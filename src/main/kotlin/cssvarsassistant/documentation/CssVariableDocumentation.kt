@@ -12,6 +12,7 @@ import com.intellij.psi.search.GlobalSearchScope
 import com.intellij.util.indexing.FileBasedIndex
 import cssvarsassistant.index.CssVariableIndex
 import cssvarsassistant.index.DELIMITER
+import cssvarsassistant.model.CssVarDoc
 import cssvarsassistant.model.DocParser
 import cssvarsassistant.settings.CssVarsAssistantSettings
 
@@ -20,12 +21,17 @@ class CssVariableDocumentation : AbstractDocumentationProvider() {
     private val LOG = Logger.getInstance(CssVariableDocumentation::class.java)
     private val ENTRY_SEP = "|||"
     private val LESS_VAR_PATTERN = Regex("""^@([\w-]+)$""")
-    private val lessVarCache = mutableMapOf<Pair<Project, String>, String?>()
 
     override fun generateDoc(element: PsiElement, original: PsiElement?): String? {
         try {
             val varName = extractVariableName(element) ?: return null
             val settings = CssVarsAssistantSettings.getInstance()
+
+            // Check if hover documentation is disabled
+            if (!settings.enableHoverDocumentation) {
+                return null
+            }
+
             val project = element.project
             val scope = when (settings.indexingScope) {
                 CssVarsAssistantSettings.IndexingScope.GLOBAL -> GlobalSearchScope.allScope(project)
@@ -41,7 +47,11 @@ class CssVariableDocumentation : AbstractDocumentationProvider() {
                 val p = it.split(DELIMITER, limit = 3)
                 if (p.size >= 2) {
                     val ctx = p[0]
-                    val value = resolveVarValue(project, p[1], scope)
+                    val value = if (settings.enableAliasResolution) {
+                        resolveVarValue(project, p[1], scope)
+                    } else {
+                        p[1]
+                    }
                     val comment = p.getOrElse(2) { "" }
                     Triple(ctx, value, comment)
                 } else null
@@ -61,57 +71,95 @@ class CssVariableDocumentation : AbstractDocumentationProvider() {
                 unique.firstOrNull { it.third.isNotBlank() } ?: unique.find { it.first == "default" } ?: unique.first()
             val doc = DocParser.parse(docEntry.third, docEntry.second)
 
-            val sb = StringBuilder()
-            sb.append("<html><body>").append(DocumentationMarkup.DEFINITION_START)
-            if (doc.name.isNotBlank()) sb.append("<b>").append(doc.name).append("</b><br/>")
-            sb.append("<small>CSS Variable: <code>$varName</code></small>").append(DocumentationMarkup.DEFINITION_END)
-                .append(DocumentationMarkup.CONTENT_START)
+            return generateHtmlDocumentation(varName, doc, sorted, settings)
 
-            sb.append("<p><b>Values:</b></p>")
-                .append("<table>")
-                .append("<tr><td>Context</td>")
-                .append("<td>&nbsp;</td>")
-                .append("<td align='left'>Value</td></tr>")
-
-            for ((ctx, value, _) in sorted) {
-                val isColour = ColorParser.parseCssColor(value) != null
-                sb.append("<tr><td style='color:#888;padding-right:10px'>")
-                    .append(contextLabel(ctx))
-                    .append("</td><td>")
-                if (isColour) sb.append(colorSwatchHtml(value)) else sb.append("&nbsp;")
-                sb.append("</td><td>")
-                    .append(StringUtil.escapeXmlEntities(value))
-                    .append("</td></tr>")
-            }
-            sb.append("</table>")
-
-            if (doc.description.isNotBlank()) sb.append("<p><b>Description:</b><br/>")
-                .append(StringUtil.escapeXmlEntities(doc.description)).append("</p>")
-
-            if (doc.examples.isNotEmpty()) {
-                sb.append("<p><b>Examples:</b></p><pre>")
-                doc.examples.forEach { sb.append(StringUtil.escapeXmlEntities(it)).append('\n') }
-                sb.append("</pre>")
-            }
-
-            sorted.mapNotNull { ColorParser.parseCssColor(it.second) }.firstOrNull()?.let { c ->
-                val hex = "%02x%02x%02x".format(c.red, c.green, c.blue)
-                sb.append(
-                    """<p style='margin-top:10px'>
-                             |<a target="_blank"
-                             |   href="https://webaim.org/resources/contrastchecker/?fcolor=$hex&bcolor=000000">
-                             |Check contrast on WebAIM Contrast Checker
-                             |</a></p>""".trimMargin()
-                )
-            }
-
-            sb.append(DocumentationMarkup.CONTENT_END).append("</body></html>")
-
-            return sb.toString()
         } catch (e: Exception) {
             LOG.error("Error generating documentation", e)
             return null
         }
+    }
+
+    private fun generateHtmlDocumentation(
+        varName: String,
+        doc: CssVarDoc,
+        sorted: List<Triple<String, String, String>>,
+        settings: CssVarsAssistantSettings
+    ): String {
+        val sb = StringBuilder()
+
+        // Header
+        sb.append("<html><body>")
+            .append(DocumentationMarkup.DEFINITION_START)
+
+        if (doc.name.isNotBlank()) {
+            sb.append("<b>").append(StringUtil.escapeXmlEntities(doc.name)).append("</b><br/>")
+        }
+
+        sb.append("<small>CSS Variable: <code>$varName</code></small>")
+            .append(DocumentationMarkup.DEFINITION_END)
+            .append(DocumentationMarkup.CONTENT_START)
+
+        // Values table
+        sb.append("<p><b>Values:</b></p>")
+            .append("<table style='border-collapse: collapse;'>")
+            .append("<tr><td style='padding: 2px 8px; font-weight: bold;'>Context</td>")
+            .append("<td style='padding: 2px 8px; font-weight: bold;'>&nbsp;</td>")
+            .append("<td style='padding: 2px 8px; font-weight: bold;' align='left'>Value</td></tr>")
+
+        for ((ctx, value, _) in sorted) {
+            val isColour = settings.enableColorPreview && ColorParser.parseCssColor(value) != null
+            sb.append("<tr>")
+                .append("<td style='color:#888; padding: 2px 8px; border-top: 1px solid #eee;'>")
+                .append(StringUtil.escapeXmlEntities(contextLabel(ctx)))
+                .append("</td>")
+                .append("<td style='padding: 2px 8px; border-top: 1px solid #eee;'>")
+
+            if (isColour) {
+                sb.append(colorSwatchHtml(value))
+            } else {
+                sb.append("&nbsp;")
+            }
+
+            sb.append("</td>")
+                .append("<td style='padding: 2px 8px; border-top: 1px solid #eee;'>")
+                .append(StringUtil.escapeXmlEntities(value))
+                .append("</td></tr>")
+        }
+        sb.append("</table>")
+
+        // Description
+        if (doc.description.isNotBlank()) {
+            sb.append("<p><b>Description:</b><br/>")
+                .append(StringUtil.escapeXmlEntities(doc.description))
+                .append("</p>")
+        }
+
+        // Examples
+        if (doc.examples.isNotEmpty()) {
+            sb.append("<p><b>Examples:</b></p><pre style='background: #f5f5f5; padding: 8px; border-radius: 4px;'>")
+            doc.examples.forEach {
+                sb.append(StringUtil.escapeXmlEntities(it)).append('\n')
+            }
+            sb.append("</pre>")
+        }
+
+        // WebAIM link (if enabled and color found)
+        if (settings.showWebAimLinks) {
+            sorted.mapNotNull { ColorParser.parseCssColor(it.second) }.firstOrNull()?.let { c ->
+                val hex = "%02x%02x%02x".format(c.red, c.green, c.blue)
+                sb.append(
+                    """<p style='margin-top:10px; padding: 8px; background: #f0f8ff; border-radius: 4px;'>
+                         |<b>Accessibility:</b><br/>
+                         |<a target="_blank" style='color: #0066cc;'
+                         |   href="https://webaim.org/resources/contrastchecker/?fcolor=$hex&bcolor=000000">
+                         |🔍 Check contrast on WebAIM Contrast Checker
+                         |</a></p>""".trimMargin()
+                )
+            }
+        }
+
+        sb.append(DocumentationMarkup.CONTENT_END).append("</body></html>")
+        return sb.toString()
     }
 
     private fun resolveVarValue(
@@ -128,10 +176,10 @@ class CssVariableDocumentation : AbstractDocumentationProvider() {
             val ref = varRef.groupValues[1]
             if (ref in visited) return raw
 
-            val entries =
-                FileBasedIndex.getInstance().getValues(CssVariableIndex.NAME, ref, scope)
-                    .flatMap { it.split(ENTRY_SEP) }
-                    .filter { it.isNotBlank() }
+            val entries = FileBasedIndex.getInstance()
+                .getValues(CssVariableIndex.NAME, ref, scope)
+                .flatMap { it.split(ENTRY_SEP) }
+                .filter { it.isNotBlank() }
 
             val defValue = entries.mapNotNull {
                 val p = it.split(DELIMITER, limit = 3)
@@ -144,14 +192,9 @@ class CssVariableDocumentation : AbstractDocumentationProvider() {
         }
 
         val lessVarMatch = LESS_VAR_PATTERN.find(raw.trim())
-        if (lessVarMatch != null) {
+        if (lessVarMatch != null && CssVarsAssistantSettings.getInstance().preprocessorVariableSupport) {
             val varName = lessVarMatch.groupValues[1]
-            val cacheKey = Pair(project, varName)
-            lessVarCache[cacheKey]?.let { return it }
-
-            val resolvedValue = findPreprocessorVariableValue(project, varName, scope)
-            lessVarCache[cacheKey] = resolvedValue
-            return resolvedValue ?: raw
+            return findPreprocessorVariableValue(project, varName, scope) ?: raw
         }
 
         return raw
@@ -164,11 +207,12 @@ class CssVariableDocumentation : AbstractDocumentationProvider() {
     ): String? {
         try {
             val potentialFiles = mutableListOf<VirtualFile>()
-            val fileTypes = listOf(".less", ".scss", ".sass", ".css")
+            val fileTypes = listOf("less", "scss", "sass", "css")
 
             for (ext in fileTypes) {
                 for (commonName in listOf("variables", "vars", "theme", "colors", "spacing", "tokens")) {
-                    FilenameIndex.getAllFilesByExt(project, "$commonName$ext", scope)
+                    val files = FilenameIndex.getAllFilesByExt(project, ext, scope)
+                    files.filter { it.nameWithoutExtension.startsWith(commonName) }
                         .forEach { potentialFiles.add(it) }
                 }
             }
@@ -177,19 +221,17 @@ class CssVariableDocumentation : AbstractDocumentationProvider() {
                 try {
                     val content = String(file.contentsToByteArray())
 
-                    val lessPattern = Regex("""@${Regex.escape(varName)}:\s*([^;]+);""")
-                    lessPattern.find(content)?.let {
-                        return it.groupValues[1].trim()
-                    }
+                    // Try different variable syntaxes
+                    val patterns = listOf(
+                        Regex("""@${Regex.escape(varName)}:\s*([^;]+);"""),      // LESS
+                        Regex("""\$${Regex.escape(varName)}:\s*([^;]+);"""),     // SCSS
+                        Regex("""--${Regex.escape(varName)}:\s*([^;]+);""")      // CSS
+                    )
 
-                    val scssPattern = Regex("""\$${Regex.escape(varName)}:\s*([^;]+);""")
-                    scssPattern.find(content)?.let {
-                        return it.groupValues[1].trim()
-                    }
-
-                    val cssVarPattern = Regex("""--${Regex.escape(varName)}:\s*([^;]+);""")
-                    cssVarPattern.find(content)?.let {
-                        return it.groupValues[1].trim()
+                    for (pattern in patterns) {
+                        pattern.find(content)?.let {
+                            return it.groupValues[1].trim()
+                        }
                     }
                 } catch (e: Exception) {
                     LOG.debug("Error reading file ${file.path}", e)

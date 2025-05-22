@@ -42,7 +42,7 @@ object ImportResolver {
                         resolvedFile,
                         project,
                         maxDepth,
-                        visited,
+                        visited.toMutableSet(), // Create copy to avoid modifying parent's visited set
                         currentDepth + 1
                     )
                     resolvedFiles.addAll(nestedImports)
@@ -60,12 +60,20 @@ object ImportResolver {
      */
     private fun extractImportPaths(content: String): List<String> {
         val imports = mutableListOf<String>()
+        val lines = content.lines()
 
-        IMPORT_PATTERN.findAll(content).forEach { match ->
-            // Extract the actual import path from any of the capture groups
-            val importPath = match.groupValues.drop(1).firstOrNull { it.isNotBlank() }
-            if (importPath != null) {
-                imports.add(importPath.trim())
+        for (line in lines) {
+            val trimmedLine = line.trim()
+
+            // Skip commented lines
+            if (trimmedLine.startsWith("//") || trimmedLine.startsWith("/*")) continue
+
+            // Handle conditional imports like @import "file.css" screen;
+            IMPORT_PATTERN.findAll(trimmedLine).forEach { match ->
+                val importPath = match.groupValues.drop(1).firstOrNull { it.isNotBlank() }
+                if (importPath != null && !importPath.startsWith("http")) {
+                    imports.add(importPath.trim())
+                }
             }
         }
 
@@ -81,42 +89,42 @@ object ImportResolver {
         project: Project
     ): VirtualFile? {
         try {
-            // Handle different types of import paths
-            when {
-                // Relative paths (./file.css, ../file.css)
+            return when {
+                // Relative paths
                 importPath.startsWith("./") || importPath.startsWith("../") -> {
-                    return resolveRelativePath(currentFile, importPath)
+                    resolveRelativePath(currentFile, importPath)
                 }
 
-                // Node modules paths (@package/file, package/file)
+                // Node modules or scoped packages
                 importPath.startsWith("@") || !importPath.startsWith("/") -> {
-                    return resolveNodeModulesPath(currentFile, importPath, project)
+                    resolveNodeModulesPath(currentFile, importPath, project)
                 }
 
-                // Absolute paths (less common, but handle them)
+                // Absolute paths from project root
                 importPath.startsWith("/") -> {
                     val projectRoot = project.guessProjectDir()
-                    return projectRoot?.findFileByRelativePath(importPath.substring(1))
+                    projectRoot?.findFileByRelativePath(importPath.substring(1))
                 }
+
+                else -> null
             }
         } catch (e: Exception) {
-            LOG.debug("Error resolving import path: $importPath", e)
+            LOG.debug("Error resolving import path: $importPath from ${currentFile.path}", e)
             return null
         }
-        return null
-
     }
 
     /**
      * Resolves relative paths like ./variables.css or ../theme/colors.css
-     * Tries multiple extensions if no extension is specified, prioritizing based on current file type
      */
     private fun resolveRelativePath(currentFile: VirtualFile, relativePath: String): VirtualFile? {
         val currentDir = currentFile.parent ?: return null
 
-        // If path already has an extension, use it directly
-        if (relativePath.contains('.')) {
-            return VfsUtil.findRelativeFile(currentDir, *relativePath.split('/').toTypedArray())
+        // If path already has an extension, try it first
+        if (relativePath.contains('.') && !relativePath.endsWith('.')) {
+            VfsUtil.findRelativeFile(currentDir, *relativePath.split('/').toTypedArray())?.let {
+                if (it.exists()) return it
+            }
         }
 
         // Prioritize extensions based on the importing file's extension
@@ -128,11 +136,28 @@ object ImportResolver {
             else -> listOf("css", "scss", "sass", "less")
         }
 
+        // Try each extension
         for (ext in prioritizedExtensions) {
-            val pathWithExtension = "$relativePath.$ext"
+            val pathWithExtension = if (relativePath.contains('.')) {
+                relativePath.substringBeforeLast('.') + ".$ext"
+            } else {
+                "$relativePath.$ext"
+            }
+
             val resolved = VfsUtil.findRelativeFile(currentDir, *pathWithExtension.split('/').toTypedArray())
             if (resolved != null && resolved.exists()) {
                 return resolved
+            }
+        }
+
+        // Try index files (like index.scss, index.css)
+        if (!relativePath.contains('.')) {
+            for (ext in prioritizedExtensions) {
+                val indexPath = "$relativePath/index.$ext"
+                val resolved = VfsUtil.findRelativeFile(currentDir, *indexPath.split('/').toTypedArray())
+                if (resolved != null && resolved.exists()) {
+                    return resolved
+                }
             }
         }
 
@@ -170,49 +195,90 @@ object ImportResolver {
 
     /**
      * Resolves a package path within a node_modules directory
-     * Tries multiple extensions if no extension is specified, prioritizing based on importing file type
      */
     private fun resolveInNodeModules(
         nodeModules: VirtualFile,
         packagePath: String,
         importingFile: VirtualFile
     ): VirtualFile? {
-        // If path already has an extension, use it directly
-        if (packagePath.contains('.')) {
-            val pathParts = packagePath.split('/')
-            var current = nodeModules
+        val pathParts = packagePath.split('/')
 
-            for (part in pathParts) {
-                current = current.findChild(part) ?: return null
-            }
-
-            return if (current.isDirectory) null else current
+        // Handle scoped packages (@scope/package)
+        val packageName = if (packagePath.startsWith("@") && pathParts.size >= 2) {
+            "${pathParts[0]}/${pathParts[1]}"
+        } else {
+            pathParts[0]
         }
 
-        // Prioritize extensions based on the importing file's extension
-        val currentExtension = importingFile.extension?.lowercase()
-        val prioritizedExtensions = when (currentExtension) {
+        val packageDir = if (packageName.contains("/")) {
+            // Scoped package
+            val scopeParts = packageName.split("/")
+            nodeModules.findChild(scopeParts[0])?.findChild(scopeParts[1])
+        } else {
+            nodeModules.findChild(packageName)
+        }
+
+        if (packageDir == null || !packageDir.isDirectory) return null
+
+        // If it's just the package name, try to find main CSS file
+        if (pathParts.size <= (if (packagePath.startsWith("@")) 2 else 1)) {
+            return findMainCssFile(packageDir, importingFile)
+        }
+
+        // Navigate to the specific file within the package
+        val remainingPath = pathParts.drop(if (packagePath.startsWith("@")) 2 else 1).joinToString("/")
+        return resolveFileInPackage(packageDir, remainingPath, importingFile)
+    }
+
+    private fun findMainCssFile(packageDir: VirtualFile, importingFile: VirtualFile): VirtualFile? {
+        // Try common CSS entry points
+        val commonEntries = listOf("style", "main", "index", "dist/index", "css/index")
+        val extensions = getExtensionPriority(importingFile)
+
+        for (entry in commonEntries) {
+            for (ext in extensions) {
+                val cssFile = packageDir.findFileByRelativePath("$entry.$ext")
+                if (cssFile != null && cssFile.exists()) return cssFile
+            }
+        }
+
+        return null
+    }
+
+    private fun resolveFileInPackage(
+        packageDir: VirtualFile,
+        filePath: String,
+        importingFile: VirtualFile
+    ): VirtualFile? {
+        // Try exact path first
+        if (filePath.contains('.')) {
+            val exact = packageDir.findFileByRelativePath(filePath)
+            if (exact != null && exact.exists()) return exact
+        }
+
+        // Try with extensions
+        val extensions = getExtensionPriority(importingFile)
+        for (ext in extensions) {
+            val pathWithExt = if (filePath.contains('.')) {
+                filePath.substringBeforeLast('.') + ".$ext"
+            } else {
+                "$filePath.$ext"
+            }
+
+            val resolved = packageDir.findFileByRelativePath(pathWithExt)
+            if (resolved != null && resolved.exists()) return resolved
+        }
+
+        return null
+    }
+
+    private fun getExtensionPriority(importingFile: VirtualFile): List<String> {
+        return when (importingFile.extension?.lowercase()) {
             "scss" -> listOf("scss", "css", "sass", "less")
             "sass" -> listOf("sass", "scss", "css", "less")
             "less" -> listOf("less", "css", "scss", "sass")
             else -> listOf("css", "scss", "sass", "less")
         }
-
-        for (ext in prioritizedExtensions) {
-            val pathWithExtension = "$packagePath.$ext"
-            val pathParts = pathWithExtension.split('/')
-            var current = nodeModules
-
-            for (part in pathParts) {
-                current = current.findChild(part) ?: break
-            }
-
-            if (current != nodeModules && !current.isDirectory && current.exists()) {
-                return current
-            }
-        }
-
-        return null
     }
 
     /**
@@ -221,8 +287,44 @@ object ImportResolver {
     fun isExternalImport(file: VirtualFile, project: Project): Boolean {
         val projectRoot = project.guessProjectDir()?.path ?: return false
         val filePath = file.path
-
-        // Check if file is in node_modules
         return filePath.contains("/node_modules/") && !filePath.startsWith(projectRoot)
+    }
+
+    /**
+     * Debug utility to trace import resolution
+     */
+    fun debugImportChain(file: VirtualFile, project: Project, maxDepth: Int = 3): String {
+        val result = StringBuilder()
+        result.appendLine("Import resolution debug for: ${file.path}")
+        result.appendLine("Max depth: $maxDepth")
+
+        fun traceImports(currentFile: VirtualFile, depth: Int, prefix: String = "") {
+            if (depth >= maxDepth) return
+
+            try {
+                val content = String(currentFile.contentsToByteArray())
+                val imports = extractImportPaths(content)
+
+                result.appendLine("${prefix}├─ ${currentFile.name} (${imports.size} imports)")
+
+                imports.forEachIndexed { index, importPath ->
+                    val isLast = index == imports.size - 1
+                    val newPrefix = prefix + if (isLast) "   " else "│  "
+
+                    val resolved = resolveImportPath(currentFile, importPath, project)
+                    if (resolved != null && resolved.exists()) {
+                        result.appendLine("${prefix}${if (isLast) "└─" else "├─"} $importPath -> ${resolved.name} ✓")
+                        traceImports(resolved, depth + 1, newPrefix)
+                    } else {
+                        result.appendLine("${prefix}${if (isLast) "└─" else "├─"} $importPath -> NOT FOUND ✗")
+                    }
+                }
+            } catch (e: Exception) {
+                result.appendLine("${prefix}└─ ERROR: ${e.message}")
+            }
+        }
+
+        traceImports(file, 0)
+        return result.toString()
     }
 }

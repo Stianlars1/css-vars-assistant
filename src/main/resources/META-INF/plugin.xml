@@ -55,5 +55,26 @@
             displayName="CSS Variables Assistant"
             parentId="tools"
     />
+
   </extensions>
+
+
+  <!-- Actions -->
+    <actions>
+        <action
+                id="cssvarsassistant.debug.imports"
+                class="cssvarsassistant.actions.DebugCssImportResolutionAction"
+                text="Debug CSS Import Resolution"
+                description="Debug CSS @import resolution chain for this file">
+            <add-to-group group-id="EditorPopupMenu" anchor="last"/>
+        </action>
+    </actions>
+
+
+  <!-- Project listeners -->
+  <projectListeners>
+    <listener
+            class="cssvarsassistant."
+            topic="com.intellij.openapi.vfs.VirtualFileListener"/>
+  </projectListeners>
 </idea-plugin>
