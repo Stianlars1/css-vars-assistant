@@ -20,8 +20,10 @@ class CssVariableIndex : FileBasedIndexExtension<String, String>() {
         val NAME = ID.create<String, String>("cssvarsassistant.index")
     }
 
+    private val LOG = com.intellij.openapi.diagnostic.Logger.getInstance(CssVariableIndex::class.java)
+
     override fun getName(): ID<String, String> = NAME
-    override fun getVersion(): Int = 6  // Increment due to import resolution changes
+    override fun getVersion(): Int = 8
 
     override fun getInputFilter(): FileBasedIndex.InputFilter {
         val registry = FileTypeRegistry.getInstance()
@@ -35,11 +37,19 @@ class CssVariableIndex : FileBasedIndexExtension<String, String>() {
             val isStylesheetFile = fileType == cssFileType || fileType == scssFileType ||
                     fileType == lessFileType || fileType == sassFileType
 
-            if (!isStylesheetFile) return@InputFilter false
+            if (!isStylesheetFile) {
+                return@InputFilter false
+            }
 
-            // Get settings to determine if this file should be indexed
             val settings = CssVarsAssistantSettings.getInstance()
-            shouldIndexFile(virtualFile, settings)
+            val shouldIndex = shouldIndexFile(virtualFile, settings)
+
+            LOG.debug("🔍 FILTER CHECK: ${virtualFile.path}")
+            LOG.debug("  Extension: ${virtualFile.extension}")
+            LOG.debug("  FileType: ${fileType.name}")
+            LOG.debug("  ShouldIndex: $shouldIndex")
+
+            shouldIndex
         }
     }
 
@@ -50,87 +60,125 @@ class CssVariableIndex : FileBasedIndexExtension<String, String>() {
         val settings = CssVarsAssistantSettings.getInstance()
 
         try {
-            // Index the current file
-            indexFileContent(inputData.contentAsText, map)
+            LOG.info("🚀 INDEXING START: ${inputData.file.path}")
+            LOG.info("  Extension: ${inputData.file.extension}")
+            LOG.info("  Indexing scope: ${settings.indexingScope}")
+            LOG.info("  Should resolve imports: ${settings.shouldResolveImports}")
+            LOG.info("  Max import depth: ${settings.maxImportDepth}")
 
-            // If import resolution is enabled, also index imported files
+            // Index the main file
+            val mainFileVars = indexFileContent(inputData.contentAsText, "MAIN FILE")
+            map.putAll(mainFileVars)
+            LOG.info("📊 Found ${mainFileVars.size} variables in main file")
+
+            // Index imported files if enabled
             if (settings.shouldResolveImports) {
-                indexImportedFiles(inputData.file, inputData.project, settings, map)
+                LOG.info("🔗 Starting import resolution...")
+                val importVars = indexImportedFiles(inputData.file, inputData.project, settings)
+                val beforeTotal = map.size
+                map.putAll(importVars)
+                val afterTotal = map.size
+                LOG.info("📊 Added ${afterTotal - beforeTotal} variables from imports (${importVars.size} total found)")
+
+                if (importVars.isNotEmpty()) {
+                    LOG.info("📝 Import variables found:")
+                    importVars.keys.take(10).forEach { key ->
+                        LOG.info("  • $key")
+                    }
+                    if (importVars.size > 10) {
+                        LOG.info("  ... and ${importVars.size - 10} more")
+                    }
+                }
             }
+
+            LOG.info("✅ INDEXING COMPLETE: ${map.size} total variables for ${inputData.file.name}")
+
         } catch (e: Exception) {
-            com.intellij.openapi.diagnostic.Logger.getInstance(CssVariableIndex::class.java)
-                .debug("Error indexing file ${inputData.file.path}", e)
+            LOG.error("💥 Error indexing file ${inputData.file.path}", e)
         }
 
         map
     }
 
-    /**
-     * Determines if a file should be indexed based on current settings
-     */
     private fun shouldIndexFile(file: VirtualFile, settings: CssVarsAssistantSettings): Boolean {
         return when (settings.indexingScope) {
             CssVarsAssistantSettings.IndexingScope.GLOBAL -> true
-
-            CssVarsAssistantSettings.IndexingScope.PROJECT_ONLY -> {
-                // Only index files within the project, not in node_modules
-                !file.path.contains("/node_modules/")
-            }
-
-            CssVarsAssistantSettings.IndexingScope.PROJECT_WITH_IMPORTS -> {
-                // Index project files and selectively imported external files
-                // This is handled by the import resolution logic
-                !file.path.contains("/node_modules/")
-            }
+            CssVarsAssistantSettings.IndexingScope.PROJECT_ONLY -> !file.path.contains("/node_modules/")
+            CssVarsAssistantSettings.IndexingScope.PROJECT_WITH_IMPORTS -> !file.path.contains("/node_modules/")
         }
     }
 
-    /**
-     * Indexes imported files when import resolution is enabled
-     */
     private fun indexImportedFiles(
         file: VirtualFile,
         project: Project?,
-        settings: CssVarsAssistantSettings,
-        map: MutableMap<String, String>
-    ) {
-        if (project == null) return
+        settings: CssVarsAssistantSettings
+    ): MutableMap<String, String> {
+        val importMap = mutableMapOf<String, String>()
+
+        if (project == null) {
+            LOG.warn("⚠️ No project available for import resolution")
+            return importMap
+        }
 
         try {
+            LOG.info("🔍 Resolving imports for: ${file.path}")
             val importedFiles = ImportResolver.resolveImports(
                 file,
                 project,
                 settings.maxImportDepth
             )
 
-            for (importedFile in importedFiles) {
+            LOG.info("📦 Processing ${importedFiles.size} imported files:")
+            importedFiles.forEachIndexed { index, importedFile ->
+                LOG.info("  ${index + 1}. ${importedFile.path}")
+            }
+
+            for ((index, importedFile) in importedFiles.withIndex()) {
                 try {
+                    LOG.info("📄 [${index + 1}/${importedFiles.size}] Processing: ${importedFile.name}")
                     val importedContent = String(importedFile.contentsToByteArray())
-                    indexFileContent(importedContent, map)
+                    val fileVars = indexFileContent(importedContent, importedFile.name)
+
+                    val beforeCount = importMap.size
+                    importMap.putAll(fileVars)
+                    val afterCount = importMap.size
+                    val addedCount = afterCount - beforeCount
+
+                    LOG.info("  ✅ Added $addedCount variables from ${importedFile.name} (${fileVars.size} found)")
+
+                    if (fileVars.isNotEmpty()) {
+                        fileVars.keys.take(5).forEach { key ->
+                            LOG.info("    • $key")
+                        }
+                        if (fileVars.size > 5) {
+                            LOG.info("    ... and ${fileVars.size - 5} more")
+                        }
+                    }
+
                 } catch (e: Exception) {
-                    com.intellij.openapi.diagnostic.Logger.getInstance(CssVariableIndex::class.java)
-                        .debug("Error indexing imported file ${importedFile.path}", e)
+                    LOG.error("💥 Error indexing imported file ${importedFile.path}", e)
                 }
             }
+
         } catch (e: Exception) {
-            com.intellij.openapi.diagnostic.Logger.getInstance(CssVariableIndex::class.java)
-                .debug("Error resolving imports for ${file.path}", e)
+            LOG.error("💥 Error resolving imports for ${file.path}", e)
         }
+
+        return importMap
     }
 
-    /**
-     * Indexes CSS variable declarations from file content
-     */
-    private fun indexFileContent(text: CharSequence, map: MutableMap<String, String>) {
+    private fun indexFileContent(text: CharSequence, sourceName: String): MutableMap<String, String> {
+        val map = mutableMapOf<String, String>()
         val lines = text.lines()
         var currentContext = "default"
         val contextStack = ArrayDeque<String>()
-
         var lastComment: String? = null
         var inBlockComment = false
         val blockComment = StringBuilder()
 
-        for (rawLine in lines) {
+        LOG.debug("🔍 Scanning $sourceName (${lines.size} lines)")
+
+        for ((lineNum, rawLine) in lines.withIndex()) {
             val line = rawLine.trim()
 
             // Media Query Context Handling
@@ -155,18 +203,13 @@ class CssVariableIndex : FileBasedIndexExtension<String, String>() {
                 blockComment.clear()
                 if (line.contains("*/")) {
                     blockComment.append(
-                        line
-                            .removePrefix("/**").removePrefix("/*")
-                            .removeSuffix("*/").trim()
+                        line.removePrefix("/**").removePrefix("/*").removeSuffix("*/").trim()
                     )
                     lastComment = blockComment.toString().trim()
                     inBlockComment = false
                     continue
                 } else {
-                    blockComment.append(
-                        line
-                            .removePrefix("/**").removePrefix("/*").trim()
-                    )
+                    blockComment.append(line.removePrefix("/**").removePrefix("/*").trim())
                     continue
                 }
             }
@@ -181,7 +224,7 @@ class CssVariableIndex : FileBasedIndexExtension<String, String>() {
                 continue
             }
 
-            // Variable Extraction
+            // CSS Variable Extraction
             val varDecl = Regex("""(--[A-Za-z0-9\-_]+)\s*:\s*([^;]+);""").find(line)
             if (varDecl != null) {
                 val varName = varDecl.groupValues[1]
@@ -191,8 +234,13 @@ class CssVariableIndex : FileBasedIndexExtension<String, String>() {
                 val prev = map[varName]
                 map[varName] = if (prev == null) entry else prev + ENTRY_SEP + entry
                 lastComment = null
+
+                LOG.debug("  ✅ Variable found in $sourceName:${lineNum + 1}: $varName = $value")
             }
         }
+
+        LOG.debug("📊 Total variables found in $sourceName: ${map.size}")
+        return map
     }
 
     override fun getKeyDescriptor(): KeyDescriptor<String> = EnumeratorStringDescriptor.INSTANCE

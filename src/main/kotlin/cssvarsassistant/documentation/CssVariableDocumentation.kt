@@ -129,7 +129,8 @@ class CssVariableDocumentation : AbstractDocumentationProvider() {
             if (ref in visited) return raw
 
             val entries =
-                FileBasedIndex.getInstance().getValues(CssVariableIndex.NAME, ref, scope).flatMap { it.split(ENTRY_SEP) }
+                FileBasedIndex.getInstance().getValues(CssVariableIndex.NAME, ref, scope)
+                    .flatMap { it.split(ENTRY_SEP) }
                     .filter { it.isNotBlank() }
 
             val defValue = entries.mapNotNull {
@@ -163,12 +164,15 @@ class CssVariableDocumentation : AbstractDocumentationProvider() {
     ): String? {
         try {
             val potentialFiles = mutableListOf<VirtualFile>()
-            val fileTypes = listOf(".less", ".scss", ".sass", ".css")
+            val fileTypes = listOf("less", "scss", "sass", "css")
 
             for (ext in fileTypes) {
                 for (commonName in listOf("variables", "vars", "theme", "colors", "spacing", "tokens")) {
-                    FilenameIndex.getFilesByName(project, "$commonName$ext", scope, true)
-                        .forEach { potentialFiles.add(it.virtualFile) }
+                    // Use the newer API instead of deprecated getFilesByName
+                    val files = FilenameIndex.getAllFilesByExt(project, ext, scope)
+
+                    files.filter { it.name.startsWith(commonName) }
+                        .forEach { psiFile -> potentialFiles.add(psiFile) }
                 }
             }
 
@@ -181,7 +185,7 @@ class CssVariableDocumentation : AbstractDocumentationProvider() {
                         return it.groupValues[1].trim()
                     }
 
-                    val scssPattern = Regex("""\\$${Regex.escape(varName)}:\s*([^;]+);""")
+                    val scssPattern = Regex("""\$${Regex.escape(varName)}:\s*([^;]+);""")
                     scssPattern.find(content)?.let {
                         return it.groupValues[1].trim()
                     }
