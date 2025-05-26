@@ -1,59 +1,71 @@
 <idea-plugin>
-  <!-- Plugin metadata is managed by Gradle -->
+    <!-- Plugin metadata is managed by Gradle -->
 
-  <!-- Dependencies -->
-  <depends>com.intellij.modules.platform</depends>
-  <depends>com.intellij.modules.lang</depends>
-  <depends>com.intellij.css</depends>
+    <!-- Dependencies -->
+    <depends>com.intellij.modules.platform</depends>
+    <depends>com.intellij.modules.lang</depends>
+    <depends>com.intellij.css</depends>
 
-  <extensions defaultExtensionNs="com.intellij">
-    <!-- your indexer & completion -->
-    <fileBasedIndex implementation="cssvarsassistant.index.CssVariableIndex"/>
 
-    <completion.contributor language="CSS"
-                            implementationClass="cssvarsassistant.completion.CssVariableCompletion"
-                            order="first"/>
-    <completion.contributor language="SCSS"
-                            implementationClass="cssvarsassistant.completion.CssVariableCompletion"
-                            order="first"/>
-    <completion.contributor language="Sass"
-                            implementationClass="cssvarsassistant.completion.CssVariableCompletion"
-                            order="first"/>
-    <completion.contributor language="LESS"
-                            implementationClass="cssvarsassistant.completion.CssVariableCompletion"
-                            order="first"/>
-    <completion.contributor language="JavaScript"
-                            implementationClass="cssvarsassistant.completion.CssVariableCompletion"
-                            order="first"/>
-    <completion.contributor language="TypeScript"
-                            implementationClass="cssvarsassistant.completion.CssVariableCompletion"
-                            order="first"/>
-    <completion.contributor language="JSX Harmony"
-                            implementationClass="cssvarsassistant.completion.CssVariableCompletion"
-                            order="first"/>
-    <completion.contributor language="TypeScript JSX"
-                            implementationClass="cssvarsassistant.completion.CssVariableCompletion"
-                            order="first"/>
+    <extensions defaultExtensionNs="com.intellij">
+        <!-- your indexer & completion -->
+        <fileBasedIndex implementation="cssvarsassistant.index.CssVariableIndex"/>
 
-    <!-- override built‑in CSS/SCSS docs -->
-    <lang.documentationProvider
-            language="CSS"
-            implementationClass="cssvarsassistant.documentation.CssVariableDocumentation"
-            order="first"/>
-    <lang.documentationProvider
-            language="Sass"
-            implementationClass="cssvarsassistant.documentation.CssVariableDocumentation"
-            order="first"/>
-    <lang.documentationProvider
-            language="LESS"
-            implementationClass="cssvarsassistant.documentation.CssVariableDocumentation"
-            order="first"/>
+        <completion.contributor language="CSS"
+                                implementationClass="cssvarsassistant.completion.CssVariableCompletion"
+                                order="first"/>
+        <completion.contributor language="SCSS"
+                                implementationClass="cssvarsassistant.completion.CssVariableCompletion"
+                                order="first"/>
+        <completion.contributor language="Sass"
+                                implementationClass="cssvarsassistant.completion.CssVariableCompletion"
+                                order="first"/>
+        <completion.contributor language="LESS"
+                                implementationClass="cssvarsassistant.completion.CssVariableCompletion"
+                                order="first"/>
+        <completion.contributor language="JavaScript"
+                                implementationClass="cssvarsassistant.completion.CssVariableCompletion"
+                                order="first"/>
+        <completion.contributor language="TypeScript"
+                                implementationClass="cssvarsassistant.completion.CssVariableCompletion"
+                                order="first"/>
+        <completion.contributor language="JSX Harmony"
+                                implementationClass="cssvarsassistant.completion.CssVariableCompletion"
+                                order="first"/>
+        <completion.contributor language="TypeScript JSX"
+                                implementationClass="cssvarsassistant.completion.CssVariableCompletion"
+                                order="first"/>
 
-    <applicationConfigurable
-            id="cssvarsassistant.settings"
-            instance="cssvarsassistant.settings.CssVarsAssistantConfigurable"
-            displayName="CSS Variables Assistant"
-            parentId="tools"
-    />
-  </extensions>
+        <!-- override built‑in CSS/SCSS docs -->
+        <lang.documentationProvider
+                language="CSS"
+                implementationClass="cssvarsassistant.documentation.CssVariableDocumentation"
+                order="first"/>
+        <lang.documentationProvider
+                language="Sass"
+                implementationClass="cssvarsassistant.documentation.CssVariableDocumentation"
+                order="first"/>
+        <lang.documentationProvider
+                language="LESS"
+                implementationClass="cssvarsassistant.documentation.CssVariableDocumentation"
+                order="first"/>
+
+        <applicationConfigurable
+                id="cssvarsassistant.settings"
+                instance="cssvarsassistant.settings.CssVarsAssistantConfigurable"
+                displayName="CSS Variables Assistant"
+                parentId="tools"
+        />
+    </extensions>
+
+    <actions>
+        <!-- Debug action for variable index -->
+        <action id="cssvarsassistant.DebugVariableIndex"
+                class="cssvarsassistant.actions.DebugVariableIndexAction"
+                text="Debug CSS Variable Index"
+                description="Debug indexed CSS variables">
+            <add-to-group group-id="ToolsMenu" anchor="last"/>
+            <add-to-group group-id="ProjectViewPopupMenu" anchor="last"/>
+        </action>
+    </actions>
 </idea-plugin>

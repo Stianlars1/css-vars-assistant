@@ -9,6 +9,7 @@ import com.intellij.util.io.EnumeratorStringDescriptor
 import com.intellij.util.io.IOUtil
 import com.intellij.util.io.KeyDescriptor
 import cssvarsassistant.settings.CssVarsAssistantSettings
+import org.apache.log4j.Logger
 import java.io.DataInput
 import java.io.DataOutput
 
@@ -20,8 +21,10 @@ class CssVariableIndex : FileBasedIndexExtension<String, String>() {
         val NAME = ID.create<String, String>("cssvarsassistant.index")
     }
 
+    private val logger = Logger.getLogger(CssVariableIndex::class.java)
+
     override fun getName(): ID<String, String> = NAME
-    override fun getVersion(): Int = 6  // Increment due to import resolution changes
+    override fun getVersion(): Int = 8  // Increment for LESS support
 
     override fun getInputFilter(): FileBasedIndex.InputFilter {
         val registry = FileTypeRegistry.getInstance()
@@ -50,8 +53,12 @@ class CssVariableIndex : FileBasedIndexExtension<String, String>() {
         val settings = CssVarsAssistantSettings.getInstance()
 
         try {
+            // Determine file type
+            val isLessFile = inputData.file.extension?.lowercase().equals("less", true)
+
+
             // Index the current file
-            indexFileContent(inputData.contentAsText, map)
+            indexFileContent(inputData.contentAsText, map, isLessFile)
 
             // If import resolution is enabled, also index imported files
             if (settings.shouldResolveImports) {
@@ -94,34 +101,35 @@ class CssVariableIndex : FileBasedIndexExtension<String, String>() {
         settings: CssVarsAssistantSettings,
         map: MutableMap<String, String>
     ) {
-        if (project == null) return
+        val realProject = project
+            ?: com.intellij.openapi.project.ProjectLocator.getInstance().guessProjectForFile(file)
+            ?: return                           // fortsatt ingenting vi kan gjøre
 
         try {
             val importedFiles = ImportResolver.resolveImports(
                 file,
-                project,
+                realProject,
                 settings.maxImportDepth
             )
 
-            for (importedFile in importedFiles) {
+            for (imported in importedFiles) {
                 try {
-                    val importedContent = String(importedFile.contentsToByteArray())
-                    indexFileContent(importedContent, map)
+                    val content = String(imported.contentsToByteArray())
+                    indexFileContent(content, map, imported.extension.equals("less", true))
                 } catch (e: Exception) {
-                    com.intellij.openapi.diagnostic.Logger.getInstance(CssVariableIndex::class.java)
-                        .debug("Error indexing imported file ${importedFile.path}", e)
+                    logger.debug("Error indexing ${imported.path}", e)
                 }
             }
         } catch (e: Exception) {
-            com.intellij.openapi.diagnostic.Logger.getInstance(CssVariableIndex::class.java)
-                .debug("Error resolving imports for ${file.path}", e)
+            logger.debug("Error resolving imports for ${file.path}", e)
         }
     }
 
     /**
      * Indexes CSS variable declarations from file content
+     * Now supports both CSS custom properties (--var) and LESS variables (@var)
      */
-    private fun indexFileContent(text: CharSequence, map: MutableMap<String, String>) {
+    private fun indexFileContent(text: CharSequence, map: MutableMap<String, String>, isLessFile: Boolean) {
         val lines = text.lines()
         var currentContext = "default"
         val contextStack = ArrayDeque<String>()
@@ -182,15 +190,35 @@ class CssVariableIndex : FileBasedIndexExtension<String, String>() {
             }
 
             // Variable Extraction
-            val varDecl = Regex("""(--[A-Za-z0-9\-_]+)\s*:\s*([^;]+);""").find(line)
-            if (varDecl != null) {
-                val varName = varDecl.groupValues[1]
-                val value = varDecl.groupValues[2].trim()
+
+            // ALWAYS index CSS custom properties (--variables) regardless of file type
+            val cssVarDecl = Regex("""(--[A-Za-z0-9\-_]+)\s*:\s*([^;]+);""").find(line)
+            if (cssVarDecl != null) {
+                val varName = cssVarDecl.groupValues[1]
+                val value = cssVarDecl.groupValues[2].trim()
                 val comment = lastComment ?: ""
                 val entry = "$currentContext$DELIMITER$value$DELIMITER$comment"
                 val prev = map[varName]
                 map[varName] = if (prev == null) entry else prev + ENTRY_SEP + entry
                 lastComment = null
+            }
+
+            // Also index LESS variables (@var) in LESS files, converting them to CSS custom property format
+            if (isLessFile) {
+                val lessVarDecl = Regex("""(@[A-Za-z0-9\-_]+)\s*:\s*([^;]+);""").find(line)
+                if (lessVarDecl != null && !line.startsWith("@import") && !line.startsWith("@media")) {
+                    val varName = lessVarDecl.groupValues[1]
+                    val value = lessVarDecl.groupValues[2].trim()
+                    val comment = lastComment ?: ""
+
+                    // Convert LESS variable to CSS custom property format for consistency
+                    val cssVarName = "--" + varName.substring(1)
+                    val entry = "$currentContext$DELIMITER$value$DELIMITER$comment$DELIMITER#LESS"
+
+                    val prev = map[cssVarName]
+                    map[cssVarName] = if (prev == null) entry else prev + ENTRY_SEP + entry
+                    lastComment = null
+                }
             }
         }
     }

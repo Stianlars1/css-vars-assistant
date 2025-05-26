@@ -92,10 +92,34 @@ class CssVariableCompletion : CompletionContributor() {
                                     return raw
                             }
 
-                            // Handle preprocessor variable references (LESS/SCSS)
+                            // Handle LESS variable references (@var)
                             val lessVarMatch = LESS_VAR_PATTERN.find(raw.trim())
                             if (lessVarMatch != null) {
                                 val varName = lessVarMatch.groupValues[1]
+                                // Check if we have this as a CSS custom property (converted from LESS)
+                                val cssVarName = "--$varName"
+
+                                val lessEntries = FileBasedIndex.getInstance()
+                                    .getValues(CssVariableIndex.NAME, cssVarName, scope)
+                                    .flatMap { it.split(ENTRY_SEP) }
+                                    .distinct()
+                                    .filter { it.isNotBlank() }
+
+                                val lessDefault = lessEntries
+                                    .mapNotNull {
+                                        val p = it.split(DELIMITER, limit = 3)
+                                        if (p.size >= 2) p[0] to p[1] else null
+                                    }
+                                    .let { pairs ->
+                                        pairs.find { it.first == "default" }?.second
+                                            ?: pairs.firstOrNull()?.second
+                                    }
+
+                                if (lessDefault != null) {
+                                    return resolveVarValue(lessDefault, visited + cssVarName, depth + 1)
+                                }
+
+                                // Fallback to finding in LESS files
                                 val cacheKey = Pair(project, varName)
                                 lessVarCache[cacheKey]?.let { return it }
 
@@ -113,7 +137,8 @@ class CssVariableCompletion : CompletionContributor() {
                             val mainValue: String,
                             val allValues: List<Pair<String, String>>,
                             val doc: String,
-                            val isAllColor: Boolean
+                            val isAllColor: Boolean,
+                            val isFromLess: Boolean = false
                         )
 
                         val entries = mutableListOf<Entry>()
@@ -163,7 +188,8 @@ class CssVariableCompletion : CompletionContributor() {
                                     mainValue,
                                     uniqueValuePairs,
                                     doc,
-                                    isAllColor
+                                    isAllColor,
+                                    isFromLess = allVals.any { it.endsWith("#LESS") }
                                 )
                             }
 
@@ -182,6 +208,7 @@ class CssVariableCompletion : CompletionContributor() {
                                 e.isAllColor && colorIcons.size == 2 -> DoubleColorIcon(colorIcons[0], colorIcons[1])
                                 e.isAllColor && colorIcons.isNotEmpty() -> colorIcons[0]
                                 isSizeValue(e.mainValue) -> AllIcons.FileTypes.Css
+                                e.isFromLess -> AllIcons.FileTypes.Css
                                 else -> AllIcons.Nodes.Property
                             }
 
@@ -194,10 +221,12 @@ class CssVariableCompletion : CompletionContributor() {
                                         }
                                     }
                                 }
+
                                 e.isAllColor -> e.mainValue
                                 e.allValues.size > 1 && settings.showContextValues -> {
                                     "${e.mainValue} (+${e.allValues.size - 1})"
                                 }
+
                                 else -> e.mainValue
                             }
 
@@ -249,10 +278,20 @@ class CssVariableCompletion : CompletionContributor() {
             val fileTypes = listOf(".less", ".scss", ".sass", ".css")
 
             for (ext in fileTypes) {
-                for (commonName in listOf("variables", "vars", "theme", "colors", "spacing", "tokens")) {
+                for (commonName in listOf(
+                    "variables",
+                    "vars",
+                    "theme",
+                    "colors",
+                    "spacing",
+                    "tokens",
+                    "breakpoints",
+                    "dimensions",
+                    "motion"
+                )) {
                     val files = FilenameIndex.getAllFilesByExt(project, ext, scope)
 
-                    files.filter { it.name.startsWith(commonName) }
+                    files.filter { it.name.startsWith(commonName) || it.name == commonName + ext }
                         .forEach { psiFile -> potentialFiles.add(psiFile) }
                 }
             }
@@ -266,7 +305,7 @@ class CssVariableCompletion : CompletionContributor() {
                         return it.groupValues[1].trim()
                     }
 
-                    val scssPattern = Regex("""\$${Regex.escape(varName)}:\s*([^;]+);""")
+                    val scssPattern = Regex("""\\${Regex.escape(varName)}:\s*([^;]+);""")
                     scssPattern.find(content)?.let {
                         return it.groupValues[1].trim()
                     }

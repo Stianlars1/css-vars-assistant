@@ -8,11 +8,13 @@ import com.intellij.openapi.vfs.VirtualFile
 
 object ImportResolver {
     private val LOG = Logger.getInstance(ImportResolver::class.java)
+
+    // Enhanced pattern to handle LESS import options like (reference), (inline), etc.
     private val IMPORT_PATTERN =
-        Regex("""@import\s+(?:"([^"]+)"|'([^']+)'|\burl\(\s*(?:"([^"]+)"|'([^']+)'|([^)]+))\s*\))""")
+        Regex("""@import\s+(?:\(([^)]+)\)\s+)?(?:"([^"]+)"|'([^']+)'|\burl\(\s*(?:"([^"]+)"|'([^']+)'|([^)]+))\s*\))""")
 
     /**
-     * Resolves @import statements in a CSS file and returns a set of VirtualFiles
+     * Resolves @import statements in a CSS/LESS file and returns a set of VirtualFiles
      * that should be indexed based on the current settings.
      */
     fun resolveImports(
@@ -32,7 +34,7 @@ object ImportResolver {
             val content = String(file.contentsToByteArray())
             val imports = extractImportPaths(content)
 
-            for (importPath in imports) {
+            for ((importPath, _) in imports) {
                 val resolvedFile = resolveImportPath(file, importPath, project)
                 if (resolvedFile != null && resolvedFile.exists()) {
                     resolvedFiles.add(resolvedFile)
@@ -56,16 +58,20 @@ object ImportResolver {
     }
 
     /**
-     * Extracts @import paths from CSS content
+     * Extracts @import paths from CSS/LESS content
+     * Returns pairs of (path, importOptions)
      */
-    private fun extractImportPaths(content: String): List<String> {
-        val imports = mutableListOf<String>()
+    private fun extractImportPaths(content: String): List<Pair<String, String?>> {
+        val imports = mutableListOf<Pair<String, String?>>()
 
         IMPORT_PATTERN.findAll(content).forEach { match ->
+            // Extract import options (e.g., "reference", "inline", etc.)
+            val importOptions = match.groupValues[1].takeIf { it.isNotBlank() }
+
             // Extract the actual import path from any of the capture groups
-            val importPath = match.groupValues.drop(1).firstOrNull { it.isNotBlank() }
+            val importPath = match.groupValues.drop(2).firstOrNull { it.isNotBlank() }
             if (importPath != null) {
-                imports.add(importPath.trim())
+                imports.add(importPath.trim() to importOptions)
             }
         }
 
@@ -104,12 +110,11 @@ object ImportResolver {
             return null
         }
         return null
-
     }
 
     /**
      * Resolves relative paths like ./variables.css or ../theme/colors.css
-     * Tries multiple extensions if no extension is specified, prioritizing based on current file type
+     * Enhanced to handle LESS import conventions
      */
     private fun resolveRelativePath(currentFile: VirtualFile, relativePath: String): VirtualFile? {
         val currentDir = currentFile.parent ?: return null
@@ -119,18 +124,34 @@ object ImportResolver {
             return VfsUtil.findRelativeFile(currentDir, *relativePath.split('/').toTypedArray())
         }
 
-        // Prioritize extensions based on the importing file's extension
+        // For LESS, if no extension, try to find the file with LESS extension first
+        // This handles imports like @import "variables"; which should resolve to variables.less
         val currentExtension = currentFile.extension?.lowercase()
         val prioritizedExtensions = when (currentExtension) {
+            "less" -> listOf("less", "css", "scss", "sass")
             "scss" -> listOf("scss", "css", "sass", "less")
             "sass" -> listOf("sass", "scss", "css", "less")
-            "less" -> listOf("less", "css", "scss", "sass")
             else -> listOf("css", "scss", "sass", "less")
         }
 
+        // First try exact match with prioritized extensions
         for (ext in prioritizedExtensions) {
             val pathWithExtension = "$relativePath.$ext"
             val resolved = VfsUtil.findRelativeFile(currentDir, *pathWithExtension.split('/').toTypedArray())
+            if (resolved != null && resolved.exists()) {
+                return resolved
+            }
+        }
+
+        // If no exact match, try with underscore prefix (partial files)
+        val pathParts = relativePath.split('/')
+        val fileName = pathParts.last()
+        val dirPath = pathParts.dropLast(1)
+
+        for (ext in prioritizedExtensions) {
+            val partialFileName = "_$fileName.$ext"
+            val partialPath = (dirPath + listOf(partialFileName)).toTypedArray()
+            val resolved = VfsUtil.findRelativeFile(currentDir, *partialPath)
             if (resolved != null && resolved.exists()) {
                 return resolved
             }
@@ -140,7 +161,7 @@ object ImportResolver {
     }
 
     /**
-     * Resolves node_modules paths like @sb1/ffe-core/css/ffe or bootstrap/dist/css/bootstrap
+     * Resolves node_modules paths like @sb1/ffe-core/less/ffe or bootstrap/dist/css/bootstrap
      */
     private fun resolveNodeModulesPath(
         currentFile: VirtualFile,
@@ -170,7 +191,7 @@ object ImportResolver {
 
     /**
      * Resolves a package path within a node_modules directory
-     * Tries multiple extensions if no extension is specified, prioritizing based on importing file type
+     * Enhanced to handle LESS import conventions
      */
     private fun resolveInNodeModules(
         nodeModules: VirtualFile,
@@ -192,18 +213,38 @@ object ImportResolver {
         // Prioritize extensions based on the importing file's extension
         val currentExtension = importingFile.extension?.lowercase()
         val prioritizedExtensions = when (currentExtension) {
+            "less" -> listOf("less", "css", "scss", "sass")
             "scss" -> listOf("scss", "css", "sass", "less")
             "sass" -> listOf("sass", "scss", "css", "less")
-            "less" -> listOf("less", "css", "scss", "sass")
             else -> listOf("css", "scss", "sass", "less")
         }
 
+        // Try exact match with prioritized extensions
         for (ext in prioritizedExtensions) {
             val pathWithExtension = "$packagePath.$ext"
             val pathParts = pathWithExtension.split('/')
             var current = nodeModules
 
             for (part in pathParts) {
+                current = current.findChild(part) ?: break
+            }
+
+            if (current != nodeModules && !current.isDirectory && current.exists()) {
+                return current
+            }
+        }
+
+        // Try with underscore prefix for partial files
+        val pathParts = packagePath.split('/')
+        val fileName = pathParts.last()
+        val dirPath = pathParts.dropLast(1)
+
+        for (ext in prioritizedExtensions) {
+            val partialFileName = "_$fileName.$ext"
+            val fullPath = (dirPath + listOf(partialFileName))
+            var current = nodeModules
+
+            for (part in fullPath) {
                 current = current.findChild(part) ?: break
             }
 
