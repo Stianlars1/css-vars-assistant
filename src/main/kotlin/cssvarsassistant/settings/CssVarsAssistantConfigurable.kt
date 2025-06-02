@@ -7,9 +7,11 @@ import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.progress.Task
 import com.intellij.openapi.project.ProjectManager
+import com.intellij.util.indexing.FileBasedIndex
 import com.intellij.util.ui.JBUI
 import cssvarsassistant.completion.CssVarCompletionCache
 import cssvarsassistant.completion.CssVariableIndexRebuilder
+import cssvarsassistant.index.CSS_VARIABLE_INDEXER_NAME
 import cssvarsassistant.index.ImportCache
 import cssvarsassistant.util.PreprocessorUtil
 import java.awt.GridBagConstraints
@@ -264,6 +266,18 @@ class CssVarsAssistantConfigurable : Configurable {
         settings.showContextValues = showContextValuesCheck.isSelected
         settings.allowIdeCompletions = allowIdeCompletionsCheck.isSelected
         settings.indexingScope = getSelectedScope()
+
+        val newScope = getSelectedScope()
+        if (settings.indexingScope != newScope) {
+            settings.indexingScope = newScope
+            val project = ProjectManager.getInstance().openProjects.firstOrNull() ?: return
+            // Clear all caches and cached import files
+            ImportCache.get(project).clear(project)
+            PreprocessorUtil.clearCache()
+            CssVarCompletionCache.clearCaches()
+            // Trigger index rebuild of CSS variables
+            FileBasedIndex.getInstance().requestRebuild(CSS_VARIABLE_INDEXER_NAME)
+        }
         settings.maxImportDepth = maxImportDepthSpinner.value as Int
     }
 

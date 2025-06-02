@@ -14,20 +14,19 @@ class ImportCache {
     private val map = ConcurrentHashMap<Project, MutableSet<VirtualFile>>()
 
     fun add(project: Project, files: Collection<VirtualFile>) {
-        val wasEmpty = map[project]?.isEmpty() ?: true
-        map.computeIfAbsent(project) { ConcurrentHashMap.newKeySet() }.addAll(files)
-
-        if (wasEmpty && files.isNotEmpty()) {
+        if (files.isEmpty()) return
+        val existing = map.computeIfAbsent(project) { ConcurrentHashMap.newKeySet() }
+        // If any new files were added, clear the preprocessor and completion caches
+        if (existing.addAll(files)) {
             PreprocessorUtil.clearCache()
             CssVarCompletionCache.clearCaches()
         }
     }
-
     fun get(project: Project): Set<VirtualFile> = map[project] ?: emptySet()
 
     fun clear(project: Project) {
         map[project]?.clear()
-        // FIXED: Clear both caches when imports are cleared
+        // Always clear caches when imports are cleared
         PreprocessorUtil.clearCache()
         CssVarCompletionCache.clearCaches()
     }
