@@ -6,6 +6,8 @@ import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.project.Project
 import com.intellij.psi.search.FilenameIndex
 import com.intellij.psi.search.GlobalSearchScope
+import cssvarsassistant.index.ImportCache
+import cssvarsassistant.util.ArithmeticEvaluator
 
 object PreprocessorUtil {
     private val LOG = Logger.getInstance(PreprocessorUtil::class.java)
@@ -29,7 +31,15 @@ object PreprocessorUtil {
                 // Check for cancellation before expensive operations
                 ProgressManager.checkCanceled()
 
-                val files = FilenameIndex.getAllFilesByExt(project, ext, scope)
+                // Files from standard indexes
+                val indexedFiles = FilenameIndex.getAllFilesByExt(project, ext, scope)
+
+                // Files discovered via import resolution but not indexed
+                val extraFiles = ImportCache.get(project)
+                    .get(project)
+                    .filter { it.extension?.equals(ext, ignoreCase = true) == true }
+
+                val files = (indexedFiles + extraFiles).distinct()
 
                 for (vf in files) {
                     // Check for cancellation in loops
@@ -57,19 +67,28 @@ object PreprocessorUtil {
                         else -> null
                     }
 
-                    // fant definisjon?
                     if (value != null) {
-                        // peker det fortsatt på en @foo / $foo ?
-                        val refMatch = Regex("""^[\s]*[@$]([\w-]+)""").find(value)
-                        val resolved = if (refMatch != null) {
-                            resolveVariable(project, refMatch.groupValues[1], scope, visited + varName)
-                                ?: value                       // fall tilbake
-                        } else {
-                            value
+                        var replaced: String = value
+                        var changed = true
+                        val refRegex = Regex("[@$]([\\w-]+)")
+
+                        while (changed) {
+                            changed = false
+                            refRegex.findAll(replaced).forEach { m ->
+                                val name = m.groupValues[1]
+                                if (name in visited) return@forEach
+                                val r = resolveVariable(project, name, scope, visited + varName)
+                                if (r != null) {
+                                    replaced = replaced.replace(m.value, r)
+                                    changed = true
+                                }
+                            }
                         }
 
-                        cache[key] = resolved                // cache KUN når vi har noe
-                        return resolved
+                        val evaluated: String = ArithmeticEvaluator.evaluate(replaced) ?: replaced
+
+                        cache[key] = evaluated
+                        return evaluated
                     }
                 }
             }

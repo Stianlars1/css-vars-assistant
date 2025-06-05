@@ -19,6 +19,7 @@ import cssvarsassistant.model.DocParser
 import cssvarsassistant.settings.CssVarsAssistantSettings
 import cssvarsassistant.util.PreprocessorUtil
 import cssvarsassistant.util.ScopeUtil
+import cssvarsassistant.util.ArithmeticEvaluator
 
 class CssVariableDocumentation : AbstractDocumentationProvider() {
     private val logger = Logger.getInstance(CssVariableCompletion::class.java)
@@ -132,70 +133,81 @@ class CssVariableDocumentation : AbstractDocumentationProvider() {
     }
 
     // FIXED: Always use fresh scope for resolution
-    private fun resolveVarValue(
-        project: Project,
-        raw: String,
-        visited: Set<String> = emptySet(),
-        depth: Int = 0,
-    ): String {
-        val settings = CssVarsAssistantSettings.getInstance()
-        if (depth > settings.maxImportDepth) return raw
 
-        try {
-            ProgressManager.checkCanceled()
+private fun resolveVarValue(
+    project: Project,
+    raw: String,
+    visited: Set<String> = emptySet(),
+    depth: Int = 0,
+): String {
+    val settings = CssVarsAssistantSettings.getInstance()
+    if (depth > settings.maxImportDepth) return raw
 
-            // ── 1. CSS var(..) ───────────────────────────────────────
-            Regex("""var\(\s*(--[\w-]+)\s*\)""").find(raw)?.let { m ->
+    try {
+        ProgressManager.checkCanceled()
+
+        var result = raw
+
+        val cssVarRegex = Regex("""var\(\s*(--[\w-]+)\s*\)""")
+        var changed = true
+        while (changed) {
+            changed = false
+            cssVarRegex.findAll(result).toList().asReversed().forEach { m ->
                 val ref = m.groupValues[1]
-                if (ref !in visited) {
-                    // Use CSS indexing scope for FileBasedIndex operations
-                    val cssScope = ScopeUtil.effectiveCssIndexingScope(project, settings)
-                    val entries = FileBasedIndex.getInstance()
-                        .getValues(CSS_VARIABLE_INDEXER_NAME, ref, cssScope)
-                        .flatMap { it.split(ENTRY_SEP) }
-                        .filter { it.isNotBlank() }
+                if (ref in visited) return@forEach
 
-                    val defVal = entries.mapNotNull {
-                        val p = it.split(DELIMITER, limit = 3)
-                        if (p.size >= 2) p[0] to p[1] else null
-                    }.let { list ->
-                        list.find { it.first == "default" }?.second ?: list.firstOrNull()?.second
-                    }
+                val cssScope = ScopeUtil.effectiveCssIndexingScope(project, settings)
+                val entries = FileBasedIndex.getInstance()
+                    .getValues(CSS_VARIABLE_INDEXER_NAME, ref, cssScope)
+                    .flatMap { it.split(ENTRY_SEP) }
+                    .filter { it.isNotBlank() }
 
-                    if (defVal != null)
-                        return resolveVarValue(project, defVal, visited + ref, depth + 1)
+                val defVal = entries.mapNotNull {
+                    val p = it.split(DELIMITER, limit = 3)
+                    if (p.size >= 2) p[0] to p[1] else null
+                }.let { list ->
+                    list.find { it.first == "default" }?.second ?: list.firstOrNull()?.second
                 }
-                return raw
+
+                if (defVal != null) {
+                    val resolved = resolveVarValue(project, defVal, visited + ref, depth + 1)
+                    result = result.replaceRange(m.range, resolved)
+                    changed = true
+                }
             }
+        }
 
-            // ── 2. LESS / SCSS pre-prosessor-vars ────────────────────
-            val lessMatch = Regex("""^[\s]*[@$]([\w-]+)$""").find(raw.trim())
-            if (lessMatch != null) {
-                val varName = lessMatch.groupValues[1]
+        val preprocRegex = Regex("[@$]([\\w-]+)")
+        changed = true
+        while (changed) {
+            changed = false
+            preprocRegex.findAll(result).toList().asReversed().forEach { m ->
+                val varName = m.groupValues[1]
+                if (varName in visited) return@forEach
 
-                // FIXED: Use scope-aware cache
                 val currentScope = ScopeUtil.currentPreprocessorScope(project)
-                CssVarCompletionCache.get(project, varName, currentScope)?.let { return it }
-
-                val resolved = findPreprocessorVariableValue(project, varName)
-
-                // FIXED: Only cache non-null values and include scope
+                val cached = CssVarCompletionCache.get(project, varName, currentScope)
+                val resolved = cached ?: findPreprocessorVariableValue(project, varName)
                 if (resolved != null) {
                     CssVarCompletionCache.put(project, varName, currentScope, resolved)
+                    result = result.replaceRange(m.range, resolved)
+                    changed = true
                 }
-
-                return resolved ?: raw
             }
-
-            return raw
-        } catch (e: ProcessCanceledException) {
-            throw e
-        } catch (e: Exception) {
-            logger.warn("Failed to resolve variable in documentation: $raw", e)
-            return raw
         }
-    }
 
+        val trimmed = result.trim()
+        val calcInside = Regex("^calc\\((.*)\\)$").matchEntire(trimmed)?.groupValues?.get(1) ?: trimmed
+
+        val evaluated = ArithmeticEvaluator.evaluate(calcInside)
+        return evaluated ?: calcInside
+    } catch (e: ProcessCanceledException) {
+        throw e
+    } catch (e: Exception) {
+        logger.warn("Failed to resolve variable in documentation: $raw", e)
+        return raw
+    }
+}
     // FIXED: Always use fresh scope for preprocessor resolution
     private fun findPreprocessorVariableValue(
         project: Project,

@@ -22,6 +22,7 @@ import cssvarsassistant.model.DocParser
 import cssvarsassistant.settings.CssVarsAssistantSettings
 import cssvarsassistant.util.PreprocessorUtil
 import cssvarsassistant.util.ScopeUtil
+import cssvarsassistant.util.ArithmeticEvaluator
 import java.awt.Component
 import java.awt.Graphics
 import javax.swing.Icon
@@ -104,67 +105,80 @@ class CssVariableCompletion : CompletionContributor() {
 
                         val processedVariables = mutableSetOf<String>()
 
-                        fun resolveVarValue(
-                            raw: String,
-                            visited: Set<String> = emptySet(),
-                            depth: Int = 0
-                        ): String {
-                            val resolveSettings = CssVarsAssistantSettings.getInstance()
-                            if (depth > resolveSettings.maxImportDepth) return raw
+fun resolveVarValue(
+    raw: String,
+    visited: Set<String> = emptySet(),
+    depth: Int = 0
+): String {
+    val resolveSettings = CssVarsAssistantSettings.getInstance()
+    if (depth > resolveSettings.maxImportDepth) return raw
 
-                            try {
-                                // Check for cancellation in recursive operations
-                                ProgressManager.checkCanceled()
+    try {
+        ProgressManager.checkCanceled()
 
-                                // ── 1. vanlige CSS var(..) ───────────────────────────────
-                                val varRef = Regex("""var\(\s*(--[\w-]+)\s*\)""").find(raw)
-                                if (varRef != null) {
-                                    val ref = varRef.groupValues[1]
-                                    if (ref in visited) return raw
+        var result = raw
 
-                                    val refEntries = FileBasedIndex.getInstance()
-                                        .getValues(CSS_VARIABLE_INDEXER_NAME, ref, cssScope)
-                                        .flatMap { it.split(ENTRY_SEP) }
-                                        .distinct()
-                                        .filter { it.isNotBlank() }
+        val cssVarRegex = Regex("""var\(\s*(--[\w-]+)\s*\)""")
+        var changed = true
+        while (changed) {
+            changed = false
+            cssVarRegex.findAll(result).toList().asReversed().forEach { m ->
+                val ref = m.groupValues[1]
+                if (ref in visited) return@forEach
 
-                                    val refDefault = refEntries
-                                        .mapNotNull {
-                                            val p = it.split(DELIMITER, limit = 3)
-                                            if (p.size >= 2) p[0] to p[1] else null
-                                        }
-                                        .let { pairs ->
-                                            pairs.find { it.first == "default" }?.second ?: pairs.firstOrNull()?.second
-                                        }
+                val refEntries = FileBasedIndex.getInstance()
+                    .getValues(CSS_VARIABLE_INDEXER_NAME, ref, cssScope)
+                    .flatMap { it.split(ENTRY_SEP) }
+                    .distinct()
+                    .filter { it.isNotBlank() }
 
-                                    if (refDefault != null)
-                                        return resolveVarValue(refDefault, visited + ref, depth + 1)
-                                    return raw
-                                }
+                val refDefault = refEntries
+                    .mapNotNull {
+                        val p = it.split(DELIMITER, limit = 3)
+                        if (p.size >= 2) p[0] to p[1] else null
+                    }
+                    .let { pairs ->
+                        pairs.find { it.first == "default" }?.second ?: pairs.firstOrNull()?.second
+                    }
 
-                                // ── 2. LESS / SCSS pre-prosessor-vars ────────────────────
-                                val lessMatch = Regex("""^[\s]*[@$]([\w-]+)$""").find(raw.trim())
-                                if (lessMatch != null) {
-                                    val varName = lessMatch.groupValues[1]
-                                    CssVarCompletionCache.get(project, varName)?.let { return it }
+                if (refDefault != null) {
+                    val resolved = resolveVarValue(refDefault, visited + ref, depth + 1)
+                    result = result.replaceRange(m.range, resolved)
+                    changed = true
+                }
+            }
+        }
 
-                                    val resolved = findPreprocessorVariableValue(project, varName)
-                                    if (resolved != null) {
-                                        CssVarCompletionCache.put(project, varName, resolved)
-                                    }
+        val preprocRegex = Regex("[@$]([\\w-]+)")
+        changed = true
+        while (changed) {
+            changed = false
+            preprocRegex.findAll(result).toList().asReversed().forEach { m ->
+                val name = m.groupValues[1]
+                if (name in visited) return@forEach
 
-                                    return resolved ?: raw
+                val cached = CssVarCompletionCache.get(project, name)
+                val resolved = cached ?: findPreprocessorVariableValue(project, name)
+                if (resolved != null) {
+                    CssVarCompletionCache.put(project, name, resolved)
+                    result = result.replaceRange(m.range, resolved)
+                    changed = true
+                }
+            }
+        }
 
-                                }
+        val trimmed = result.trim()
+        val calcInside = Regex("^calc\\((.*)\\)$").matchEntire(trimmed)?.groupValues?.get(1) ?: trimmed
 
-                                return raw
-                            } catch (e: ProcessCanceledException) {
-                                throw e // Always rethrow ProcessCanceledException
-                            } catch (e: Exception) {
-                                logger.warn("Failed to resolve variable value: $raw", e)
-                                return raw
-                            }
-                        }
+        val evaluated = ArithmeticEvaluator.evaluate(calcInside)
+        return evaluated ?: calcInside
+    } catch (e: ProcessCanceledException) {
+        throw e
+    } catch (e: Exception) {
+        logger.warn("Failed to resolve variable value: $raw", e)
+        return raw
+    }
+}
 
                         val entries = mutableListOf<Entry>()
 
