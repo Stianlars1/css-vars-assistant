@@ -9,7 +9,9 @@ import com.intellij.openapi.vfs.VirtualFile
 object ImportResolver {
     private val LOG = Logger.getInstance(ImportResolver::class.java)
     private val IMPORT_PATTERN =
-        Regex("""@import\s+(?:"([^"]+)"|'([^']+)'|\burl\(\s*(?:"([^"]+)"|'([^']+)'|([^)]+))\s*\))""")
+        Regex(
+            """@import\s*(?:\([^)]*\)\s*)?(?:"([^"]+)"|'([^']+)'|url\(\s*(?:"([^"]+)"|'([^']+)'|([^)]+))\s*\))"""
+        )
 
 
     /**

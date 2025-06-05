@@ -22,7 +22,7 @@ class CssVarsAssistantSettings : PersistentStateComponent<CssVarsAssistantSettin
     data class State(
         var showContextValues: Boolean = true,
         var allowIdeCompletions: Boolean = true,
-        var indexingScope: IndexingScope = IndexingScope.GLOBAL,
+        var indexingScope: IndexingScope = IndexingScope.PROJECT_WITH_IMPORTS,
         var maxImportDepth: Int = 20  // Prevent infinite recursion in @import chains
     )
 

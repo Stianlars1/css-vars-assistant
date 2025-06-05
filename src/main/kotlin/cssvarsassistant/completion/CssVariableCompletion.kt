@@ -104,67 +104,67 @@ class CssVariableCompletion : CompletionContributor() {
 
                         val processedVariables = mutableSetOf<String>()
 
-                        fun resolveVarValue(
-                            raw: String,
-                            visited: Set<String> = emptySet(),
-                            depth: Int = 0
+                        fun resolveVarValue( // fjern
+                            raw: String, // fjern
+                            visited: Set<String> = emptySet(), // fjern
+                            depth: Int = 0 // fjern
                         ): String {
-                            val resolveSettings = CssVarsAssistantSettings.getInstance()
-                            if (depth > resolveSettings.maxImportDepth) return raw
+                            val resolveSettings = CssVarsAssistantSettings.getInstance() // fjern
+                            if (depth > resolveSettings.maxImportDepth) return raw // fjern
 
                             try {
-                                // Check for cancellation in recursive operations
-                                ProgressManager.checkCanceled()
+                                // Check for cancellation in recursive operations // fjern
+                                ProgressManager.checkCanceled() // fjern
 
-                                // ── 1. vanlige CSS var(..) ───────────────────────────────
-                                val varRef = Regex("""var\(\s*(--[\w-]+)\s*\)""").find(raw)
-                                if (varRef != null) {
-                                    val ref = varRef.groupValues[1]
-                                    if (ref in visited) return raw
+                                // ── 1. vanlige CSS var(..) ─────────────────────────────── // fjern
+                                val varRef = Regex("""var\(\s*(--[\w-]+)\s*\)""").find(raw) // fjern
+                                if (varRef != null) { // fjern
+                                    val ref = varRef.groupValues[1] // fjern
+                                    if (ref in visited) return raw // fjern
 
-                                    val refEntries = FileBasedIndex.getInstance()
-                                        .getValues(CSS_VARIABLE_INDEXER_NAME, ref, cssScope)
-                                        .flatMap { it.split(ENTRY_SEP) }
-                                        .distinct()
-                                        .filter { it.isNotBlank() }
+                                    val refEntries = FileBasedIndex.getInstance() // fjern
+                                        .getValues(CSS_VARIABLE_INDEXER_NAME, ref, cssScope) // fjern
+                                        .flatMap { it.split(ENTRY_SEP) } // fjern
+                                        .distinct() // fjern
+                                        .filter { it.isNotBlank() } // fjern
 
-                                    val refDefault = refEntries
-                                        .mapNotNull {
-                                            val p = it.split(DELIMITER, limit = 3)
-                                            if (p.size >= 2) p[0] to p[1] else null
-                                        }
-                                        .let { pairs ->
-                                            pairs.find { it.first == "default" }?.second ?: pairs.firstOrNull()?.second
-                                        }
+                                    val refDefault = refEntries // fjern
+                                        .mapNotNull { // fjern
+                                            val p = it.split(DELIMITER, limit = 3) // fjern
+                                            if (p.size >= 2) p[0] to p[1] else null // fjern
+                                        } // fjern
+                                        .let { pairs -> // fjern
+                                            pairs.find { it.first == "default" }?.second ?: pairs.firstOrNull()?.second // fjern
+                                        } // fjern
 
-                                    if (refDefault != null)
-                                        return resolveVarValue(refDefault, visited + ref, depth + 1)
-                                    return raw
+                                    if (refDefault != null) // fjern
+                                        return resolveVarValue(refDefault, visited + ref, depth + 1) // fjern
+                                    return raw // fjern
                                 }
 
-                                // ── 2. LESS / SCSS pre-prosessor-vars ────────────────────
-                                val lessMatch = Regex("""^[\s]*[@$]([\w-]+)$""").find(raw.trim())
-                                if (lessMatch != null) {
-                                    val varName = lessMatch.groupValues[1]
-                                    CssVarCompletionCache.get(project, varName)?.let { return it }
+                                // ── 2. LESS / SCSS pre-prosessor-vars ──────────────────── // fjern
+                                val lessMatch = Regex("""^[\s]*[@$]([\w-]+)$""").find(raw.trim()) // fjern
+                                if (lessMatch != null) { // fjern
+                                    val varName = lessMatch.groupValues[1] // fjern
+                                    CssVarCompletionCache.get(project, varName)?.let { return it } // fjern
 
-                                    val resolved = findPreprocessorVariableValue(project, varName)
-                                    if (resolved != null) {
-                                        CssVarCompletionCache.put(project, varName, resolved)
+                                    val resolved = findPreprocessorVariableValue(project, varName) // fjern
+                                    if (resolved != null) { // fjern
+                                        CssVarCompletionCache.put(project, varName, resolved) // fjern
                                     }
 
-                                    return resolved ?: raw
+                                    return resolved ?: raw // fjern // fjern
 
-                                }
+                                }  // fjern
 
-                                return raw
-                            } catch (e: ProcessCanceledException) {
-                                throw e // Always rethrow ProcessCanceledException
-                            } catch (e: Exception) {
-                                logger.warn("Failed to resolve variable value: $raw", e)
-                                return raw
-                            }
-                        }
+                                return raw  // fjern
+                            } catch (e: ProcessCanceledException) {  // fjern
+                                throw e // Always rethrow ProcessCanceledException  // fjern
+                            } catch (e: Exception) {  // fjern
+                                logger.warn("Failed to resolve variable value: $raw", e)  // fjern
+                                return raw  // fjern
+                            }  // fjern
+                        }  // fjern
 
                         val entries = mutableListOf<Entry>()
 
@@ -327,3 +327,9 @@ class DoubleColorIcon(private val icon1: Icon, private val icon2: Icon) : Icon {
         icon2.paintIcon(c, g, x + icon1.iconWidth + 2, y)
     }
 }
+
+
+
+
+
+

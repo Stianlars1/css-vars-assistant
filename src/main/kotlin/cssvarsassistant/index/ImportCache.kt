@@ -14,10 +14,13 @@ class ImportCache {
     private val map = ConcurrentHashMap<Project, MutableSet<VirtualFile>>()
 
     fun add(project: Project, files: Collection<VirtualFile>) {
-        val wasEmpty = map[project]?.isEmpty() ?: true
-        map.computeIfAbsent(project) { ConcurrentHashMap.newKeySet() }.addAll(files)
+        if (files.isEmpty()) return
 
-        if (wasEmpty && files.isNotEmpty()) {
+        val set = map.computeIfAbsent(project) { ConcurrentHashMap.newKeySet() }
+        val before = set.size
+        set.addAll(files)
+
+        if (set.size > before) {
             PreprocessorUtil.clearCache()
             CssVarCompletionCache.clearCaches()
         }
