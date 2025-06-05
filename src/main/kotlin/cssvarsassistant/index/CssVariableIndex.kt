@@ -22,7 +22,7 @@ val CSS_VARIABLE_INDEXER_NAME = ID.create<String, String>("cssvarsassistant.inde
 class CssVariableIndex : FileBasedIndexExtension<String, String>() {
 
     override fun getName(): ID<String, String> = CSS_VARIABLE_INDEXER_NAME
-    override fun getVersion(): Int = 170  // Increment due to import resolution changes
+    override fun getVersion(): Int = 185  // Increment due to import resolution changes
     
 
     override fun getInputFilter(): FileBasedIndex.InputFilter {
