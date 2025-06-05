@@ -6,7 +6,6 @@ import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.project.DumbService
-import com.intellij.openapi.project.IndexNotReadyException
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.text.StringUtil
 import com.intellij.psi.PsiElement
@@ -18,6 +17,7 @@ import cssvarsassistant.index.DELIMITER
 import cssvarsassistant.model.DocParser
 import cssvarsassistant.settings.CssVarsAssistantSettings
 import cssvarsassistant.util.PreprocessorUtil
+import cssvarsassistant.util.safeIndexLookup
 import cssvarsassistant.util.ScopeUtil
 import cssvarsassistant.util.ArithmeticEvaluator
 
@@ -41,8 +41,11 @@ class CssVariableDocumentation : AbstractDocumentationProvider() {
             // FIXED: Use CSS indexing scope for FileBasedIndex operations
             val cssScope = ScopeUtil.effectiveCssIndexingScope(project, settings)
 
-            val rawEntries = FileBasedIndex.getInstance().getValues(CSS_VARIABLE_INDEXER_NAME, varName, cssScope)
-                .flatMap { it.split(ENTRY_SEP) }.filter { it.isNotBlank() }
+            val rawEntries = safeIndexLookup(project) {
+                FileBasedIndex.getInstance()
+                    .getValues(CSS_VARIABLE_INDEXER_NAME, varName, cssScope)
+                    .toList()
+            }.flatMap { it.split(ENTRY_SEP) }.filter { it.isNotBlank() }
 
             if (rawEntries.isEmpty()) return null
 
@@ -157,9 +160,11 @@ private fun resolveVarValue(
                 if (ref in visited) return@forEach
 
                 val cssScope = ScopeUtil.effectiveCssIndexingScope(project, settings)
-                val entries = FileBasedIndex.getInstance()
-                    .getValues(CSS_VARIABLE_INDEXER_NAME, ref, cssScope)
-                    .flatMap { it.split(ENTRY_SEP) }
+                val entries = safeIndexLookup(project) {
+                    FileBasedIndex.getInstance()
+                        .getValues(CSS_VARIABLE_INDEXER_NAME, ref, cssScope)
+                        .toList()
+                }.flatMap { it.split(ENTRY_SEP) }
                     .filter { it.isNotBlank() }
 
                 val defVal = entries.mapNotNull {
@@ -263,14 +268,5 @@ private fun resolveVarValue(
         if (arrayOf("hover", "motion", "orientation", "print").any { it in c }) return Triple(4, null, c)
 
         return Triple(5, null, c)
-    }
-}
-
-/** Runs [action] only when indices are ready, otherwise returns an empty list. */
-private inline fun <T> safeIndexLookup(project: Project, action: () -> List<T>): List<T> {
-    return if (DumbService.isDumb(project)) emptyList() else try {
-        action()
-    } catch (ignored: IndexNotReadyException) {           // ➌ safety-net
-        emptyList()
     }
 }

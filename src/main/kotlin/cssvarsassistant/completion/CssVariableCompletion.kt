@@ -23,6 +23,7 @@ import cssvarsassistant.settings.CssVarsAssistantSettings
 import cssvarsassistant.util.PreprocessorUtil
 import cssvarsassistant.util.ScopeUtil
 import cssvarsassistant.util.ArithmeticEvaluator
+import cssvarsassistant.util.safeIndexLookup
 import java.awt.Component
 import java.awt.Graphics
 import javax.swing.Icon
@@ -126,9 +127,11 @@ fun resolveVarValue(
                 val ref = m.groupValues[1]
                 if (ref in visited) return@forEach
 
-                val refEntries = FileBasedIndex.getInstance()
-                    .getValues(CSS_VARIABLE_INDEXER_NAME, ref, cssScope)
-                    .flatMap { it.split(ENTRY_SEP) }
+                val refEntries = safeIndexLookup(project) {
+                    FileBasedIndex.getInstance()
+                        .getValues(CSS_VARIABLE_INDEXER_NAME, ref, cssScope)
+                        .toList()
+                }.flatMap { it.split(ENTRY_SEP) }
                     .distinct()
                     .filter { it.isNotBlank() }
 
@@ -196,9 +199,11 @@ fun resolveVarValue(
 
                                 processedVariables.add(rawName)
 
-                                val allVals = FileBasedIndex.getInstance()
-                                    .getValues(CSS_VARIABLE_INDEXER_NAME, rawName, cssScope)
-                                    .flatMap { it.split(ENTRY_SEP) }
+                                val allVals = safeIndexLookup(project) {
+                                    FileBasedIndex.getInstance()
+                                        .getValues(CSS_VARIABLE_INDEXER_NAME, rawName, cssScope)
+                                        .toList()
+                                }.flatMap { it.split(ENTRY_SEP) }
                                     .distinct()
                                     .filter { it.isNotBlank() }
 
