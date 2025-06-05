@@ -4,6 +4,7 @@ import com.intellij.openapi.components.Service
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.progress.ProgressManager
 import com.intellij.util.indexing.FileBasedIndex
+import com.intellij.openapi.project.IndexNotReadyException
 import cssvarsassistant.index.CSS_VARIABLE_INDEXER_NAME
 
 /**
@@ -20,9 +21,13 @@ class CssVarKeyCache(private val project: Project) {
         if (cached != null) return cached
 
         ProgressManager.checkCanceled()
-        val loaded = FileBasedIndex.getInstance()
-            .getAllKeys(CSS_VARIABLE_INDEXER_NAME, project)
-            .toList()
+        val loaded = try {
+            FileBasedIndex.getInstance()
+                .getAllKeys(CSS_VARIABLE_INDEXER_NAME, project)
+                .toList()
+        } catch (_: IndexNotReadyException) {
+            emptyList()
+        }
         keys = loaded
         return loaded
     }

@@ -5,6 +5,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
 import cssvarsassistant.completion.CssVarCompletionCache
 import cssvarsassistant.util.PreprocessorUtil
+import cssvarsassistant.completion.CssVarKeyCache
 import java.util.concurrent.ConcurrentHashMap
 
 @Service(Service.Level.PROJECT)
@@ -23,6 +24,7 @@ class ImportCache {
         if (set.size > before) {
             PreprocessorUtil.clearCache()
             CssVarCompletionCache.clearCaches()
+            CssVarKeyCache.get(project).clear()
         }
     }
 
@@ -33,6 +35,7 @@ class ImportCache {
         // FIXED: Clear both caches when imports are cleared
         PreprocessorUtil.clearCache()
         CssVarCompletionCache.clearCaches()
+        CssVarKeyCache.get(project).clear()
     }
 
     companion object {

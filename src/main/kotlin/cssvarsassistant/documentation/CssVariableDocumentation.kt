@@ -6,7 +6,6 @@ import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.project.DumbService
-import com.intellij.openapi.project.IndexNotReadyException
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.text.StringUtil
 import com.intellij.psi.PsiElement
@@ -17,8 +16,10 @@ import cssvarsassistant.index.CSS_VARIABLE_INDEXER_NAME
 import cssvarsassistant.index.DELIMITER
 import cssvarsassistant.model.DocParser
 import cssvarsassistant.settings.CssVarsAssistantSettings
+import cssvarsassistant.util.ArithmeticEvaluator
 import cssvarsassistant.util.PreprocessorUtil
 import cssvarsassistant.util.ScopeUtil
+import cssvarsassistant.util.safeIndexLookup
 
 class CssVariableDocumentation : AbstractDocumentationProvider() {
     private val logger = Logger.getInstance(CssVariableCompletion::class.java)
@@ -40,8 +41,11 @@ class CssVariableDocumentation : AbstractDocumentationProvider() {
             // FIXED: Use CSS indexing scope for FileBasedIndex operations
             val cssScope = ScopeUtil.effectiveCssIndexingScope(project, settings)
 
-            val rawEntries = FileBasedIndex.getInstance().getValues(CSS_VARIABLE_INDEXER_NAME, varName, cssScope)
-                .flatMap { it.split(ENTRY_SEP) }.filter { it.isNotBlank() }
+            val rawEntries = safeIndexLookup(project) {
+                FileBasedIndex.getInstance()
+                    .getValues(CSS_VARIABLE_INDEXER_NAME, varName, cssScope)
+                    .toList()
+            }.flatMap { it.split(ENTRY_SEP) }.filter { it.isNotBlank() }
 
             if (rawEntries.isEmpty()) return null
 
@@ -132,6 +136,7 @@ class CssVariableDocumentation : AbstractDocumentationProvider() {
     }
 
     // FIXED: Always use fresh scope for resolution
+
     private fun resolveVarValue(
         project: Project,
         raw: String,
@@ -144,15 +149,22 @@ class CssVariableDocumentation : AbstractDocumentationProvider() {
         try {
             ProgressManager.checkCanceled()
 
-            // ── 1. CSS var(..) ───────────────────────────────────────
-            Regex("""var\(\s*(--[\w-]+)\s*\)""").find(raw)?.let { m ->
-                val ref = m.groupValues[1]
-                if (ref !in visited) {
-                    // Use CSS indexing scope for FileBasedIndex operations
+            var result = raw
+
+            val cssVarRegex = Regex("""var\(\s*(--[\w-]+)\s*\)""")
+            var changed = true
+            while (changed) {
+                changed = false
+                cssVarRegex.findAll(result).toList().asReversed().forEach { m ->
+                    val ref = m.groupValues[1]
+                    if (ref in visited) return@forEach
+
                     val cssScope = ScopeUtil.effectiveCssIndexingScope(project, settings)
-                    val entries = FileBasedIndex.getInstance()
-                        .getValues(CSS_VARIABLE_INDEXER_NAME, ref, cssScope)
-                        .flatMap { it.split(ENTRY_SEP) }
+                    val entries = safeIndexLookup(project) {
+                        FileBasedIndex.getInstance()
+                            .getValues(CSS_VARIABLE_INDEXER_NAME, ref, cssScope)
+                            .toList()
+                    }.flatMap { it.split(ENTRY_SEP) }
                         .filter { it.isNotBlank() }
 
                     val defVal = entries.mapNotNull {
@@ -162,32 +174,38 @@ class CssVariableDocumentation : AbstractDocumentationProvider() {
                         list.find { it.first == "default" }?.second ?: list.firstOrNull()?.second
                     }
 
-                    if (defVal != null)
-                        return resolveVarValue(project, defVal, visited + ref, depth + 1)
+                    if (defVal != null) {
+                        val resolved = resolveVarValue(project, defVal, visited + ref, depth + 1)
+                        result = result.replaceRange(m.range, resolved)
+                        changed = true
+                    }
                 }
-                return raw
             }
 
-            // ── 2. LESS / SCSS pre-prosessor-vars ────────────────────
-            val lessMatch = Regex("""^[\s]*[@$]([\w-]+)$""").find(raw.trim())
-            if (lessMatch != null) {
-                val varName = lessMatch.groupValues[1]
+            val preprocRegex = Regex("[@$]([\\w-]+)")
+            changed = true
+            while (changed) {
+                changed = false
+                preprocRegex.findAll(result).toList().asReversed().forEach { m ->
+                    val varName = m.groupValues[1]
+                    if (varName in visited) return@forEach
 
-                // FIXED: Use scope-aware cache
-                val currentScope = ScopeUtil.currentPreprocessorScope(project)
-                CssVarCompletionCache.get(project, varName, currentScope)?.let { return it }
-
-                val resolved = findPreprocessorVariableValue(project, varName)
-
-                // FIXED: Only cache non-null values and include scope
-                if (resolved != null) {
-                    CssVarCompletionCache.put(project, varName, currentScope, resolved)
+                    val currentScope = ScopeUtil.currentPreprocessorScope(project)
+                    val cached = CssVarCompletionCache.get(project, varName, currentScope)
+                    val resolved = cached ?: findPreprocessorVariableValue(project, varName)
+                    if (resolved != null) {
+                        CssVarCompletionCache.put(project, varName, currentScope, resolved)
+                        result = result.replaceRange(m.range, resolved)
+                        changed = true
+                    }
                 }
-
-                return resolved ?: raw
             }
 
-            return raw
+            val trimmed = result.trim()
+            val calcInside = Regex("^calc\\((.*)\\)$").matchEntire(trimmed)?.groupValues?.get(1) ?: trimmed
+
+            val evaluated = ArithmeticEvaluator.evaluate(calcInside)
+            return evaluated ?: calcInside
         } catch (e: ProcessCanceledException) {
             throw e
         } catch (e: Exception) {
@@ -251,14 +269,5 @@ class CssVariableDocumentation : AbstractDocumentationProvider() {
         if (arrayOf("hover", "motion", "orientation", "print").any { it in c }) return Triple(4, null, c)
 
         return Triple(5, null, c)
-    }
-}
-
-/** Runs [action] only when indices are ready, otherwise returns an empty list. */
-private inline fun <T> safeIndexLookup(project: Project, action: () -> List<T>): List<T> {
-    return if (DumbService.isDumb(project)) emptyList() else try {
-        action()
-    } catch (ignored: IndexNotReadyException) {           // ➌ safety-net
-        emptyList()
     }
 }

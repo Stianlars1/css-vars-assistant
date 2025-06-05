@@ -17,11 +17,12 @@ import com.intellij.util.ui.ColorIcon
 import cssvarsassistant.documentation.ColorParser
 import cssvarsassistant.index.CSS_VARIABLE_INDEXER_NAME
 import cssvarsassistant.index.DELIMITER
-import cssvarsassistant.completion.CssVarKeyCache
 import cssvarsassistant.model.DocParser
 import cssvarsassistant.settings.CssVarsAssistantSettings
+import cssvarsassistant.util.ArithmeticEvaluator
 import cssvarsassistant.util.PreprocessorUtil
 import cssvarsassistant.util.ScopeUtil
+import cssvarsassistant.util.safeIndexLookup
 import java.awt.Component
 import java.awt.Graphics
 import javax.swing.Icon
@@ -104,67 +105,84 @@ class CssVariableCompletion : CompletionContributor() {
 
                         val processedVariables = mutableSetOf<String>()
 
-                        fun resolveVarValue( // fjern
-                            raw: String, // fjern
-                            visited: Set<String> = emptySet(), // fjern
-                            depth: Int = 0 // fjern
+                        fun resolveVarValue(
+                            raw: String,
+                            visited: Set<String> = emptySet(),
+                            depth: Int = 0
                         ): String {
-                            val resolveSettings = CssVarsAssistantSettings.getInstance() // fjern
-                            if (depth > resolveSettings.maxImportDepth) return raw // fjern
+                            val resolveSettings = CssVarsAssistantSettings.getInstance()
+                            if (depth > resolveSettings.maxImportDepth) return raw
 
                             try {
-                                // Check for cancellation in recursive operations // fjern
-                                ProgressManager.checkCanceled() // fjern
+                                ProgressManager.checkCanceled()
 
-                                // ── 1. vanlige CSS var(..) ─────────────────────────────── // fjern
-                                val varRef = Regex("""var\(\s*(--[\w-]+)\s*\)""").find(raw) // fjern
-                                if (varRef != null) { // fjern
-                                    val ref = varRef.groupValues[1] // fjern
-                                    if (ref in visited) return raw // fjern
+                                var result = raw
 
-                                    val refEntries = FileBasedIndex.getInstance() // fjern
-                                        .getValues(CSS_VARIABLE_INDEXER_NAME, ref, cssScope) // fjern
-                                        .flatMap { it.split(ENTRY_SEP) } // fjern
-                                        .distinct() // fjern
-                                        .filter { it.isNotBlank() } // fjern
+                                val cssVarRegex = Regex("""var\(\s*(--[\w-]+)\s*\)""")
+                                var changed = true
+                                while (changed) {
+                                    changed = false
+                                    cssVarRegex.findAll(result).toList().asReversed().forEach { m ->
+                                        val ref = m.groupValues[1]
+                                        if (ref in visited) return@forEach
 
-                                    val refDefault = refEntries // fjern
-                                        .mapNotNull { // fjern
-                                            val p = it.split(DELIMITER, limit = 3) // fjern
-                                            if (p.size >= 2) p[0] to p[1] else null // fjern
-                                        } // fjern
-                                        .let { pairs -> // fjern
-                                            pairs.find { it.first == "default" }?.second ?: pairs.firstOrNull()?.second // fjern
-                                        } // fjern
+                                        val refEntries = safeIndexLookup(project) {
+                                            FileBasedIndex.getInstance()
+                                                .getValues(CSS_VARIABLE_INDEXER_NAME, ref, cssScope)
+                                                .toList()
+                                        }.flatMap { it.split(ENTRY_SEP) }
+                                            .distinct()
+                                            .filter { it.isNotBlank() }
 
-                                    if (refDefault != null) // fjern
-                                        return resolveVarValue(refDefault, visited + ref, depth + 1) // fjern
-                                    return raw // fjern
+                                        val refDefault = refEntries
+                                            .mapNotNull {
+                                                val p = it.split(DELIMITER, limit = 3)
+                                                if (p.size >= 2) p[0] to p[1] else null
+                                            }
+                                            .let { pairs ->
+                                                pairs.find { it.first == "default" }?.second
+                                                    ?: pairs.firstOrNull()?.second
+                                            }
+
+                                        if (refDefault != null) {
+                                            val resolved = resolveVarValue(refDefault, visited + ref, depth + 1)
+                                            result = result.replaceRange(m.range, resolved)
+                                            changed = true
+                                        }
+                                    }
                                 }
 
-                                // ── 2. LESS / SCSS pre-prosessor-vars ──────────────────── // fjern
-                                val lessMatch = Regex("""^[\s]*[@$]([\w-]+)$""").find(raw.trim()) // fjern
-                                if (lessMatch != null) { // fjern
-                                    val varName = lessMatch.groupValues[1] // fjern
-                                    CssVarCompletionCache.get(project, varName)?.let { return it } // fjern
+                                val preprocRegex = Regex("[@$]([\\w-]+)")
+                                changed = true
+                                while (changed) {
+                                    changed = false
+                                    preprocRegex.findAll(result).toList().asReversed().forEach { m ->
+                                        val name = m.groupValues[1]
+                                        if (name in visited) return@forEach
 
-                                    val resolved = findPreprocessorVariableValue(project, varName) // fjern
-                                    if (resolved != null) { // fjern
-                                        CssVarCompletionCache.put(project, varName, resolved) // fjern
+                                        val cached = CssVarCompletionCache.get(project, name)
+                                        val resolved = cached ?: findPreprocessorVariableValue(project, name)
+                                        if (resolved != null) {
+                                            CssVarCompletionCache.put(project, name, resolved)
+                                            result = result.replaceRange(m.range, resolved)
+                                            changed = true
+                                        }
                                     }
+                                }
 
-                                    return resolved ?: raw // fjern // fjern
+                                val trimmed = result.trim()
+                                val calcInside =
+                                    Regex("^calc\\((.*)\\)$").matchEntire(trimmed)?.groupValues?.get(1) ?: trimmed
 
-                                }  // fjern
-
-                                return raw  // fjern
-                            } catch (e: ProcessCanceledException) {  // fjern
-                                throw e // Always rethrow ProcessCanceledException  // fjern
-                            } catch (e: Exception) {  // fjern
-                                logger.warn("Failed to resolve variable value: $raw", e)  // fjern
-                                return raw  // fjern
-                            }  // fjern
-                        }  // fjern
+                                val evaluated = ArithmeticEvaluator.evaluate(calcInside)
+                                return evaluated ?: calcInside
+                            } catch (e: ProcessCanceledException) {
+                                throw e
+                            } catch (e: Exception) {
+                                logger.warn("Failed to resolve variable value: $raw", e)
+                                return raw
+                            }
+                        }
 
                         val entries = mutableListOf<Entry>()
 
@@ -182,9 +200,11 @@ class CssVariableCompletion : CompletionContributor() {
 
                                 processedVariables.add(rawName)
 
-                                val allVals = FileBasedIndex.getInstance()
-                                    .getValues(CSS_VARIABLE_INDEXER_NAME, rawName, cssScope)
-                                    .flatMap { it.split(ENTRY_SEP) }
+                                val allVals = safeIndexLookup(project) {
+                                    FileBasedIndex.getInstance()
+                                        .getValues(CSS_VARIABLE_INDEXER_NAME, rawName, cssScope)
+                                        .toList()
+                                }.flatMap { it.split(ENTRY_SEP) }
                                     .distinct()
                                     .filter { it.isNotBlank() }
 
@@ -327,9 +347,3 @@ class DoubleColorIcon(private val icon1: Icon, private val icon2: Icon) : Icon {
         icon2.paintIcon(c, g, x + icon1.iconWidth + 2, y)
     }
 }
-
-
-
-
-
-

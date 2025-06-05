@@ -3,15 +3,16 @@ package cssvarsassistant.util
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.progress.ProgressManager
+import com.intellij.openapi.project.IndexNotReadyException
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.search.FilenameIndex
 import com.intellij.psi.search.GlobalSearchScope
 import cssvarsassistant.index.ImportCache
-import cssvarsassistant.util.ArithmeticEvaluator
 
 object PreprocessorUtil {
     private val LOG = Logger.getInstance(PreprocessorUtil::class.java)
-    private val cache = mutableMapOf<Triple<Project, String, Int>, String?>()
+    private val cache = java.util.concurrent.ConcurrentHashMap<Triple<Project, String, Int>, String?>()
 
     /**
      * Finn verdien til en LESS/SCSS/CSS-variabel (@foo, $foo, --foo) uansett filnavn.
@@ -32,7 +33,11 @@ object PreprocessorUtil {
                 ProgressManager.checkCanceled()
 
                 // Files from standard indexes
-                val indexedFiles = FilenameIndex.getAllFilesByExt(project, ext, scope)
+                val indexedFiles: Collection<VirtualFile> = try {
+                    FilenameIndex.getAllFilesByExt(project, ext, scope)
+                } catch (_: IndexNotReadyException) {
+                    emptyList()
+                }
 
                 // Files discovered via import resolution but not indexed
                 val extraFiles = ImportCache.get(project)
