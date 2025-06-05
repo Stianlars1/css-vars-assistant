@@ -14,6 +14,7 @@ class ImportCache {
 
     /** project → set of imported VirtualFiles */
     private val map = ConcurrentHashMap<Project, MutableSet<VirtualFile>>()
+    private val pending = ConcurrentHashMap.newKeySet<Project>()
 
     fun add(project: Project, files: Collection<VirtualFile>) {
         if (files.isEmpty()) return
@@ -24,15 +25,18 @@ class ImportCache {
 
         if (set.size > before) {
             val dumb = DumbService.getInstance(project)
-            val clearAction = {
+            val schedule = {
+                pending.remove(project)
                 PreprocessorUtil.clearCache()
                 CssVarCompletionCache.clearCaches()
                 CssVarKeyCache.get(project).clear()
             }
             if (dumb.isDumb) {
-                dumb.runWhenSmart(clearAction)
+                if (pending.add(project)) {
+                    dumb.runWhenSmart(schedule)
+                }
             } else {
-                clearAction()
+                schedule()
             }
         }
     }
@@ -41,6 +45,7 @@ class ImportCache {
 
     fun clear(project: Project) {
         map[project]?.clear()
+        pending.remove(project)
         // FIXED: Clear both caches when imports are cleared
         PreprocessorUtil.clearCache()
         CssVarCompletionCache.clearCaches()
