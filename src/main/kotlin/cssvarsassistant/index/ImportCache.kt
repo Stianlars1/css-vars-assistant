@@ -6,6 +6,7 @@ import com.intellij.openapi.vfs.VirtualFile
 import cssvarsassistant.completion.CssVarCompletionCache
 import cssvarsassistant.util.PreprocessorUtil
 import cssvarsassistant.completion.CssVarKeyCache
+import com.intellij.openapi.project.DumbService
 import java.util.concurrent.ConcurrentHashMap
 
 @Service(Service.Level.PROJECT)
@@ -22,9 +23,17 @@ class ImportCache {
         set.addAll(files)
 
         if (set.size > before) {
-            PreprocessorUtil.clearCache()
-            CssVarCompletionCache.clearCaches()
-            CssVarKeyCache.get(project).clear()
+            val dumb = DumbService.getInstance(project)
+            val clearAction = {
+                PreprocessorUtil.clearCache()
+                CssVarCompletionCache.clearCaches()
+                CssVarKeyCache.get(project).clear()
+            }
+            if (dumb.isDumb) {
+                dumb.runWhenSmart(clearAction)
+            } else {
+                clearAction()
+            }
         }
     }
 
