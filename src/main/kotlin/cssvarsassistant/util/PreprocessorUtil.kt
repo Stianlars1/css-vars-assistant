@@ -11,7 +11,7 @@ import cssvarsassistant.util.ArithmeticEvaluator
 
 object PreprocessorUtil {
     private val LOG = Logger.getInstance(PreprocessorUtil::class.java)
-    private val cache = mutableMapOf<Triple<Project, String, Int>, String?>()
+    private val cache = java.util.concurrent.ConcurrentHashMap<Triple<Project, String, Int>, String?>()
 
     /**
      * Finn verdien til en LESS/SCSS/CSS-variabel (@foo, $foo, --foo) uansett filnavn.
