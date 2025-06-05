@@ -26,8 +26,11 @@ class CssVarKeyCache(private val project: Project) {
                 .getAllKeys(CSS_VARIABLE_INDEXER_NAME, project)
                 .toList()
         } catch (_: IndexNotReadyException) {
-            emptyList()
+            return cached ?: emptyList()
         }
+
+        if (loaded.isEmpty()) return cached ?: emptyList()
+
         keys = loaded
         return loaded
     }
