@@ -13,7 +13,8 @@ import cssvarsassistant.index.CSS_VARIABLE_INDEXER_NAME
  */
 @Service(Service.Level.PROJECT)
 class CssVarKeyCache(private val project: Project) {
-    @Volatile private var keys: List<String>? = null
+    @Volatile
+    private var keys: List<String>? = null
 
     /** Returns all variable names, loading them once per project. */
     fun getKeys(): List<String> {
@@ -26,14 +27,18 @@ class CssVarKeyCache(private val project: Project) {
                 .getAllKeys(CSS_VARIABLE_INDEXER_NAME, project)
                 .toList()
         } catch (_: IndexNotReadyException) {
-            emptyList()
+            return cached ?: emptyList()
         }
+        if (loaded.isEmpty()) return cached ?: emptyList()
+
         keys = loaded
         return loaded
     }
 
     /** Clears the cached keys so they will be reloaded on next request. */
-    fun clear() { keys = null }
+    fun clear() {
+        keys = null
+    }
 
     companion object {
         @JvmStatic
