@@ -12,6 +12,7 @@ import cssvarsassistant.completion.CssVarCompletionCache
 import cssvarsassistant.index.CssVariableIndexRebuilder
 import cssvarsassistant.index.ImportCache
 import cssvarsassistant.util.PreprocessorUtil
+import cssvarsassistant.util.ScopeUtil
 import java.awt.GridBagConstraints
 import java.awt.GridBagLayout
 import java.awt.event.ActionListener
@@ -82,6 +83,7 @@ class CssVarsAssistantConfigurable : Configurable {
                             indicator.text = "Clearing preprocessor cache..."
                             indicator.fraction = 0.3
                             PreprocessorUtil.clearCache()
+                            ScopeUtil.clearAll()
                             Thread.sleep(200)
 
                             indicator.text = "Clearing completion cache..."

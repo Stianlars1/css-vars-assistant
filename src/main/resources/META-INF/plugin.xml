@@ -11,6 +11,7 @@
 
         <!-- your indexer & completion -->
         <fileBasedIndex implementation="cssvarsassistant.index.CssVariableIndex"/>
+        <fileBasedIndex implementation="cssvarsassistant.index.PreprocessorVariableIndex"/>
 
         <completion.contributor language="CSS"
                                 implementationClass="cssvarsassistant.completion.CssVariableCompletion"
