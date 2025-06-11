@@ -66,11 +66,13 @@ intellijPlatform {
         }
 
         changeNotes = """
-<h2>1.4.3 – 2025-06-11</h2>
+<h2>1.4.2 – 2025-06-11</h2>
 
 <h3>Added</h3>
 <ul>
   <li><strong>Preprocessor index</strong> – LESS/SCSS variables are indexed for instant resolution.</li>
+  <li><strong>Value‑based sorting</strong> – completions sort by numeric value with asc/desc option.</li>
+  <li><strong>Pixel equivalents</strong> shown in documentation for rem/em/% values.</li>
 </ul>
 
 <h3>Improved</h3>
@@ -81,7 +83,7 @@ intellijPlatform {
 
 <h3>Fixed</h3>
 <ul>
-  <li>Race conditions in scope calculation and duplicate IDE completions.</li>
+  <li>Scope caching race conditions and duplicate IDE completions.</li>
 </ul>
 """.trimIndent()
 

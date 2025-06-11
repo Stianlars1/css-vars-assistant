@@ -18,6 +18,8 @@ Boosts CSS Custom Properties with smart completion, rich documentation and full 
 |----------|------------|
 | **🛠️ Preprocessor index** | LESS/SCSS variables are indexed for instant resolution. |
 | **🔍 Smarter var() detection** | Completion works while typing incomplete `var(` and resolves aliases quicker. |
+| **📏 Value-based sorting** | Completions sort by numeric value with ascending/descending option. |
+| **📐 Docs show px equivalents** | Non‑px size values display their pixel conversion. |
 
 ---
 ## ✨ What's new in 1.4.1
@@ -81,6 +83,7 @@ Open **Settings → Tools → CSS Variables Assistant**
 | **Max @import depth** | 1 – 20 (default 20)                                                |
 | **Show context values** | Display dark/light & media-query variants                          |
 | **Allow IDE built-in completions** | Fall back to IntelliJ suggestions for misses                       |
+| **Completion sorting** | Ascending or descending value order |
 | **🔄 Re-index Now** | Flush caches and rebuild the variable index immediately            |
 
 ---
