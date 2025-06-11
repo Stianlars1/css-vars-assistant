@@ -87,21 +87,32 @@ class CssVariableCompletion : CompletionContributor() {
                         ProgressManager.checkCanceled()
 
                         // Only inside var(...) args
-                        val pos = params.position
-                        val fn = PsiTreeUtil.getParentOfType(pos, CssFunction::class.java) ?: return
-                        if (fn.name != "var") return
-                        val l = fn.lParenthesis?.textOffset ?: return
+                        // Attempt to locate a `var(` expression via PSI and text
+                        // so completions trigger even before the closing parenthesis is typed
                         val off = params.offset
-
-                        // Determine the closing parenthesis location from the document
-                        // rather than PSI, as the PSI may be stale while typing.
-                        val docText = params.editor.document.charsSequence
-                        val r = docText.indexOf(')', startIndex = l + 1)
-                        if (off <= l || (r != -1 && off > r)) return
-
-                        // Compute the prefix manually to avoid leading "var(" when
-                        // completion is triggered immediately after typing
                         val doc = params.editor.document
+                        val docText = doc.charsSequence
+
+                        var l = -1
+                        var r = -1
+
+                        val pos = params.position
+                        val fn = PsiTreeUtil.getParentOfType(pos, CssFunction::class.java)
+                        if (fn != null && fn.name == "var") {
+                            l = fn.lParenthesis?.textOffset ?: -1
+                            r = docText.indexOf(')', startIndex = l + 1)
+                        }
+
+                        if (l == -1) {
+                            val idx = docText.subSequence(0, off).lastIndexOf("var(")
+                            if (idx != -1) {
+                                l = idx + 3
+                                r = docText.indexOf(')', startIndex = l + 1)
+                            }
+                        }
+
+                        if (l == -1 || off <= l || (r != -1 && off > r)) return
+
                         val rawPref = doc.getText(TextRange(l + 1, off)).trim()
                         val simple = rawPref.removePrefix("--")
                         val settings = CssVarsAssistantSettings.getInstance()
