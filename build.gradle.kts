@@ -8,7 +8,7 @@ plugins {
 }
 
 group = "com.stianlarsen"
-version = "1.4.1"
+version = "1.4.3"
 
 
 

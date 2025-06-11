@@ -12,7 +12,6 @@ import com.intellij.openapi.util.text.StringUtil
 import com.intellij.psi.PsiElement
 import com.intellij.util.indexing.FileBasedIndex
 import cssvarsassistant.completion.CssVarCompletionCache
-import cssvarsassistant.completion.CssVariableCompletion
 import cssvarsassistant.index.CSS_VARIABLE_INDEXER_NAME
 import cssvarsassistant.index.DELIMITER
 import cssvarsassistant.model.DocParser
@@ -20,28 +19,30 @@ import cssvarsassistant.settings.CssVarsAssistantSettings
 import cssvarsassistant.util.PreprocessorUtil
 import cssvarsassistant.util.ScopeUtil
 
+/**
+ * PERFORMANCE OPTIMIZED: Uses cached scopes and safe index operations
+ */
 class CssVariableDocumentation : AbstractDocumentationProvider() {
-    private val logger = Logger.getInstance(CssVariableCompletion::class.java)
-
+    private val logger = Logger.getInstance(CssVariableDocumentation::class.java)
     private val ENTRY_SEP = "|||"
-    private val lessVarCache = mutableMapOf<Pair<Project, String>, String?>()
 
     override fun generateDoc(element: PsiElement, original: PsiElement?): String? {
         try {
-
             val project = element.project
-            // Check for cancellation early
             if (DumbService.isDumb(project)) return null
-
 
             ProgressManager.checkCanceled()
             val settings = CssVarsAssistantSettings.getInstance()
             val varName = extractVariableName(element) ?: return null
-            // FIXED: Use CSS indexing scope for FileBasedIndex operations
-            val cssScope = ScopeUtil.effectiveCssIndexingScope(project, settings)
 
-            val rawEntries = FileBasedIndex.getInstance().getValues(CSS_VARIABLE_INDEXER_NAME, varName, cssScope)
-                .flatMap { it.split(ENTRY_SEP) }.filter { it.isNotBlank() }
+            // PERFORMANCE FIX: Use stable cached scope
+            val cssScope = ScopeUtil.getStableCssIndexingScope(project, settings)
+
+            // PERFORMANCE FIX: Use safe index lookup helper
+            val rawEntries = safeIndexLookup(project) {
+                FileBasedIndex.getInstance().getValues(CSS_VARIABLE_INDEXER_NAME, varName, cssScope)
+                    .flatMap { it.split(ENTRY_SEP) }.filter { it.isNotBlank() }
+            }
 
             if (rawEntries.isEmpty()) return null
 
@@ -49,8 +50,8 @@ class CssVariableDocumentation : AbstractDocumentationProvider() {
                 val p = it.split(DELIMITER, limit = 3)
                 if (p.size >= 2) {
                     val ctx = p[0]
-                    // FIXED: Pass project instead of scope to resolveVarValue
-                    val value = resolveVarValue(project, p[1])
+                    // PERFORMANCE FIX: Use optimized variable resolution
+                    val value = resolveVarValueOptimized(project, p[1])
                     val comment = p.getOrElse(2) { "" }
                     Triple(ctx, value, comment)
                 } else null
@@ -85,7 +86,6 @@ class CssVariableDocumentation : AbstractDocumentationProvider() {
                 .append("<td align='left'>Value</td></tr>")
 
             for ((ctx, value, _) in sorted) {
-                // Check for cancellation in loops
                 ProgressManager.checkCanceled()
 
                 val isColour = ColorParser.parseCssColor(value) != null
@@ -123,7 +123,6 @@ class CssVariableDocumentation : AbstractDocumentationProvider() {
 
             return sb.toString()
         } catch (e: ProcessCanceledException) {
-            // CRITICAL: Always rethrow ProcessCanceledException
             throw e
         } catch (e: Exception) {
             logger.error("Error generating documentation", e)
@@ -131,8 +130,21 @@ class CssVariableDocumentation : AbstractDocumentationProvider() {
         }
     }
 
-    // FIXED: Always use fresh scope for resolution
-    private fun resolveVarValue(
+    /**
+     * PERFORMANCE FIX: Actually use this safe index lookup helper
+     */
+    private inline fun <T> safeIndexLookup(project: Project, action: () -> List<T>): List<T> {
+        return if (DumbService.isDumb(project)) emptyList() else try {
+            action()
+        } catch (ignored: IndexNotReadyException) {
+            emptyList()
+        }
+    }
+
+    /**
+     * PERFORMANCE FIX: Optimized variable resolution using cached scopes
+     */
+    private fun resolveVarValueOptimized(
         project: Project,
         raw: String,
         visited: Set<String> = emptySet(),
@@ -144,16 +156,19 @@ class CssVariableDocumentation : AbstractDocumentationProvider() {
         try {
             ProgressManager.checkCanceled()
 
-            // ── 1. CSS var(..) ───────────────────────────────────────
+            // CSS var(..) resolution
             Regex("""var\(\s*(--[\w-]+)\s*\)""").find(raw)?.let { m ->
                 val ref = m.groupValues[1]
                 if (ref !in visited) {
-                    // Use CSS indexing scope for FileBasedIndex operations
-                    val cssScope = ScopeUtil.effectiveCssIndexingScope(project, settings)
-                    val entries = FileBasedIndex.getInstance()
-                        .getValues(CSS_VARIABLE_INDEXER_NAME, ref, cssScope)
-                        .flatMap { it.split(ENTRY_SEP) }
-                        .filter { it.isNotBlank() }
+                    // PERFORMANCE FIX: Use cached scope
+                    val cssScope = ScopeUtil.getStableCssIndexingScope(project, settings)
+
+                    val entries = safeIndexLookup(project) {
+                        FileBasedIndex.getInstance()
+                            .getValues(CSS_VARIABLE_INDEXER_NAME, ref, cssScope)
+                            .flatMap { it.split(ENTRY_SEP) }
+                            .filter { it.isNotBlank() }
+                    }
 
                     val defVal = entries.mapNotNull {
                         val p = it.split(DELIMITER, limit = 3)
@@ -163,23 +178,22 @@ class CssVariableDocumentation : AbstractDocumentationProvider() {
                     }
 
                     if (defVal != null)
-                        return resolveVarValue(project, defVal, visited + ref, depth + 1)
+                        return resolveVarValueOptimized(project, defVal, visited + ref, depth + 1)
                 }
                 return raw
             }
 
-            // ── 2. LESS / SCSS pre-prosessor-vars ────────────────────
+            // LESS / SCSS preprocessor variables
             val lessMatch = Regex("""^[\s]*[@$]([\w-]+)$""").find(raw.trim())
             if (lessMatch != null) {
                 val varName = lessMatch.groupValues[1]
 
-                // FIXED: Use scope-aware cache
-                val currentScope = ScopeUtil.currentPreprocessorScope(project)
+                // PERFORMANCE FIX: Use stable cached scope for preprocessor resolution
+                val currentScope = ScopeUtil.getStablePreprocessorScope(project)
                 CssVarCompletionCache.get(project, varName, currentScope)?.let { return it }
 
-                val resolved = findPreprocessorVariableValue(project, varName)
+                val resolved = PreprocessorUtil.resolveVariable(project, varName, currentScope)
 
-                // FIXED: Only cache non-null values and include scope
                 if (resolved != null) {
                     CssVarCompletionCache.put(project, varName, currentScope, resolved)
                 }
@@ -193,23 +207,6 @@ class CssVariableDocumentation : AbstractDocumentationProvider() {
         } catch (e: Exception) {
             logger.warn("Failed to resolve variable in documentation: $raw", e)
             return raw
-        }
-    }
-
-    // FIXED: Always use fresh scope for preprocessor resolution
-    private fun findPreprocessorVariableValue(
-        project: Project,
-        varName: String
-    ): String? {
-        return try {
-            // Always compute fresh scope to see newly discovered imports
-            val freshScope = ScopeUtil.currentPreprocessorScope(project)
-            PreprocessorUtil.resolveVariable(project, varName, freshScope)
-        } catch (e: ProcessCanceledException) {
-            throw e
-        } catch (e: Exception) {
-            logger.warn("Failed to find preprocessor variable in doc-menu: $varName", e)
-            null
         }
     }
 
@@ -251,14 +248,5 @@ class CssVariableDocumentation : AbstractDocumentationProvider() {
         if (arrayOf("hover", "motion", "orientation", "print").any { it in c }) return Triple(4, null, c)
 
         return Triple(5, null, c)
-    }
-}
-
-/** Runs [action] only when indices are ready, otherwise returns an empty list. */
-private inline fun <T> safeIndexLookup(project: Project, action: () -> List<T>): List<T> {
-    return if (DumbService.isDumb(project)) emptyList() else try {
-        action()
-    } catch (ignored: IndexNotReadyException) {           // ➌ safety-net
-        emptyList()
     }
 }

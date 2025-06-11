@@ -7,66 +7,20 @@ import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.project.DumbService
-import com.intellij.openapi.project.Project
 import com.intellij.patterns.PlatformPatterns
 import com.intellij.psi.css.CssFunction
 import com.intellij.psi.util.PsiTreeUtil
 import com.intellij.util.ProcessingContext
-import com.intellij.util.indexing.FileBasedIndex
 import com.intellij.util.ui.ColorIcon
 import cssvarsassistant.documentation.ColorParser
-import cssvarsassistant.index.CSS_VARIABLE_INDEXER_NAME
-import cssvarsassistant.index.DELIMITER
-import cssvarsassistant.completion.CssVarKeyCache
-import cssvarsassistant.model.DocParser
 import cssvarsassistant.settings.CssVarsAssistantSettings
-import cssvarsassistant.util.PreprocessorUtil
 import cssvarsassistant.util.ScopeUtil
 import java.awt.Component
 import java.awt.Graphics
 import javax.swing.Icon
 
-
 class CssVariableCompletion : CompletionContributor() {
     private val logger = Logger.getInstance(CssVariableCompletion::class.java)
-    private val ENTRY_SEP = "|||"
-
-    data class Entry(
-        val rawName: String,
-        val display: String,
-        val mainValue: String,
-        val allValues: List<Pair<String, String>>,
-        val doc: String,
-        val isAllColor: Boolean
-    )
-
-    companion object {
-        private const val WIDTH_THRESHOLD = 50
-        private const val PIXELS_PER_CHAR = 8
-        private const val MIN_POPUP_WIDTH = 500
-        private const val MAX_POPUP_WIDTH = 1100
-
-
-    }
-
-
-    // FIXED: Always use fresh scope for preprocessor resolution
-    private fun findPreprocessorVariableValue(
-        project: Project,
-        varName: String
-    ): String? {
-        return try {
-            // Always compute fresh scope to see newly discovered imports
-            val freshScope = ScopeUtil.currentPreprocessorScope(project)
-            PreprocessorUtil.resolveVariable(project, varName, freshScope)
-        } catch (e: ProcessCanceledException) {
-            throw e // Always rethrow ProcessCanceledException
-        } catch (e: Exception) {
-            logger.warn("Failed to find preprocessor variable: $varName", e)
-            null
-        }
-    }
-
 
     init {
         extend(
@@ -78,194 +32,83 @@ class CssVariableCompletion : CompletionContributor() {
                     ctx: ProcessingContext,
                     result: CompletionResultSet
                 ) {
+                    val startTime = System.currentTimeMillis()
+
                     try {
                         val project = params.position.project
                         if (DumbService.isDumb(project)) return
 
-                        // Check for cancellation at the start
                         ProgressManager.checkCanceled()
 
-                        // Only inside var(...) args
-                        val pos = params.position
-                        val fn = PsiTreeUtil.getParentOfType(pos, CssFunction::class.java) ?: return
-                        if (fn.name != "var") return
-                        val l = fn.lParenthesis?.textOffset ?: return
-                        val r = fn.rParenthesis?.textOffset ?: return
-                        val off = params.offset
-                        if (off <= l || off > r) return
+                        // ROBUST VAR() DETECTION: Multiple strategies to detect if we're inside var()
+                        val varContext = detectVarContext(params)
+                        if (!varContext.isInVar) {
+                            logger.debug("Not in var() context: ${varContext.reason}")
+                            return
+                        }
+
+                        logger.debug("CSS Variable completion triggered with strategy: ${varContext.strategy}")
 
                         val rawPref = result.prefixMatcher.prefix
                         val simple = rawPref.removePrefix("--")
                         val settings = CssVarsAssistantSettings.getInstance()
 
-                        // FIXED: Use CSS indexing scope for FileBasedIndex operations
-                        val cssScope = ScopeUtil.effectiveCssIndexingScope(project, settings)
+                        // Use stable cached scope
+                        val cssScope = ScopeUtil.getStableCssIndexingScope(project, settings)
 
+                        // Use pre-computed completion data
+                        val completionData = CompletionDataCache.get(project).getCompletionEntries(cssScope)
 
-                        val processedVariables = mutableSetOf<String>()
-
-                        fun resolveVarValue(
-                            raw: String,
-                            visited: Set<String> = emptySet(),
-                            depth: Int = 0
-                        ): String {
-                            val resolveSettings = CssVarsAssistantSettings.getInstance()
-                            if (depth > resolveSettings.maxImportDepth) return raw
-
-                            try {
-                                // Check for cancellation in recursive operations
-                                ProgressManager.checkCanceled()
-
-                                // ── 1. vanlige CSS var(..) ───────────────────────────────
-                                val varRef = Regex("""var\(\s*(--[\w-]+)\s*\)""").find(raw)
-                                if (varRef != null) {
-                                    val ref = varRef.groupValues[1]
-                                    if (ref in visited) return raw
-
-                                    val refEntries = FileBasedIndex.getInstance()
-                                        .getValues(CSS_VARIABLE_INDEXER_NAME, ref, cssScope)
-                                        .flatMap { it.split(ENTRY_SEP) }
-                                        .distinct()
-                                        .filter { it.isNotBlank() }
-
-                                    val refDefault = refEntries
-                                        .mapNotNull {
-                                            val p = it.split(DELIMITER, limit = 3)
-                                            if (p.size >= 2) p[0] to p[1] else null
-                                        }
-                                        .let { pairs ->
-                                            pairs.find { it.first == "default" }?.second ?: pairs.firstOrNull()?.second
-                                        }
-
-                                    if (refDefault != null)
-                                        return resolveVarValue(refDefault, visited + ref, depth + 1)
-                                    return raw
-                                }
-
-                                // ── 2. LESS / SCSS pre-prosessor-vars ────────────────────
-                                val lessMatch = Regex("""^[\s]*[@$]([\w-]+)$""").find(raw.trim())
-                                if (lessMatch != null) {
-                                    val varName = lessMatch.groupValues[1]
-                                    CssVarCompletionCache.get(project, varName)?.let { return it }
-
-                                    val resolved = findPreprocessorVariableValue(project, varName)
-                                    if (resolved != null) {
-                                        CssVarCompletionCache.put(project, varName, resolved)
-                                    }
-
-                                    return resolved ?: raw
-
-                                }
-
-                                return raw
-                            } catch (e: ProcessCanceledException) {
-                                throw e // Always rethrow ProcessCanceledException
-                            } catch (e: Exception) {
-                                logger.warn("Failed to resolve variable value: $raw", e)
-                                return raw
-                            }
-                        }
-
-                        val entries = mutableListOf<Entry>()
-
-                        // Check cancellation before expensive indexing operations
                         ProgressManager.checkCanceled()
 
-                        val keyCache = CssVarKeyCache.get(project)
-                        keyCache.getKeys()
-                            .forEach { rawName ->
-                                // Check cancellation periodically in loops
-                                ProgressManager.checkCanceled()
+                        val processedVariables = mutableSetOf<String>()
+                        var entriesAdded = 0
 
-                                val display = rawName.removePrefix("--")
-                                if (!display.startsWith(simple, ignoreCase = true)) return@forEach
-
-                                processedVariables.add(rawName)
-
-                                val allVals = FileBasedIndex.getInstance()
-                                    .getValues(CSS_VARIABLE_INDEXER_NAME, rawName, cssScope)
-                                    .flatMap { it.split(ENTRY_SEP) }
-                                    .distinct()
-                                    .filter { it.isNotBlank() }
-
-                                if (allVals.isEmpty()) return@forEach
-
-                                val valuePairs = allVals.mapNotNull {
-                                    val parts = it.split(DELIMITER, limit = 3)
-                                    if (parts.size >= 2) {
-                                        val ctx = parts[0]
-                                        val rawVal = parts[1]
-                                        val resolved = resolveVarValue(rawVal)
-                                        ctx to resolved
-                                    } else null
-                                }
-
-                                val uniqueValuePairs: List<Pair<String, String>> =
-                                    valuePairs.distinctBy { (ctx, v) -> ctx to v }
-                                val values = uniqueValuePairs.map { it.second }.distinct()
-                                val mainValue = uniqueValuePairs.find { it.first == "default" }?.second
-                                    ?: values.first()
-
-                                val docEntry = allVals.firstOrNull { it.substringAfter(DELIMITER).isNotBlank() }
-                                    ?: allVals.first()
-                                val commentTxt = docEntry.substringAfter(DELIMITER)
-                                val doc = DocParser.parse(commentTxt, mainValue).description
-
-                                val isAllColor =
-                                    values.isNotEmpty() && values.all { ColorParser.parseCssColor(it) != null }
-
-                                entries += Entry(
-                                    rawName,
-                                    display,
-                                    mainValue,
-                                    uniqueValuePairs,
-                                    doc,
-                                    isAllColor
-                                )
-                            }
-
-                        entries.sortBy { it.display }
-
-                        for (e in entries) {
-                            // Check cancellation in completion generation loop
+                        // Filter and add completion entries
+                        for (entry in completionData) {
                             ProgressManager.checkCanceled()
 
-                            val short = e.doc.takeIf { it.isNotBlank() }
+                            // More flexible prefix matching
+                            if (simple.isNotBlank() && !entry.display.startsWith(simple, ignoreCase = true)) {
+                                continue
+                            }
+
+                            processedVariables.add(entry.rawName)
+
+                            val short = entry.doc.takeIf { it.isNotBlank() }
                                 ?.let { it.take(40) + if (it.length > 40) "…" else "" }
                                 ?: ""
 
-                            val colorIcons = e.allValues.mapNotNull { (_, v) ->
+                            val colorIcons = entry.allValues.mapNotNull { (_, v) ->
                                 ColorParser.parseCssColor(v)?.let { ColorIcon(12, it, false) }
                             }.distinctBy { it.iconColor }
 
                             val icon: Icon = when {
-                                e.isAllColor && colorIcons.size == 2 -> DoubleColorIcon(colorIcons[0], colorIcons[1])
-                                e.isAllColor && colorIcons.isNotEmpty() -> colorIcons[0]
+                                entry.isAllColor && colorIcons.size == 2 -> DoubleColorIcon(colorIcons[0], colorIcons[1])
+                                entry.isAllColor && colorIcons.isNotEmpty() -> colorIcons[0]
                                 else -> AllIcons.FileTypes.Css
                             }
 
                             val valueText = when {
-                                e.isAllColor && e.allValues.size > 1 && settings.showContextValues -> {
-                                    e.allValues.joinToString(" / ") { (ctx, v) ->
+                                entry.isAllColor && entry.allValues.size > 1 && settings.showContextValues -> {
+                                    entry.allValues.joinToString(" / ") { (ctx, v) ->
                                         when {
                                             "dark" in ctx.lowercase() -> "\uD83C\uDF19 $v"
                                             else -> v
                                         }
                                     }
                                 }
-
-                                e.isAllColor -> e.mainValue
-                                e.allValues.size > 1 && settings.showContextValues -> {
-                                    "${e.mainValue} (+${e.allValues.size - 1})"
+                                entry.isAllColor -> entry.mainValue
+                                entry.allValues.size > 1 && settings.showContextValues -> {
+                                    "${entry.mainValue} (+${entry.allValues.size - 1})"
                                 }
-
-                                else -> e.mainValue
+                                else -> entry.mainValue
                             }
 
                             val elt = LookupElementBuilder
-                                .create(e.rawName)
-                                .withPresentableText(e.display)
-                                .withLookupString(e.display)
+                                .create(entry.rawName)
+                                .withPresentableText(entry.display)
+                                .withLookupString(entry.display)
                                 .withIcon(icon)
                                 .withTypeText(valueText, true)
                                 .withTailText(if (short.isNotBlank()) " — $short" else "", true)
@@ -275,21 +118,21 @@ class CssVariableCompletion : CompletionContributor() {
                                         val start = ctx2.startOffset
                                         val tail = ctx2.tailOffset
 
-                                        // Validate range before replacement
                                         if (start >= 0 && tail <= doc.textLength && start <= tail) {
-                                            doc.replaceString(start, tail, e.rawName)
+                                            doc.replaceString(start, tail, entry.rawName)
                                         }
                                     } catch (ex: Exception) {
-                                        // Log but don't crash completion
                                         logger.debug("Safe insert handler caught exception", ex)
                                     }
                                 }
 
-
-
                             result.addElement(elt)
+                            entriesAdded++
                         }
 
+                        logger.debug("Added $entriesAdded completion entries using strategy: ${varContext.strategy}")
+
+                        // Handle IDE completion filtering
                         if (settings.allowIdeCompletions) {
                             if (processedVariables.isNotEmpty()) {
                                 val filteredResult = result.withPrefixMatcher(object : PrefixMatcher(rawPref) {
@@ -306,6 +149,10 @@ class CssVariableCompletion : CompletionContributor() {
                         } else {
                             result.stopHere()
                         }
+
+                        val endTime = System.currentTimeMillis()
+                        logger.info("CSS Variable completion took ${endTime - startTime}ms for $entriesAdded entries")
+
                     } catch (e: ProcessCanceledException) {
                         throw e
                     } catch (e: Exception) {
@@ -316,7 +163,106 @@ class CssVariableCompletion : CompletionContributor() {
         )
     }
 
+    data class VarContext(
+        val isInVar: Boolean,
+        val strategy: String,
+        val reason: String = ""
+    )
 
+    /**
+     * ROBUST VAR() DETECTION: Multiple strategies with detailed logging
+     */
+    private fun detectVarContext(params: CompletionParameters): VarContext {
+        val pos = params.position
+        val offset = params.offset
+        val document = params.editor?.document
+
+        try {
+            // Strategy 1: PSI tree detection (most reliable when PSI is complete)
+            val fn = PsiTreeUtil.getParentOfType(pos, CssFunction::class.java)
+            if (fn?.name == "var") {
+                val l = fn.lParenthesis?.textOffset
+                val r = fn.rParenthesis?.textOffset
+                if (l != null && (r == null || (offset > l && offset <= r))) {
+                    logger.debug("Strategy 1 SUCCESS: Found var() via PSI tree at offset $offset")
+                    return VarContext(true, "PSI_TREE")
+                }
+            }
+
+            // Strategy 2: Document text analysis (works when PSI is incomplete)
+            if (document != null) {
+                val text = document.text
+
+                // Look backward from cursor for var( pattern
+                val searchStart = maxOf(0, offset - 200)
+                val beforeCursor = text.substring(searchStart, minOf(offset, text.length))
+
+                // Pattern 1: Look for var( followed by optional whitespace and --
+                val varPattern1 = Regex("""var\s*\(\s*--?[^)]*$""")
+                if (varPattern1.find(beforeCursor) != null) {
+                    logger.debug("Strategy 2a SUCCESS: Found var(-- pattern before cursor")
+                    return VarContext(true, "TEXT_PATTERN_COMPLETE")
+                }
+
+                // Pattern 2: Look for incomplete var( pattern
+                val varPattern2 = Regex("""var\s*\(\s*-?$""")
+                if (varPattern2.find(beforeCursor) != null) {
+                    logger.debug("Strategy 2b SUCCESS: Found incomplete var( pattern")
+                    return VarContext(true, "TEXT_PATTERN_INCOMPLETE")
+                }
+
+                // Pattern 3: Look for var( anywhere with cursor inside parentheses
+                val allVarMatches = Regex("""var\s*\(""").findAll(beforeCursor + text.substring(offset, minOf(offset + 50, text.length)))
+                for (match in allVarMatches) {
+                    val varStart = searchStart + match.range.last
+                    val closingParen = text.indexOf(')', varStart)
+                    if (closingParen == -1 || offset <= closingParen) {
+                        logger.debug("Strategy 2c SUCCESS: Cursor inside var() parentheses")
+                        return VarContext(true, "TEXT_PATTERN_INSIDE_PARENS")
+                    }
+                }
+            }
+
+            // Strategy 3: Element context detection (fallback)
+            val elementText = pos.text
+            val parentText = pos.parent?.text ?: ""
+            val grandParentText = pos.parent?.parent?.text ?: ""
+
+            if (elementText.contains("--") ||
+                parentText.contains("var(") ||
+                grandParentText.contains("var(")) {
+                logger.debug("Strategy 3 SUCCESS: Found var context in element hierarchy")
+                return VarContext(true, "ELEMENT_CONTEXT")
+            }
+
+            // Strategy 4: Character-based detection (most aggressive)
+            if (document != null) {
+                val text = document.text
+                val lineStart = document.getLineStartOffset(document.getLineNumber(offset))
+                val lineText = text.substring(lineStart, minOf(document.getLineEndOffset(document.getLineNumber(offset)), text.length))
+
+                // Check if line contains var( and we're after it
+                val varIndex = lineText.indexOf("var(")
+                if (varIndex != -1) {
+                    val varAbsolutePos = lineStart + varIndex + 4 // position after "var("
+                    if (offset >= varAbsolutePos) {
+                        val closingParen = lineText.indexOf(')', varIndex)
+                        if (closingParen == -1 || offset <= lineStart + closingParen) {
+                            logger.debug("Strategy 4 SUCCESS: Line-based var() detection")
+                            return VarContext(true, "LINE_BASED")
+                        }
+                    }
+                }
+            }
+
+            logger.debug("All strategies FAILED - not in var() context")
+            return VarContext(false, "NONE", "No var() context detected by any strategy")
+
+        } catch (e: Exception) {
+            logger.debug("Error in var context detection: ${e.message}")
+            return VarContext(false, "ERROR", "Exception during detection: ${e.message}")
+        }
+    }
 }
 
 class DoubleColorIcon(private val icon1: Icon, private val icon2: Icon) : Icon {
