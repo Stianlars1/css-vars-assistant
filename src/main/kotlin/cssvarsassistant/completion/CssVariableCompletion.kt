@@ -91,10 +91,13 @@ class CssVariableCompletion : CompletionContributor() {
                         val fn = PsiTreeUtil.getParentOfType(pos, CssFunction::class.java) ?: return
                         if (fn.name != "var") return
                         val l = fn.lParenthesis?.textOffset ?: return
-                        // Allow completions even if the closing parenthesis hasn't been typed yet
-                        val r = fn.rParenthesis?.textOffset ?: Int.MAX_VALUE
                         val off = params.offset
-                        if (off <= l || off > r) return
+
+                        // Determine the closing parenthesis location from the document
+                        // rather than PSI, as the PSI may be stale while typing.
+                        val docText = params.editor.document.charsSequence
+                        val r = docText.indexOf(')', startIndex = l + 1)
+                        if (off <= l || (r != -1 && off > r)) return
 
                         // Compute the prefix manually to avoid leading "var(" when
                         // completion is triggered immediately after typing
