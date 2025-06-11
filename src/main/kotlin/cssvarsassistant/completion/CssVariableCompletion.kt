@@ -13,6 +13,7 @@ import com.intellij.psi.css.CssFunction
 import com.intellij.psi.util.PsiTreeUtil
 import com.intellij.util.ProcessingContext
 import com.intellij.util.indexing.FileBasedIndex
+import com.intellij.openapi.util.TextRange
 import com.intellij.util.ui.ColorIcon
 import cssvarsassistant.documentation.ColorParser
 import cssvarsassistant.index.CSS_VARIABLE_INDEXER_NAME
@@ -95,7 +96,10 @@ class CssVariableCompletion : CompletionContributor() {
                         val off = params.offset
                         if (off <= l || off > r) return
 
-                        val rawPref = result.prefixMatcher.prefix
+                        // Compute the prefix manually to avoid leading "var(" when
+                        // completion is triggered immediately after typing
+                        val doc = params.editor.document
+                        val rawPref = doc.getText(TextRange(l + 1, off)).trim()
                         val simple = rawPref.removePrefix("--")
                         val settings = CssVarsAssistantSettings.getInstance()
 

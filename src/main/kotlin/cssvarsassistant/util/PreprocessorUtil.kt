@@ -26,6 +26,7 @@ object PreprocessorUtil {
         scope: GlobalSearchScope,
         visited: Set<String> = emptySet()
     ): String? {
+        ProgressManager.checkCanceled()
         if (varName in visited) return null
         val key = Triple(project, varName, scope.hashCode())
         cache[key]?.let { return it }
@@ -33,6 +34,8 @@ object PreprocessorUtil {
         return try {
             val values = FileBasedIndex.getInstance()
                 .getValues(PREPROCESSOR_VARIABLE_INDEX_NAME, varName, scope)
+
+            if (values.isEmpty()) return null
 
             for (value in values) {
                 ProgressManager.checkCanceled()
