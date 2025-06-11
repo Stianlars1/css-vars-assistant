@@ -90,7 +90,8 @@ class CssVariableCompletion : CompletionContributor() {
                         val fn = PsiTreeUtil.getParentOfType(pos, CssFunction::class.java) ?: return
                         if (fn.name != "var") return
                         val l = fn.lParenthesis?.textOffset ?: return
-                        val r = fn.rParenthesis?.textOffset ?: return
+                        // Allow completions even if the closing parenthesis hasn't been typed yet
+                        val r = fn.rParenthesis?.textOffset ?: Int.MAX_VALUE
                         val off = params.offset
                         if (off <= l || off > r) return
 
