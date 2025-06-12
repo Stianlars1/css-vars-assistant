@@ -70,6 +70,8 @@ See full details in [`CHANGELOG.MD`](./CHANGELOG.MD).
 * **Recursive var() & pre-processor alias resolution**
 * **JSDoc-style tags** `@name`, `@description`, `@example`
 * Works inside **CSS / SCSS / SASS / LESS / JS / TS / JSX / TSX**
+* **Preprocessor variable index** for instant LESS/SCSS variable look-ups
+* **Value-based sorting** with pixel equivalents for intuitive ordering
 
 ---
 

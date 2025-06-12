@@ -5,7 +5,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/) and semantic-
 
 ---
 
-## [1.4.2] – 2025‑06‑11
+## [1.4.2] – 2025‑06‑12
 ### Added
 * **Preprocessor variable index** – LESS and SCSS variables are indexed for instant look‑ups.
 * **Value‑based completion sorting** – variables sort by numeric value with ascending/descending option.
