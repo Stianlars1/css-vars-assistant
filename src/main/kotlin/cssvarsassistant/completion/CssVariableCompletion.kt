@@ -172,10 +172,19 @@ class CssVariableCompletion : CompletionContributor() {
                                     valuePairs.distinctBy { (ctx, v) -> ctx to v }
                                 val values = uniqueValuePairs.map { it.second }.distinct()
 
-                                val mainValue = uniqueValuePairs.find { it.first == "default" }?.second
+                                fun isAlias(v: String): Boolean {
+                                    val t = v.trim()
+                                    return t.startsWith("@") || t.startsWith("$") || t.startsWith("var(")
+                                }
+
+                                val mainValue = uniqueValuePairs
+                                    .filter { it.first == "default" }
+                                    .firstOrNull { !isAlias(it.second) }
+                                    ?.second
+                                    ?: uniqueValuePairs.find { it.first == "default" }?.second
                                     ?: values.first()
 
-                                val cleanMainValue = mainValue.trim().replace(Regex("""\s*\(.*\)$"""), "")
+                                val cleanMainValue = mainValue.trim()
 
                                 val docEntry = allVals.firstOrNull {
                                     it.substringAfter(DELIMITER).substringAfter(DELIMITER).isNotBlank()
