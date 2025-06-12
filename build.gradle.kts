@@ -72,7 +72,7 @@ intellijPlatform {
 <ul>
   <li><strong>Preprocessor index</strong> – LESS/SCSS variables are indexed for instant resolution.</li>
   <li><strong>Value‑based sorting</strong> – completions sort by numeric value with asc/desc option.</li>
-  <li><strong>Pixel equivalents</strong> shown in documentation for rem/em/%/vw/vh/dvh values.</li>
+  <li><strong>Pixel equivalents</strong> column shows px values whenever a size isn't in px.</li>
 </ul>
 
 <h3>Improved</h3>

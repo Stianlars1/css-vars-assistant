@@ -66,6 +66,7 @@ See full details in [`CHANGELOG.MD`](./CHANGELOG.MD).
 
 * **Context-aware completion** inside `var(-- … )`
 * **Quick Documentation** (<kbd>Ctrl Q</kbd> / hover) with table, swatches, description & examples
+* **Pixel equivalents** displayed in documentation for non-px size values
 * **@import traversal** for CSS, SCSS, SASS & LESS with smart extension inference
 * **Recursive var() & pre-processor alias resolution**
 * **JSDoc-style tags** `@name`, `@description`, `@example`

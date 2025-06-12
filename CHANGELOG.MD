@@ -9,7 +9,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/) and semantic-
 ### Added
 * **Preprocessor variable index** – LESS and SCSS variables are indexed for instant look‑ups.
 * **Value‑based completion sorting** – variables sort by numeric value with ascending/descending option.
-* **Pixel equivalent column** – documentation shows px values for rem/em/%/vh/vw/dvh sizes.
+* **Pixel equivalent column** – documentation now shows the px value when a size isn't in px.
 
 ### Improved
 * More reliable `var()` detection and prefix extraction while typing.
