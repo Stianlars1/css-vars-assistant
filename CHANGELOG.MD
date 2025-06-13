@@ -4,6 +4,19 @@ All notable changes to this project will be documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/) and semantic-versioning.
 
 ---
+## [1.4.3] – 2025‑06‑13
+
+### Added
+- **Rich variable documentation**: Quick Documentation now includes resolution steps, usage counts, dependencies, related variables and file locations.
+- **Preprocessor arithmetic**: Support for expressions like `(@var * 1.5)` with decimal multipliers and additional units.
+- **Context grouping**: Completions group values by context, showing the latest value per group.
+
+### Changed
+- Unified index version constant for all indexes.
+
+### Removed
+- Legacy `PreprocessorUtil_old` helper.
+
 ## [1.4.2] – 2025‑06‑12
 
 ### Added

@@ -55,3 +55,5 @@ gradle.properties
 # IntelliJ sandbox & distr
 sandbox/
 build/distributions/
+.intellijPlatform/self-update.lock
+.kotlin/sessions/*.salive

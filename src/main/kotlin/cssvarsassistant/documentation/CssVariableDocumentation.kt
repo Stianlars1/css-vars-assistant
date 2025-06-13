@@ -345,8 +345,10 @@ class CssVariableDocumentation : AbstractDocumentationProvider() {
 
         val totalUsages = files.sumOf { file ->
             try {
-                val content = file.inputStream.bufferedReader().readText()
-                Regex("""var\(\s*${Regex.escape(varName)}\s*\)""").findAll(content).count()
+                file.inputStream.use { stream ->
+                    val content = stream.bufferedReader().readText()
+                    Regex("""var\(\s*${Regex.escape(varName)}\s*\)""").findAll(content).count()
+                }
             } catch (e: Exception) { 0 }
         }
 

@@ -1,6 +1,6 @@
 # CSS Variables Assistant  🔧🎨
 
-**Version:** 1.4.2<br/>
+**Version:** 1.4.3<br/>
 **Compatible IDEs:** WebStorm / IntelliJ Ultimate **2025.1+**<br/>
 **Author:** Stian Larsen<br/>
 **Links:** 
@@ -11,6 +11,15 @@
 
 
 Boosts CSS Custom Properties with smart completion, rich documentation and full pre-processor support.
+---
+## ✨ What's new in 1.4.3
+
+| Category | Highlights |
+|----------|------------|
+| **📚 Richer documentation** | Quick Documentation shows resolution steps, usage counts, dependency tracing and related variables. |
+| **🧮 Arithmetic expressions** | Preprocessor variables support math like `(@spacing * 1.5)` with decimal multipliers and more units. |
+| **🔗 Context grouping** | Completion groups values by context, picking the latest value in each group. |
+| **🧹 Cleanup & indexing** | Unified index version constant for faster rebuilds. |
 ---
 ## ✨ What's new in 1.4.2
 

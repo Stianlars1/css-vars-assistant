@@ -15,6 +15,17 @@ import cssvarsassistant.index.PREPROCESSOR_VARIABLE_INDEX_NAME
 object PreprocessorUtil {
     private val LOG = Logger.getInstance(PreprocessorUtil::class.java)
     private val cache = mutableMapOf<Triple<Project, String, Int>, String?>()
+    private val arithmeticRegex = Regex("""\(\s*[@$]([\w-]+)\s*\*\s*(-?\d+(?:\.\d+)?)\s*\)""")
+    private val numUnitRegex = Regex("""(-?\d+(?:\.\d+)?)(px|rem|em|%|vh|vw|pt)""")
+
+    internal fun applyArithmetic(baseValue: String, multiplier: Double): String? {
+        val match = numUnitRegex.find(baseValue) ?: return null
+        val num = match.groupValues[1].toDouble()
+        val unit = match.groupValues[2]
+        val result = num * multiplier
+        val formatted = if (result % 1.0 == 0.0) result.toInt().toString() else result.toString()
+        return "$formatted$unit"
+    }
 
     /**
      * Resolves the value of a preprocessor variable (@foo or $foo) within [scope].
@@ -40,18 +51,14 @@ object PreprocessorUtil {
             for (value in values) {
                 ProgressManager.checkCanceled()
 
-                // Handle arithmetic like (@ffe-spacing * 8)
-                val mathMatch = Regex("""\(\s*[@$]([\w-]+)\s*\*\s*(\d+)\s*\)""").find(value)
+                // Handle arithmetic like (@ffe-spacing * 1.5)
+                val mathMatch = arithmeticRegex.find(value)
                 if (mathMatch != null) {
                     val baseVar = mathMatch.groupValues[1]
-                    val multiplier = mathMatch.groupValues[2].toIntOrNull() ?: continue
+                    val multiplier = mathMatch.groupValues[2].toDoubleOrNull() ?: continue
                     val baseValue = resolveVariable(project, baseVar, scope, visited + varName)
                     if (baseValue != null) {
-                        val numMatch = Regex("""(\d+)(px|rem|em|%)""").find(baseValue)
-                        if (numMatch != null) {
-                            val num = numMatch.groupValues[1].toInt()
-                            val unit = numMatch.groupValues[2]
-                            val result = "${num * multiplier}$unit"
+                        applyArithmetic(baseValue, multiplier)?.let { result ->
                             cache[key] = result
                             return result
                         }
