@@ -13,6 +13,7 @@ import com.intellij.util.indexing.FileBasedIndex
 import cssvarsassistant.completion.CssVarCompletionCache
 import cssvarsassistant.completion.CssVarKeyCache
 import cssvarsassistant.completion.CssVariableCompletion
+import cssvarsassistant.documentation.DocStatsCache
 import cssvarsassistant.index.CSS_VARIABLE_INDEXER_NAME
 import cssvarsassistant.index.DELIMITER
 import cssvarsassistant.model.DocParser
@@ -147,33 +148,41 @@ class CssVariableDocumentation : AbstractDocumentationProvider() {
             }
             sb.append("</table>")
 
-            val (fileCount, usageCount) = getUsageStats(project, varName)
-            if (fileCount > 0) {
-                sb.append("<p><b>Usage:</b> ${usageCount} times in ${fileCount} files</p>")
-            }
-
-            val dependencies = findDependencies(project, varName)
-            if (dependencies.isNotEmpty()) {
-                sb.append("<p><b>References:</b> ")
-                dependencies.take(5).forEach { dep ->
-                    sb.append("<code>${StringUtil.escapeXmlEntities(dep)}</code> ")
+            if (settings.showUsageBlock) {
+                val (fileCount, usageCount) = getUsageStats(project, varName)
+                if (fileCount > 0) {
+                    sb.append("<p><b>Usage:</b> ${usageCount} times in ${fileCount} files</p>")
                 }
-                if (dependencies.size > 5) sb.append("...")
-                sb.append("</p>")
             }
 
-            val related = findRelatedVariables(project, varName)
-            if (related.isNotEmpty()) {
-                sb.append("<p><b>Related:</b> ")
-                related.forEach { rel ->
-                    sb.append("<code>${StringUtil.escapeXmlEntities(rel.removePrefix("--"))}</code> ")
+            if (settings.showDependenciesBlock) {
+                val dependencies = findDependencies(project, varName)
+                if (dependencies.isNotEmpty()) {
+                    sb.append("<p><b>References:</b> ")
+                    dependencies.take(5).forEach { dep ->
+                        sb.append("<code>${StringUtil.escapeXmlEntities(dep)}</code> ")
+                    }
+                    if (dependencies.size > 5) sb.append("...")
+                    sb.append("</p>")
                 }
-                sb.append("</p>")
             }
 
-            val locations = getFileLocations(project, varName)
-            if (locations.isNotEmpty()) {
-                sb.append("<p><b>Files:</b> ${locations.joinToString(", ")}</p>")
+            if (settings.showRelatedBlock) {
+                val related = findRelatedVariables(project, varName)
+                if (related.isNotEmpty()) {
+                    sb.append("<p><b>Related:</b> ")
+                    related.forEach { rel ->
+                        sb.append("<code>${StringUtil.escapeXmlEntities(rel.removePrefix("--"))}</code> ")
+                    }
+                    sb.append("</p>")
+                }
+            }
+
+            if (settings.showFilesBlock) {
+                val locations = getFileLocations(project, varName)
+                if (locations.isNotEmpty()) {
+                    sb.append("<p><b>Files:</b> ${locations.joinToString(", ")}</p>")
+                }
             }
 
 
@@ -300,6 +309,14 @@ class CssVariableDocumentation : AbstractDocumentationProvider() {
             return "Reduced motion"
         }
 
+        if (Regex("\\bprint\\b", RegexOption.IGNORE_CASE).containsMatchIn(ctx)) {
+            return "Print"
+        }
+
+        if (Regex("only\\s+screen", RegexOption.IGNORE_CASE).containsMatchIn(ctx)) {
+            return "Only screen"
+        }
+
         // Handle width-based media queries with better regex
         val maxWidthRegex = Regex("""max-width:\s*(\d+)(?:px)?\s*\)""")
         val minWidthRegex = Regex("""min-width:\s*(\d+)(?:px)?\s*\)""")
@@ -337,65 +354,76 @@ class CssVariableDocumentation : AbstractDocumentationProvider() {
     }
 
     private fun getUsageStats(project: Project, varName: String): Pair<Int, Int> {
-        val settings = CssVarsAssistantSettings.getInstance()
-        val scope = ScopeUtil.effectiveCssIndexingScope(project, settings)
+        val cache = DocStatsCache.get(project)
+        return cache.usage(varName) {
+            val settings = CssVarsAssistantSettings.getInstance()
+            val scope = ScopeUtil.effectiveCssIndexingScope(project, settings)
 
-        val files = FileBasedIndex.getInstance()
-            .getContainingFiles(CSS_VARIABLE_INDEXER_NAME, varName, scope)
+            val files = FileBasedIndex.getInstance()
+                .getContainingFiles(CSS_VARIABLE_INDEXER_NAME, varName, scope)
 
-        val totalUsages = files.sumOf { file ->
-            try {
-                val content = file.inputStream.bufferedReader().readText()
-                Regex("""var\(\s*${Regex.escape(varName)}\s*\)""").findAll(content).count()
-            } catch (e: Exception) { 0 }
+            val totalUsages = files.sumOf { file ->
+                try {
+                    val content = file.inputStream.bufferedReader().readText()
+                    Regex("""var\(\s*${Regex.escape(varName)}\s*\)""").findAll(content).count()
+                } catch (e: Exception) { 0 }
+            }
+
+            files.size to totalUsages
         }
-
-        return files.size to totalUsages
     }
 
     private fun findDependencies(project: Project, varName: String, visited: Set<String> = emptySet()): List<String> {
         if (varName in visited) return emptyList()
 
-        val settings = CssVarsAssistantSettings.getInstance()
-        val scope = ScopeUtil.effectiveCssIndexingScope(project, settings)
+        val cache = DocStatsCache.get(project)
+        return cache.deps(varName) {
+            val settings = CssVarsAssistantSettings.getInstance()
+            val scope = ScopeUtil.effectiveCssIndexingScope(project, settings)
 
-        val entries = FileBasedIndex.getInstance()
-            .getValues(CSS_VARIABLE_INDEXER_NAME, varName, scope)
-            .flatMap { it.split(ENTRY_SEP) }
-            .filter { it.isNotBlank() }
+            val entries = FileBasedIndex.getInstance()
+                .getValues(CSS_VARIABLE_INDEXER_NAME, varName, scope)
+                .flatMap { it.split(ENTRY_SEP) }
+                .filter { it.isNotBlank() }
 
-        return entries.flatMap { entry ->
-            val value = entry.split(DELIMITER).getOrNull(1) ?: ""
-            Regex("""var\(\s*(--[\w-]+)\s*\)""").findAll(value)
-                .map { it.groupValues[1] }
-                .flatMap { ref -> listOf(ref) + findDependencies(project, ref, visited + varName) }
-        }.distinct()
+            entries.flatMap { entry ->
+                val value = entry.split(DELIMITER).getOrNull(1) ?: ""
+                Regex("""var\(\s*(--[\w-]+)\s*\)""").findAll(value)
+                    .map { it.groupValues[1] }
+                    .flatMap { ref -> listOf(ref) + findDependencies(project, ref, visited + varName) }
+            }.distinct()
+        }
     }
 
     private fun findRelatedVariables(project: Project, varName: String): List<String> {
-        val keyCache = CssVarKeyCache.get(project)
-        val base = varName.removePrefix("--")
+        val cache = DocStatsCache.get(project)
+        return cache.related(varName) {
+            val keyCache = CssVarKeyCache.get(project)
+            val base = varName.removePrefix("--")
 
-        return keyCache.getKeys()
-            .filter { it != varName }
-            .filter { candidate ->
-                val candidateBase = candidate.removePrefix("--")
-                // Same prefix or suffix patterns
-                base.split("-").any { part ->
-                    part.length > 2 && candidateBase.contains(part, ignoreCase = true)
+            keyCache.getKeys()
+                .filter { it != varName }
+                .filter { candidate ->
+                    val candidateBase = candidate.removePrefix("--")
+                    base.split("-").any { part ->
+                        part.length > 2 && candidateBase.contains(part, ignoreCase = true)
+                    }
                 }
-            }
-            .take(8)
+                .take(8)
+        }
     }
 
     private fun getFileLocations(project: Project, varName: String): List<String> {
-        val settings = CssVarsAssistantSettings.getInstance()
-        val scope = ScopeUtil.effectiveCssIndexingScope(project, settings)
+        val cache = DocStatsCache.get(project)
+        return cache.files(varName) {
+            val settings = CssVarsAssistantSettings.getInstance()
+            val scope = ScopeUtil.effectiveCssIndexingScope(project, settings)
 
-        return FileBasedIndex.getInstance()
-            .getContainingFiles(CSS_VARIABLE_INDEXER_NAME, varName, scope)
-            .map { it.name }
-            .distinct()
-            .take(5)
+            FileBasedIndex.getInstance()
+                .getContainingFiles(CSS_VARIABLE_INDEXER_NAME, varName, scope)
+                .map { it.name }
+                .distinct()
+                .take(5)
+        }
     }
 }

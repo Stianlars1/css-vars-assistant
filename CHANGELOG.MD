@@ -4,6 +4,19 @@ All notable changes to this project will be documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/) and semantic-versioning.
 
 ---
+## [1.4.3] – 2025‑06‑13
+
+### Added
+* Usage stats, dependency list, related variables and file locations in documentation.
+
+### Changed
+* Completion and docs use last value per context to honor cascade.
+* Improved context labels for complex media queries.
+
+### Fixed
+* Minor arithmetic resolution bugs for preprocessor variables.
+
+---
 ## [1.4.2] – 2025‑06‑12
 
 ### Added

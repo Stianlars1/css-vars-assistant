@@ -1,6 +1,6 @@
 # CSS Variables Assistant  🔧🎨
 
-**Version:** 1.4.2<br/>
+**Version:** 1.4.3<br/>
 **Compatible IDEs:** WebStorm / IntelliJ Ultimate **2025.1+**<br/>
 **Author:** Stian Larsen<br/>
 **Links:** 
