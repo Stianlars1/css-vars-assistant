@@ -1,5 +1,3 @@
-// Fixed version of DebugImportResolutionAction.kt
-
 package cssvarsassistant.actions
 
 import com.intellij.notification.NotificationGroupManager
@@ -14,458 +12,278 @@ import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.progress.Task
 import com.intellij.openapi.project.guessProjectDir
 import com.intellij.openapi.ui.DialogWrapper
-import com.intellij.openapi.ui.Messages
+import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.ui.components.JBScrollPane
 import com.intellij.util.ui.JBUI
-import cssvarsassistant.index.ImportResolver
 import cssvarsassistant.settings.CssVarsAssistantSettings
-import java.awt.BorderLayout
 import java.awt.Dimension
 import java.awt.Font
 import javax.swing.*
 
+/**
+ * Context-menu action: shows a tree view of every @import that a CSS / SCSS /
+ * LESS / SASS file pulls in, up to the max depth set in plugin settings.
+ */
 class DebugImportResolutionAction : AnAction() {
-    private val logger = Logger.getInstance(DebugImportResolutionAction::class.java)
 
+    private val LOG = Logger.getInstance(DebugImportResolutionAction::class.java)
+    private val IMPORT_RE =
+        Regex("""@import\s+(?:"([^"]+)"|'([^']+)'|\burl\(\s*(?:"([^"]+)"|'([^']+)'|([^)]+))\s*\))""")
+
+    /* ---------------- Action availability ------------------------------- */
     override fun getActionUpdateThread(): ActionUpdateThread = ActionUpdateThread.BGT
 
     override fun update(e: AnActionEvent) {
-        val file = e.getData(CommonDataKeys.VIRTUAL_FILE)
-        val project = e.project
-
-        e.presentation.isEnabledAndVisible = project != null &&
-                file != null &&
-                isCssFile(file)
+        val f = e.getData(CommonDataKeys.VIRTUAL_FILE)
+        e.presentation.isEnabledAndVisible = e.project != null && f != null && isCssLike(f)
     }
 
+    /* ---------------- Main entry-point ---------------------------------- */
     override fun actionPerformed(e: AnActionEvent) {
         val project = e.project ?: return
         val file = e.getData(CommonDataKeys.VIRTUAL_FILE) ?: return
 
-        // Show immediate feedback notification
-        NotificationGroupManager.getInstance()
-            .getNotificationGroup("CSS Vars Assistant")
-            .createNotification(
-                "CSS IMPORT DEBUG STARTED",
-                "Starting CSS import resolution analysis for ${file.name}...",
-                NotificationType.INFORMATION
-            )
-            .notify(project)
+        val group = NotificationGroupManager.getInstance().getNotificationGroup("CSS Vars Assistant")
+        group.createNotification(
+            "CSS Import Debug started",
+            "Scanning import chain for <b>${file.name}</b>",
+            NotificationType.INFORMATION
+        ).notify(project)
 
-        logger.info("DEBUG ACTION TRIGGERED for file: ${file.path}")
+        ProgressManager.getInstance().run(object :
+            Task.Backgroundable(project, "Import-debug: ${file.name}", true) {
 
-        ProgressManager.getInstance().run(object : Task.Backgroundable(
-            project,
-            "CSS Import Debug: ${file.name}",
-            true  // Make it cancellable
-        ) {
             override fun run(indicator: ProgressIndicator) {
                 try {
                     indicator.isIndeterminate = false
-                    indicator.fraction = 0.1
-                    indicator.text = "Analyzing imports for ${file.name}..."
+                    indicator.text = "Parsing ${file.name}"
+                    indicator.fraction = 0.05
 
-                    val settings = CssVarsAssistantSettings.getInstance()
-                    val importChain = StringBuilder()
+                    val cfg = CssVarsAssistantSettings.getInstance()
+                    val out = StringBuilder()
+                    out.append("=== CSS Import Resolution Debug ===\n")
+                        .append("Root file : ${file.path}\n")
+                        .append("Max depth : ${cfg.maxImportDepth}\n\n")
 
-                    importChain.append("=== CSS Import Resolution Debug ===\n")
-                    importChain.append("File: ${file.path}\n")
-                    importChain.append("Extension: ${file.extension}\n")
-                    importChain.append("Max Import Depth: ${settings.maxImportDepth}\n")
-                    importChain.append("Indexing Scope: ${settings.indexingScope}\n")
-                    importChain.append("File Size: ${file.length} bytes\n\n")
+                    val stats = mutableMapOf<String, Int>()
+                    val visited = hashSetOf<String>()
+                    buildTree(file, project, cfg.maxImportDepth, 0, out, indicator, visited, stats)
 
-                    indicator.fraction = 0.3
-                    indicator.text = "Reading file content..."
 
-                    // Add file content preview
-                    try {
-                        val content = String(file.contentsToByteArray())
-                        val importMatches = Regex("""@import\s+(?:"([^"]+)"|'([^']+)'|\burl\([^)]+\))""")
-                            .findAll(content).toList()
-                        importChain.append("Found ${importMatches.size} @import statements in source file\n")
-                        importMatches.forEach { match ->
-                            importChain.append("  - ${match.value}\n")
-                        }
-                        importChain.append("\n")
-                    } catch (ex: Exception) {
-                        importChain.append("Error reading file content: ${ex.message}\n\n")
-                    }
-
-                    indicator.fraction = 0.5
-                    indicator.text = "Resolving import chain..."
-
-                    // FIXED: Build the tree structure properly
-                    debugImportChainFixed(file, project, settings.maxImportDepth, importChain, 0)
-
-                    indicator.fraction = 0.8
-                    indicator.text = "Generating report..."
-
-                    // Get the total resolved imports for summary
-                    val allImports = ImportResolver.resolveImports(file, project, settings.maxImportDepth)
-                    val totalImports = allImports.size
-
-                    // Add summary
-                    importChain.append("\n=== SUMMARY ===\n")
-                    importChain.append("Total files in import chain: ${totalImports + 1}\n")
-                    importChain.append("External imports resolved: $totalImports\n")
-                    importChain.append("Debug completed at: ${java.time.LocalDateTime.now()}\n")
-
-                    // Count variables in each file
-                    indicator.fraction = 0.9
-                    indicator.text = "Counting variables..."
-
-                    importChain.append("\n=== VARIABLE COUNT ANALYSIS ===\n")
-                    val mainFileVars = countVariablesInFile(file)
-                    importChain.append("Variables in main file (${file.name}): $mainFileVars\n")
-
-                    var totalVarsFromImports = 0
-                    allImports.forEach { importedFile ->
-                        val vars = countVariablesInFile(importedFile)
-                        totalVarsFromImports += vars
-                        importChain.append("Variables in ${importedFile.name}: $vars\n")
-                    }
-
-                    importChain.append("Total variables from imports: $totalVarsFromImports\n")
-                    importChain.append("Grand total variables: ${mainFileVars + totalVarsFromImports}\n")
-
-                    // Log to IDE log with clear separator
-                    logger.info("CSS IMPORT DEBUG RESULTS:\n" + "=".repeat(80) + "\n$importChain" + "=".repeat(80))
+                    /* ---- summary ------------------------------------------------------- */
+                    val grandTotal = stats.values.sum()
+                    out.append("\n=== SUMMARY ===\n")
+                        .append("Total unique files : ${visited.size}\n")
+                        .append("Total CSS variables: $grandTotal\n")
+                        .append("Debug finished     : ${java.time.LocalDateTime.now()}\n")
 
                     indicator.fraction = 1.0
-                    indicator.text = "Debug complete"
 
-                    // Show results in dedicated dialog instead of just logging
-                    SwingUtilities.invokeLater {
-                        showDebugResultsDialog(project, file.name, importChain.toString(), totalImports)
-                    }
-
-                } catch (e: Exception) {
-                    logger.error("CRITICAL ERROR in CSS Import Debug Action", e)
-                    NotificationGroupManager.getInstance()
-                        .getNotificationGroup("CSS Vars Assistant")
-                        .createNotification(
-                            "CSS IMPORT DEBUG FAILED",
-                            "Error: ${e.message ?: "Unknown error"}",
-                            NotificationType.ERROR
-                        )
+                    SwingUtilities.invokeLater { showDialog(project, file.name, out.toString()) }
+                    group.createNotification("CSS Import Debug finished", NotificationType.INFORMATION)
                         .notify(project)
 
-                    // Also show error in dialog
-                    SwingUtilities.invokeLater {
-                        Messages.showErrorDialog(
-                            project,
-                            "CSS Import Debug failed with error:\n\n${e.message ?: "Unknown error"}\n\nCheck IDE log for full stack trace.",
-                            "CSS IMPORT DEBUG ERROR"
-                        )
-                    }
-                }
-            }
+                    LOG.info("Debug-import done for ${file.path}\n$out")
 
-            override fun onThrowable(error: Throwable) {
-                logger.error("Background task failed", error)
-                NotificationGroupManager.getInstance()
-                    .getNotificationGroup("CSS Vars Assistant")
-                    .createNotification(
-                        "DEBUG TASK FAILED",
-                        "Background task error: ${error.message}",
+                } catch (ex: Exception) {
+                    LOG.error(ex)
+                    group.createNotification(
+                        "Import debug failed",
+                        ex.message ?: "Unknown error",
                         NotificationType.ERROR
                     )
-                    .notify(project)
+                        .notify(project)
+                }
             }
         })
     }
 
-    private fun showDebugResultsDialog(
-        project: com.intellij.openapi.project.Project,
-        fileName: String,
-        debugResults: String,
-        totalImports: Int
-    ) {
-        // Create a custom dialog to show debug results
-        val dialog = object : DialogWrapper(project) {
-            init {
-                title = "CSS Import Debug Results - $fileName"
-                init()
-            }
-
-            override fun createCenterPanel(): JComponent {
-                val panel = JPanel(BorderLayout())
-                val fileWord = if (totalImports == 1) "file" else "files"
-
-                // Summary at top
-                val summaryLabel = JLabel(
-                    "<html><b>Analysis Complete:</b> Found $totalImports imported $fileWord<br/>" +
-                            "<small>Full import chain analysis below:</small></html>"
-                )
-                summaryLabel.border = JBUI.Borders.empty(10)
-                panel.add(summaryLabel, BorderLayout.NORTH)
-
-                // Debug results in scrollable text area
-                val textArea = JTextArea(debugResults)
-                textArea.isEditable = false
-                textArea.font = Font(Font.MONOSPACED, Font.PLAIN, 12)
-                textArea.background = UIManager.getColor("Panel.background")
-
-                val scrollPane = JBScrollPane(textArea).apply {
-                    preferredSize = Dimension(800, 600)
-                    verticalScrollBarPolicy = JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED
-                    horizontalScrollBarPolicy = JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED
-                }
-                panel.add(scrollPane, BorderLayout.CENTER)
-
-                // Bottom tip label
-                val tipLabel = JLabel(
-                    "<html><small>💡 <b>Tip:</b> This analysis is also logged to IDE Log " +
-                            "(View → Tool Windows → Log) for future reference.</small></html>"
-                )
-                tipLabel.border = JBUI.Borders.empty(10)
-                panel.add(tipLabel, BorderLayout.SOUTH)
-
-                return panel
-            }
-
-            override fun createActions(): Array<Action> {
-                return arrayOf(okAction)
-            }
-        }
-        dialog.isResizable = true
-        dialog.show()
-
-        // Show success notification
-        NotificationGroupManager.getInstance()
-            .getNotificationGroup("CSS Vars Assistant")
-            .createNotification(
-                "CSS IMPORT DEBUG COMPLETE",
-                "Analysis finished for $fileName. Found $totalImports imported files. Results window opened.",
-                NotificationType.INFORMATION
-            )
-            .notify(project)
-    }
-
-    /**
-     * FIXED: Build the import tree by parsing @import statements directly in each file
-     * rather than relying on ImportResolver's visited set tracking
-     */
-    private fun debugImportChainFixed(
+    /* ------------------------------------------------------------------ */
+    /*  Recursive tree builder                                            */
+    /* ------------------------------------------------------------------ */
+    private fun buildTree(
         file: VirtualFile,
         project: com.intellij.openapi.project.Project,
         maxDepth: Int,
-        output: StringBuilder,
-        depth: Int
+        depth: Int,
+        out: StringBuilder,
+        indicator: ProgressIndicator,
+        visited: MutableSet<String>,
+        stats: MutableMap<String, Int>
     ) {
+        indicator.checkCanceled()
         val indent = "  ".repeat(depth)
 
+        if (!visited.add(file.path)) {
+            out.append("$indent↺ ${file.name} (already visited)\n")
+            return
+        }
         if (depth >= maxDepth) {
-            output.append("${indent}[MAX DEPTH REACHED]\n")
+            out.append("$indent[depth-limit reached]\n")
             return
         }
 
-        output.append("${indent}📄 ${file.name} (${file.path})\n")
+        /* ------------- cache variable-count while we're here ------------- */
+        stats.computeIfAbsent(file.path) { countVariablesInFile(file) }
 
-        try {
-            // Parse @import statements directly from this file
-            val content = String(file.contentsToByteArray())
-            val importPaths = extractImportPaths(content)
+        out.append("$indent📄 ${file.name}\n")
 
-            if (importPaths.isEmpty()) {
-                output.append("${indent}  └─ No @import statements found in ${file.name} \n")
+        val content = runCatching { String(file.contentsToByteArray()) }.getOrNull() ?: return
+        val imports = IMPORT_RE.findAll(content)
+            .mapNotNull { it.groupValues.drop(1).firstOrNull { s -> s.isNotBlank() } }
+            .toList()
 
-                // But let's also count variables to show why this file is valuable
-                val varCount = countVariablesInFile(file)
-                if (varCount > 0) {
-                    output.append("${indent}  └─ Contains $varCount CSS variables\n")
-                }
-            } else {
-                output.append("${indent}  └─ Found ${importPaths.size} @import statements:\n")
-
-                importPaths.forEachIndexed { index, importPath ->
-                    val isLast = index == importPaths.size - 1
-                    val connector = if (isLast) "└─" else "├─"
-
-                    // Try to resolve this specific import
-                    val resolvedFile = resolveImportPath(file, importPath, project)
-
-                    if (resolvedFile != null && resolvedFile.exists()) {
-                        output.append("${indent}    $connector ")
-                        debugImportChainFixed(resolvedFile, project, maxDepth, output, depth + 1)
-                    } else {
-                        output.append("${indent}    $connector ❌ Failed to resolve: $importPath\n")
-                    }
-                }
+        imports.forEachIndexed { i, imp ->
+            val connector = if (i == imports.lastIndex) "└─" else "├─"
+            val resolved = resolveImportPath(file, imp, project)
+            out.append("$indent  $connector $imp → ${resolved?.path ?: "❌"}\n")
+            resolved?.let {
+                buildTree(it, project, maxDepth, depth + 1, out, indicator, visited, stats)
             }
-        } catch (e: Exception) {
-            output.append("${indent}  └─ Error analyzing file: ${e.message}\n")
         }
     }
 
-    /**
-     * Extract @import paths from CSS content (copied from ImportResolver logic)
-     */
-    private fun extractImportPaths(content: String): List<String> {
-        val imports = mutableListOf<String>()
-        val IMPORT_PATTERN =
-            Regex("""@import\s+(?:"([^"]+)"|'([^']+)'|\burl\(\s*(?:"([^"]+)"|'([^']+)'|([^)]+))\s*\))""")
-
-        IMPORT_PATTERN.findAll(content).forEach { match ->
-            val importPath = match.groupValues.drop(1).firstOrNull { it.isNotBlank() }
-            if (importPath != null) {
-                imports.add(importPath.trim())
-            }
-        }
-
-        return imports
-    }
-
-    /**
-     * Resolve import path to VirtualFile (simplified version of ImportResolver logic)
-     */
+    /* ------------------------------------------------------------------ */
+    /*  Path resolution helpers (same rules as ImportResolver)            */
+    /* ------------------------------------------------------------------ */
     private fun resolveImportPath(
         currentFile: VirtualFile,
         importPath: String,
         project: com.intellij.openapi.project.Project
-    ): VirtualFile? {
-        return try {
-            when {
-                importPath.startsWith("./") || importPath.startsWith("../") -> {
-                    resolveRelativePath(currentFile, importPath)
-                }
+    ): VirtualFile? = try {
+        when {
+            importPath.startsWith("./") || importPath.startsWith("../") ->
+                resolveRelativePath(currentFile, importPath)
 
-                importPath.startsWith("/") -> {
-                    project.guessProjectDir()?.findFileByRelativePath(importPath.removePrefix("/"))
-                }
+            importPath.startsWith("/") ->
+                project.guessProjectDir()?.findFileByRelativePath(importPath.removePrefix("/"))
 
-                importPath.startsWith("@") -> {
-                    resolveNodeModulesPath(currentFile, importPath, project)
-                }
+            importPath.startsWith("@") ->
+                resolveNodeModulesPath(currentFile, importPath, project)
 
-                else -> {
-                    val localFile = resolveRelativePath(currentFile, importPath)
-                    if (localFile != null && localFile.exists()) {
-                        localFile
-                    } else {
-                        resolveNodeModulesPath(currentFile, importPath, project)
-                    }
-                }
+            else -> {   // bare import – try same dir first, then node_modules
+                resolveRelativePath(currentFile, importPath)
+                    ?: resolveNodeModulesPath(currentFile, importPath, project)
             }
-        } catch (e: Exception) {
-            null
         }
+    } catch (_: Exception) {
+        null
     }
 
-    private fun resolveRelativePath(currentFile: VirtualFile, relativePath: String): VirtualFile? {
-        val currentDir = currentFile.parent ?: return null
-
-        if (relativePath.contains('.')) {
-            return com.intellij.openapi.vfs.VfsUtil.findRelativeFile(
-                currentDir,
-                *relativePath.split('/').toTypedArray()
-            )
+    /* --- relative ------------------------------------------------------ */
+    private fun resolveRelativePath(currentFile: VirtualFile, rel: String): VirtualFile? {
+        val dir = currentFile.parent ?: return null
+        if (rel.contains('.')) {
+            return VfsUtil.findRelativeFile(dir, *rel.split('/').toTypedArray())
         }
-
-        val currentExtension = currentFile.extension?.lowercase()
-        val prioritizedExtensions = when (currentExtension) {
+        val pref = when (currentFile.extension?.lowercase()) {
             "scss" -> listOf("scss", "css", "sass", "less")
             "sass" -> listOf("sass", "scss", "css", "less")
             "less" -> listOf("less", "css", "scss", "sass")
             else -> listOf("css", "scss", "sass", "less")
         }
-
-        for (ext in prioritizedExtensions) {
-            val pathWithExtension = "$relativePath.$ext"
-            val resolved = com.intellij.openapi.vfs.VfsUtil.findRelativeFile(
-                currentDir,
-                *pathWithExtension.split('/').toTypedArray()
-            )
-            if (resolved != null && resolved.exists()) {
-                return resolved
-            }
+        for (ext in pref) {
+            val vf = VfsUtil.findRelativeFile(dir, *("$rel.$ext").split('/').toTypedArray())
+            if (vf != null && vf.exists()) return vf
         }
-
         return null
     }
 
+    /* --- node_modules -------------------------------------------------- */
     private fun resolveNodeModulesPath(
         currentFile: VirtualFile,
-        packagePath: String,
+        pkgPath: String,
         project: com.intellij.openapi.project.Project
     ): VirtualFile? {
-        var searchDir = currentFile.parent
-
-        while (searchDir != null) {
-            val nodeModules = searchDir.findChild("node_modules")
-            if (nodeModules != null && nodeModules.isDirectory) {
-                val resolvedFile = resolveInNodeModules(nodeModules, packagePath, currentFile)
-                if (resolvedFile != null) return resolvedFile
+        var search = currentFile.parent
+        while (search != null) {
+            val nm = search.findChild("node_modules")
+            if (nm != null) {
+                resolveInNodeModules(nm, pkgPath, currentFile)?.let { return it }
             }
-            searchDir = searchDir.parent
+            search = search.parent
         }
-
-        val projectNodeModules = project.guessProjectDir()?.findChild("node_modules")
-        if (projectNodeModules != null && projectNodeModules.isDirectory) {
-            return resolveInNodeModules(projectNodeModules, packagePath, currentFile)
-        }
-
+        project.guessProjectDir()
+            ?.findChild("node_modules")
+            ?.let { resolveInNodeModules(it, pkgPath, currentFile) }
+            ?.let { return it }
         return null
     }
 
     private fun resolveInNodeModules(
         nodeModules: VirtualFile,
-        packagePath: String,
-        importingFile: VirtualFile
+        pkgPath: String,
+        importing: VirtualFile
     ): VirtualFile? {
-        if (packagePath.contains('.')) {
-            val pathParts = packagePath.split('/')
-            var current = nodeModules
-
-            for (part in pathParts) {
-                current = current.findChild(part) ?: return null
+        if (pkgPath.contains('.')) {
+            var cur = nodeModules
+            for (part in pkgPath.split('/')) {
+                cur = cur.findChild(part) ?: return null
             }
-
-            return if (current.isDirectory) null else current
+            return if (!cur.isDirectory) cur else null
         }
 
-        val currentExtension = importingFile.extension?.lowercase()
-        val prioritizedExtensions = when (currentExtension) {
+        val pref = when (importing.extension?.lowercase()) {
             "scss" -> listOf("scss", "css", "sass", "less")
             "sass" -> listOf("sass", "scss", "css", "less")
             "less" -> listOf("less", "css", "scss", "sass")
             else -> listOf("css", "scss", "sass", "less")
         }
-
-        for (ext in prioritizedExtensions) {
-            val pathWithExtension = "$packagePath.$ext"
-            val pathParts = pathWithExtension.split('/')
-            var current = nodeModules
-
-            for (part in pathParts) {
-                current = current.findChild(part) ?: break
+        for (ext in pref) {
+            val parts = "$pkgPath.$ext".split('/')
+            var cur = nodeModules
+            for (p in parts) {
+                cur = cur.findChild(p) ?: break
             }
-
-            if (current != nodeModules && !current.isDirectory && current.exists()) {
-                return current
-            }
+            if (cur != nodeModules && !cur.isDirectory && cur.exists()) return cur
         }
-
         return null
     }
+
+    /* ------------------------------------------------------------------ */
+    /*  UI helpers                                                        */
+    /* ------------------------------------------------------------------ */
+    private fun showDialog(project: com.intellij.openapi.project.Project, name: String, text: String) {
+        object : DialogWrapper(project) {
+            init {
+                title = "CSS Import Debug – $name"; init()
+            }
+
+            override fun createCenterPanel(): JComponent {
+                val ta = JTextArea(text).apply {
+                    isEditable = false
+                    font = Font(Font.MONOSPACED, Font.PLAIN, 12)
+                    background = UIManager.getColor("Panel.background")
+                }
+                return JBScrollPane(ta).apply {
+                    preferredSize = Dimension(900, 600)
+                    border = JBUI.Borders.empty(8)
+                }
+            }
+
+            override fun createActions(): Array<Action> = arrayOf(okAction)
+        }.show()
+    }
+
+    private fun isCssLike(f: VirtualFile) =
+        f.extension?.lowercase() in setOf("css", "scss", "sass", "less")
+
 
     /**
      * Count CSS variables in a file
      */
-    private fun countVariablesInFile(file: VirtualFile): Int {
-        return try {
-            val content = String(file.contentsToByteArray())
-            val varPattern = Regex("""(--[A-Za-z0-9\-_]+)\s*:\s*([^;]+);""")
-            varPattern.findAll(content).count()
-        } catch (e: Exception) {
-            0
-        }
+    private fun countVariablesInFile(file: VirtualFile): Int = try {
+        val content = String(file.contentsToByteArray())
+        val patterns = listOf(
+            Regex("""--[\w-]+\s*:\s*[^;]+;"""),  // css custom prop
+            Regex("""@[\w-]+\s*:\s*[^;]+;"""),   // less
+            Regex("""\$[\w-]+\s*:\s*[^;]+;""")   // scss / sass
+        )
+        patterns.sumOf { it.findAll(content).count() }
+    } catch (_: Exception) {
+        0
     }
 
-    private fun isCssFile(file: VirtualFile): Boolean {
-        val extension = file.extension?.lowercase()
-        return extension in setOf("css", "scss", "sass", "less")
-    }
+
 }

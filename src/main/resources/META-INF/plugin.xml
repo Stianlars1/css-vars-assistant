@@ -9,6 +9,7 @@
     <extensions defaultExtensionNs="com.intellij">
         <notificationGroup id="CSS Vars Assistant" displayType="BALLOON" hideFromSettings="true"/>
 
+
         <!-- your indexer & completion -->
         <fileBasedIndex implementation="cssvarsassistant.index.CssVariableIndex"/>
         <fileBasedIndex implementation="cssvarsassistant.index.PreprocessorVariableIndex"/>
@@ -38,19 +39,24 @@
                                 implementationClass="cssvarsassistant.completion.CssVariableCompletion"
                                 order="first"/>
 
+
+        <!-- New API (2023.1+) -->
+        <platform.backend.documentation.psiTargetProvider
+                implementation="cssvarsassistant.documentation.v2.CssVariablePsiDocumentationTargetProvider"/>
+
         <!-- override built‑in CSS/SCSS docs -->
-        <lang.documentationProvider
-                language="CSS"
-                implementationClass="cssvarsassistant.documentation.CssVariableDocumentation"
-                order="first"/>
-        <lang.documentationProvider
-                language="Sass"
-                implementationClass="cssvarsassistant.documentation.CssVariableDocumentation"
-                order="first"/>
-        <lang.documentationProvider
-                language="LESS"
-                implementationClass="cssvarsassistant.documentation.CssVariableDocumentation"
-                order="first"/>
+        <!-- <lang.documentationProvider
+                 language="CSS"
+                 implementationClass="cssvarsassistant.documentation.v1.CssVariableDocumentation"
+                 order="first"/>
+         <lang.documentationProvider
+                 language="Sass"
+                 implementationClass="cssvarsassistant.documentation.v1.CssVariableDocumentation"
+                 order="first"/>
+         <lang.documentationProvider
+                 language="LESS"
+                 implementationClass="cssvarsassistant.documentation.v1.CssVariableDocumentation"
+                 order="first"/>-->
 
         <applicationConfigurable
                 id="cssvarsassistant.settings"

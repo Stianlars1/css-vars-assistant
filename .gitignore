@@ -41,7 +41,6 @@ bin/
 ### Mac OS ###
 .DS_Store
 
-
 # Gradle
 .gradle/
 # IDEA project files
@@ -55,3 +54,7 @@ gradle.properties
 # IntelliJ sandbox & distr
 sandbox/
 build/distributions/
+#.intellijPlatform and Kotlin build sessions
+.intellijPlatform/
+.kotlin/
+*.salive

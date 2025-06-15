@@ -25,7 +25,11 @@ class CssVarsAssistantSettings : PersistentStateComponent<CssVarsAssistantSettin
     data class State(
         var showContextValues: Boolean = true,
         var allowIdeCompletions: Boolean = true,
-        var indexingScope: IndexingScope = IndexingScope.GLOBAL,
+        var showUsageBlock: Boolean = true,
+        var showDependenciesBlock: Boolean = true,
+        var showRelatedBlock: Boolean = true,
+        var showFilesBlock: Boolean = true,
+        var indexingScope: IndexingScope = IndexingScope.PROJECT_WITH_IMPORTS,
         var maxImportDepth: Int = 20,
         var sortingOrder: SortingOrder = SortingOrder.ASC
     )
@@ -48,6 +52,30 @@ class CssVarsAssistantSettings : PersistentStateComponent<CssVarsAssistantSettin
         get() = state.allowIdeCompletions
         set(value) {
             state.allowIdeCompletions = value
+        }
+
+    var showUsageBlock: Boolean
+        get() = state.showUsageBlock
+        set(value) {
+            state.showUsageBlock = value
+        }
+
+    var showDependenciesBlock: Boolean
+        get() = state.showDependenciesBlock
+        set(value) {
+            state.showDependenciesBlock = value
+        }
+
+    var showRelatedBlock: Boolean
+        get() = state.showRelatedBlock
+        set(value) {
+            state.showRelatedBlock = value
+        }
+
+    var showFilesBlock: Boolean
+        get() = state.showFilesBlock
+        set(value) {
+            state.showFilesBlock = value
         }
 
     var indexingScope: IndexingScope
