@@ -1,9 +1,11 @@
 // src/main/kotlin/cssvarsassistant/documentation/v2/CssVariablePsiDocumentationTargetProvider.kt
 package cssvarsassistant.documentation.v2
 
+
 import com.intellij.platform.backend.documentation.DocumentationTarget
 import com.intellij.platform.backend.documentation.PsiDocumentationTargetProvider
 import com.intellij.psi.PsiElement
+import cssvarsassistant.documentation.extractCssVariableName
 
 class CssVariablePsiDocumentationTargetProvider : PsiDocumentationTargetProvider {
 
@@ -12,10 +14,5 @@ class CssVariablePsiDocumentationTargetProvider : PsiDocumentationTargetProvider
         return CssVariableDocumentationTarget(element, varName)
     }
 
-    private fun extractCssVariableName(element: PsiElement): String? =
-        element.text.trim().takeIf { it.startsWith("--") }
-            ?: element.parent?.text?.let {
-                Regex("""var\(\s*(--[\w-]+)\s*\)""").find(it)?.groupValues?.get(1)
-            }
 }
 

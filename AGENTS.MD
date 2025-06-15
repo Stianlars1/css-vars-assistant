@@ -10,9 +10,8 @@ Gradle Plugin 2.x standards.
 
 ## Context Sources
 
-1. **gpt_conversation.md:** Use as ground truth for feature intent, requirements, and key TODOs.
-2. **Commit History & Branch Diff:** Build deep context from code changes between the current feature branch and main.
-3. **Project Goals:** Every enhancement must improve UX for frontend developers (completion, hover-docs, context
+1. **Commit History & Branch Diff:** Build deep context from code changes between the current feature branch and main.
+2. **Project Goals:** Every enhancement must improve UX for frontend developers (completion, hover-docs, context
    awareness).
 
 ---
@@ -26,7 +25,6 @@ Gradle Plugin 2.x standards.
         - Which APIs, extension points, or UX flows are impacted
 
 2. **Integrate Digest:**
-    - **Start every review and improvement round by integrating the current gpt_conversation.md digest.**
     - Address all TODOs and checklist items explicitly, unless marked done.
 
 3. **Regressions & Bugs:**

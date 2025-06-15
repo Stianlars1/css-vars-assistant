@@ -3,8 +3,8 @@ package cssvarsassistant.documentation.v2
 
 import com.intellij.platform.backend.documentation.DocumentationTarget
 import com.intellij.platform.backend.documentation.DocumentationTargetProvider
-import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
+import cssvarsassistant.documentation.extractCssVariableName
 
 class CssVariableDocumentationTargetProvider : DocumentationTargetProvider {
 
@@ -15,9 +15,5 @@ class CssVariableDocumentationTargetProvider : DocumentationTargetProvider {
         return listOf(CssVariableDocumentationTarget(element, varName))
     }
 
-    private fun extractCssVariableName(element: PsiElement): String? =
-        element.text.trim().takeIf { it.startsWith("--") }
-            ?: element.parent?.text?.let {
-                Regex("""var\(\s*(--[\w-]+)\s*\)""").find(it)?.groupValues?.get(1)
-            }
+
 }

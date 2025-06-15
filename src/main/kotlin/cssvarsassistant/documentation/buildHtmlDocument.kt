@@ -1,10 +1,8 @@
-package cssvarsassistant.documentation.v2
+package cssvarsassistant.documentation
 
 import com.intellij.lang.documentation.DocumentationMarkup
 import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.util.text.StringUtil
-import cssvarsassistant.documentation.ColorParser
-import cssvarsassistant.documentation.ResolutionInfo
 import cssvarsassistant.model.CssVarDoc
 import cssvarsassistant.util.ValueUtil
 import kotlin.math.pow
@@ -185,8 +183,6 @@ fun contextLabel(ctx: String, isColor: Boolean): String {
         }
     }
 }
-
-// v2
 
 
 fun colorSwatchHtml(css: String): String =

@@ -174,9 +174,6 @@ class CssVariableCompletion : CompletionContributor() {
                             }.let { if (e.derived) "$it ↪" else it }
 
 
-
-
-
                             val element = LookupElementBuilder
                                 .create(e.rawName)
                                 .withPresentableText(e.display)

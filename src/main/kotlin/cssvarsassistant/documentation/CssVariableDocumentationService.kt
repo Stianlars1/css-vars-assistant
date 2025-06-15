@@ -4,21 +4,20 @@ import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.project.DumbService
-import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiElement
 import com.intellij.util.indexing.FileBasedIndex
-import cssvarsassistant.completion.CssVarCompletionCache
 import cssvarsassistant.completion.CssVariableCompletion
-import cssvarsassistant.documentation.ResolutionInfo
+import cssvarsassistant.documentation.buildHtmlDocument
+import cssvarsassistant.documentation.resolveVarValue
 import cssvarsassistant.index.CSS_VARIABLE_INDEXER_NAME
 import cssvarsassistant.index.DELIMITER
 import cssvarsassistant.model.DocParser
 import cssvarsassistant.settings.CssVarsAssistantSettings
-import cssvarsassistant.util.PreprocessorUtil
 import cssvarsassistant.util.RankUtil.rank
 import cssvarsassistant.util.ScopeUtil
 import cssvarsassistant.util.ValueUtil
 import kotlin.math.roundToInt
+
 
 val ENTRY_SEP = "|||"
 
@@ -103,74 +102,4 @@ object CssVariableDocumentationService {
         }
     }
 
-    private fun resolveVarValue(
-        project: Project,
-        raw: String,
-        visited: Set<String> = emptySet(),
-        depth: Int = 0,
-        steps: List<String> = emptyList()
-    ): ResolutionInfo {
-        val settings = CssVarsAssistantSettings.getInstance()
-        if (depth > settings.maxImportDepth) return ResolutionInfo(raw, raw, steps)
-
-        try {
-            ProgressManager.checkCanceled()
-
-            Regex("""var\(\s*(--[\w-]+)\s*\)""").find(raw)?.let { m ->
-                val ref = m.groupValues[1]
-                if (ref !in visited) {
-                    val newSteps = steps + "var($ref)"
-                    val cssScope = ScopeUtil.effectiveCssIndexingScope(project, settings)
-                    val entries = FileBasedIndex.getInstance().getValues(CSS_VARIABLE_INDEXER_NAME, ref, cssScope)
-                        .flatMap { it.split(ENTRY_SEP) }.filter { it.isNotBlank() }
-
-                    val defVal = entries.mapNotNull {
-                        val p = it.split(DELIMITER, limit = 3)
-                        if (p.size >= 2) p[0] to p[1] else null
-                    }.let { list ->
-                        list.find { it.first == "default" }?.second ?: list.firstOrNull()?.second
-                    }
-
-                    if (defVal != null) return resolveVarValue(project, defVal, visited + ref, depth + 1, newSteps)
-                }
-                return ResolutionInfo(raw, raw, steps)
-            }
-
-            val preprocessorMatch = Regex("""^[\s]*[@$]([\w-]+)$""").find(raw.trim())
-            if (preprocessorMatch != null) {
-                val varName = preprocessorMatch.groupValues[1]
-                val prefix = if (raw.contains("@")) "@" else "$"
-                val currentScope = ScopeUtil.currentPreprocessorScope(project)
-
-                CssVarCompletionCache.get(project, varName, currentScope)?.let {
-                    return ResolutionInfo(raw, it, steps + "$prefix$varName")
-                }
-
-                val resolved = findPreprocessorVariableValue(project, varName)
-                if (resolved != null && resolved != raw) {
-                    CssVarCompletionCache.put(project, varName, currentScope, resolved)
-                    return ResolutionInfo(raw, resolved, steps + "$prefix$varName")
-                }
-            }
-
-            return ResolutionInfo(raw, raw, steps)
-        } catch (e: ProcessCanceledException) {
-            throw e
-        } catch (e: Exception) {
-            logger.warn("Failed to resolve variable in documentation: $raw", e)
-            return ResolutionInfo(raw, raw, steps)
-        }
-    }
-
-    private fun findPreprocessorVariableValue(project: Project, varName: String): String? {
-        return try {
-            val freshScope = ScopeUtil.currentPreprocessorScope(project)
-            PreprocessorUtil.resolveVariable(project, varName, freshScope)
-        } catch (e: ProcessCanceledException) {
-            throw e
-        } catch (e: Exception) {
-            logger.warn("Failed to find preprocessor variable in doc-menu: $varName", e)
-            null
-        }
-    }
 }
