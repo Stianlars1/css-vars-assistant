@@ -8,6 +8,7 @@ import cssvarsassistant.model.CssVarDoc
 import cssvarsassistant.settings.CssVarsAssistantSettings
 import cssvarsassistant.util.ARROW_UP_RIGHT
 import cssvarsassistant.util.ValueUtil
+import java.net.URLEncoder
 import kotlin.math.pow
 import kotlin.math.roundToInt
 
@@ -95,7 +96,8 @@ fun buildHtmlDocument(
 
         val isWinner = displayIndex == 0 && winnerIndex >= 0
         val isOverridden = !isWinner && ctx == "default" && displayIndex > 0
-
+        println("\n\nctx $ctx")
+        println("\n\nresInfo $resInfo")
         val rowStyleExtra = if (isWinner) "font-weight:bold;" else ""
         val rawValue = resInfo.resolved
         val colorObj = ColorParser.parseCssColor(rawValue)
@@ -135,21 +137,13 @@ fun buildHtmlDocument(
 
             // Add resolution indicator
             if (resInfo.steps.isNotEmpty()) {
-                val encodedSteps = resInfo.steps.joinToString(",") {
-                    StringUtil.escapeXmlEntities(it)
-                }
-                sb.append(
-                    """&nbsp;<a href="#" onclick="window.showResolutionChain('${encodedSteps.replace("'", "\\'")}'); return false;" style="color: #4A9EFF; text-decoration: none; font-size: 9px;">$ARROW_UP_RIGHT</a>"""
-                )
+                val encoded = resInfo.steps.joinToString("|") { URLEncoder.encode(it, Charsets.UTF_8) }
 
-// Add at start of HTML:
                 sb.append(
-                    """<script>
-window.showResolutionChain = function(steps) {
-  // This will be handled by IntelliJ's JavaScript bridge
-  console.log('Resolution:', steps);
-};
-</script>"""
+                    """&nbsp;
+           <div title="$encoded"
+              style="color:#4A9EFF;text-decoration:none;font-size:9px;"
+           >$ARROW_UP_RIGHT</div>"""
                 )
             }
             sb.append("</nobr></td>")

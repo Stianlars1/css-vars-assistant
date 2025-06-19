@@ -50,9 +50,9 @@
                 displayName="CSS Variables Assistant"
                 parentId="tools"/>
 
+        <documentationLinkHandler implementation="cssvarsassistant.documentation.CssVarResolutionLinkHandler"/>
 
-        <documentationLinkHandler
-                implementation="cssvarsassistant.documentation.tooltip.CssVarResolutionLinkHandler"/>
+
     </extensions>
 
     <applicationListeners>
@@ -70,8 +70,5 @@
             <add-to-group group-id="EditorPopupMenu" anchor="last"/>
         </action>
 
-        <action id="cssvarsassistant.ShowResolutionChain"
-                class="cssvarsassistant.actions.ShowResolutionChainAction"
-                text="Show Resolution Chain"/>
     </actions>
 </idea-plugin>

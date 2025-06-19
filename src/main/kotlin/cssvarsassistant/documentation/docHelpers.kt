@@ -106,6 +106,54 @@ fun extractCssVariableName(element: PsiElement): String? {
         return elementText.trim()
     }
 
+    fun resolveVarValue(
+        project: Project,
+        raw: String,
+        visited: Set<String> = emptySet(),
+        depth: Int = 0,
+        steps: List<String> = emptyList()
+    ): ResolutionInfo {
+        val settings = CssVarsAssistantSettings.getInstance()
+        if (depth > settings.maxImportDepth) return ResolutionInfo(raw, raw, steps)
+
+        try {
+            ProgressManager.checkCanceled()
+
+
+            Regex("""var\(\s*(--[\w-]+)\s*\)""").find(raw)?.let { m ->
+                val ref = m.groupValues[1]
+                if (ref !in visited) {
+                    val newSteps = steps + "var($ref)"
+                    val cssScope = ScopeUtil.effectiveCssIndexingScope(project, settings)
+                    val entries = FileBasedIndex.getInstance()
+                        .getValues(CSS_VARIABLE_INDEXER_NAME, ref, cssScope)
+                        .flatMap { it.split(ENTRY_SEP) }
+                        .filter { it.isNotBlank() }
+
+                    val defVal = entries.mapNotNull {
+                        val p = it.split(DELIMITER, limit = 3)
+                        if (p.size >= 2) p[0] to p[1] else null
+                    }.let { list ->
+                        list.find { it.first == "default" }?.second ?: list.firstOrNull()?.second
+                    }
+
+                    if (defVal != null) {
+                        val childResolution = resolveVarValue(project, defVal, visited + ref, depth + 1, newSteps)
+                        return ResolutionInfo(raw, childResolution.resolved, childResolution.steps)
+                    }
+                }
+                return ResolutionInfo(raw, raw, steps)
+            }
+
+            // ... rest unchanged
+        } catch (e: ProcessCanceledException) {
+            throw e
+        } catch (e: Exception) {
+            LOG.warn("Error resolving variable value", e)
+            return ResolutionInfo(raw, raw, steps)
+        }
+    }
+
     // Check parent element safely
     val parent = element.parent
     if (parent?.isValid == true) {

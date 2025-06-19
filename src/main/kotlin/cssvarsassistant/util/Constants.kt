@@ -1,4 +1,7 @@
 package cssvarsassistant.util
 
+import com.intellij.codeInsight.documentation.DocumentationManagerProtocol
+
 const val ARROW_UP_RIGHT = "↗"
-const val CSS_VAR_RESOLUTION_LINK = "css-var-resolution://"
+val CSS_VAR_BALLOON_LINK_PREFIX =  "css-var-resolve?"
+
