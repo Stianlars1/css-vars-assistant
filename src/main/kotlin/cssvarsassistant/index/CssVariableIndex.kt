@@ -157,22 +157,26 @@ class CssVariableIndex : FileBasedIndexExtension<String, String>() {
 
             // Comment Extraction
             if (!inBlockComment && (line.startsWith("/*") || line.startsWith("/**"))) {
-                inBlockComment = true
-                blockComment.clear()
                 if (line.contains("*/")) {
-                    blockComment.append(
-                        line
-                            .removePrefix("/**").removePrefix("/*")
-                            .removeSuffix("*/").trim()
-                    )
-                    lastComment = blockComment.toString().trim()
-                    inBlockComment = false
-                    continue
+                    // Single-line comment: extract it and remove from line, then continue
+                    // processing
+                    val commentEnd = line.indexOf("*/") + 2
+                    val comment =
+                            line.substring(0, commentEnd)
+                                    .removePrefix("/**")
+                                    .removePrefix("/*")
+                                    .removeSuffix("*/")
+                                    .trim()
+                    lastComment = comment
+                    line =
+                            line.substring(commentEnd)
+                                    .trim() // Remove comment, continue with rest of line
+                    // Don't continue - process the rest of the line
                 } else {
-                    blockComment.append(
-                        line
-                            .removePrefix("/**").removePrefix("/*").trim()
-                    )
+                    // Multi-line comment start
+                    inBlockComment = true
+                    blockComment.clear()
+                    blockComment.append(line.removePrefix("/**").removePrefix("/*").trim())
                     continue
                 }
             }
