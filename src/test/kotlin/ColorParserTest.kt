@@ -108,4 +108,15 @@ class ColorParserTest {
     @Test fun `hwb works`() {
         assertEquals("#FF0000", ColorParser.toHexString("hwb(0 0% 0%)"))
     }
+
+    @Test fun `named colors cover common css palette values`() {
+        assertEquals("#663399", ColorParser.toHexString("rebeccapurple"))
+        assertEquals("#F0F8FF", ColorParser.toHexString("aliceblue"))
+        assertEquals("#1E90FF", ColorParser.toHexString("dodgerblue"))
+    }
+
+    @Test fun `hsl hue units are supported`() {
+        assertEquals("#FF0000", ColorParser.toHexString("hsl(1turn 100% 50%)"))
+        assertEquals("#00FF00", ColorParser.toHexString("hsl(133.333grad 100% 50%)"))
+    }
 }

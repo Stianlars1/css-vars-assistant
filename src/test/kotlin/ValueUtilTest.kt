@@ -46,6 +46,16 @@ class ValueUtilTest {
     }
 
     @Test
+    fun `detects modern viewport and physical units`() {
+        assertTrue(ValueUtil.isSizeValue("100dvh"))
+        assertTrue(ValueUtil.isSizeValue("50svw"))
+        assertTrue(ValueUtil.isSizeValue("12vmin"))
+        assertTrue(ValueUtil.isSizeValue("3ch"))
+        assertTrue(ValueUtil.isSizeValue("2cm"))
+        assertTrue(ValueUtil.isSizeValue("1in"))
+    }
+
+    @Test
     fun `detects pt values`() {
         assertTrue(ValueUtil.isSizeValue("12pt"))
         assertTrue(ValueUtil.isSizeValue("14.5pt"))
@@ -130,6 +140,14 @@ class ValueUtilTest {
     @Test
     fun `converts pt correctly`() {
         assertEquals(15.96, ValueUtil.convertToPixels("12pt"), 0.01)
+    }
+
+    @Test
+    fun `converts additional css units consistently`() {
+        assertEquals(16.0, ValueUtil.convertToPixels("1pc"))
+        assertEquals(24.0, ValueUtil.convertToPixels("3ch"))
+        assertEquals(75.6, ValueUtil.convertToPixels("2cm"), 0.01)
+        assertEquals(96.0, ValueUtil.convertToPixels("1in"))
     }
 
     // ----- Size Comparison -----
