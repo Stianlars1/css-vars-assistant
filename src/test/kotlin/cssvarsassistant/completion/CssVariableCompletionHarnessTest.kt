@@ -127,4 +127,45 @@ class CssVariableCompletionHarnessTest : CssVarsAssistantPlatformTestCase() {
         requireNotNull(html)
         assertTrue("expected local override to render before imported value", html.indexOf("16px") < html.indexOf("8px"))
     }
+
+    fun testNestedRuleClosuresDoNotDropMediaContext() {
+        addProjectStylesheet(
+            "contexts.css",
+            """
+            @media (min-width: 768px) {
+              .card {
+                color: red;
+              }
+
+              :root {
+                --layout-gap: 24px;
+              }
+            }
+            """
+        )
+
+        val entries = readIndexedCssEntries("--layout-gap")
+
+        assertContainsElements(entries.map { it.context }, "(min-width: 768px)")
+    }
+
+    fun testCompoundMediaQueryContextIsNormalized() {
+        addProjectStylesheet(
+            "compound-contexts.css",
+            """
+            @media screen and (min-width: 768px) and (prefers-color-scheme: dark) {
+              :root {
+                --surface-accent: #111111;
+              }
+            }
+            """
+        )
+
+        val entries = readIndexedCssEntries("--surface-accent")
+
+        assertContainsElements(
+            entries.map { it.context },
+            "screen and (min-width: 768px) and (prefers-color-scheme: dark)"
+        )
+    }
 }

@@ -128,97 +128,27 @@ class CssVariableIndex : FileBasedIndexExtension<String, String>() {
      * Indexes CSS variable declarations from file content
      */
     private fun indexFileContent(text: CharSequence, map: MutableMap<String, String>) {
-        val lines = text.lines()
-        var currentContext = "default"
-        val contextStack = ArrayDeque<String>()
+        CssVariableEntryParser.parse(text).forEach { parsedEntry ->
+            val entry = "${parsedEntry.context}$DELIMITER${parsedEntry.value}$DELIMITER${parsedEntry.comment}"
 
-        var lastComment: String? = null
-        var inBlockComment = false
-        val blockComment = StringBuilder()
+            // PRIORITY LOGIC: Direct values (non-preprocessor) win
+            val isPreprocessorRef = parsedEntry.value.matches(Regex("""[@$][\w-]+"""))
+            val prev = map[parsedEntry.name]
 
-        for (rawLine in lines) {
-            val line = rawLine.trim()
-
-            // Media Query Context Handling
-            if (line.startsWith("@media")) {
-                val m = Regex("""@media\s*\(([^)]+)\)""").find(line)
-                val mediaLabel = m?.groupValues?.get(1)?.trim() ?: "media"
-                contextStack.addLast(mediaLabel)
-                currentContext = contextStack.last()
-                continue
-            }
-            if (line == "}") {
-                if (contextStack.isNotEmpty()) {
-                    contextStack.removeLast()
-                    currentContext = contextStack.lastOrNull() ?: "default"
-                }
-                continue
-            }
-
-            // Comment Extraction
-            if (!inBlockComment && (line.startsWith("/*") || line.startsWith("/**"))) {
-                if (line.contains("*/")) {
-                    // Single-line comment: extract it and remove from line, then continue
-                    // processing
-                    val commentEnd = line.indexOf("*/") + 2
-                    val comment =
-                            line.substring(0, commentEnd)
-                                    .removePrefix("/**")
-                                    .removePrefix("/*")
-                                    .removeSuffix("*/")
-                                    .trim()
-                    lastComment = comment
-                    line =
-                            line.substring(commentEnd)
-                                    .trim() // Remove comment, continue with rest of line
-                    // Don't continue - process the rest of the line
-                } else {
-                    // Multi-line comment start
-                    inBlockComment = true
-                    blockComment.clear()
-                    blockComment.append(line.removePrefix("/**").removePrefix("/*").trim())
-                    continue
-                }
-            }
-            if (inBlockComment) {
-                if (line.contains("*/")) {
-                    blockComment.append("\n" + line.removeSuffix("*/"))
-                    lastComment = blockComment.toString().trim()
-                    inBlockComment = false
-                } else {
-                    blockComment.append("\n" + line)
-                }
-                continue
-            }
-
-            val varDecl = Regex("""(--[A-Za-z0-9\-_]+)\s*:\s*([^;]+);""").find(line)
-            if (varDecl != null) {
-                val varName = varDecl.groupValues[1]
-                val value = varDecl.groupValues[2].trim()
-                val comment = lastComment ?: ""
-                val entry = "$currentContext$DELIMITER$value$DELIMITER$comment"
-
-                // PRIORITY LOGIC: Direct values (non-preprocessor) win
-                val isPreprocessorRef = value.matches(Regex("""[@$][\w-]+"""))
-                val prev = map[varName]
-
-                if (prev == null) {
-                    map[varName] = entry
-                } else {
-                    // If current value is direct and previous was preprocessor, override
-                    val prevEntries = prev.split(ENTRY_SEP)
-                    val hasDirectValue = prevEntries.any { prevEntry ->
-                        val prevValue = prevEntry.split(DELIMITER).getOrNull(1) ?: ""
-                        !prevValue.matches(Regex("""[@$][\w-]+"""))
-                    }
-
-                    if (!isPreprocessorRef || !hasDirectValue) {
-                        map[varName] = prev + ENTRY_SEP + entry
-                    }
-                    // else: skip preprocessor reference if we already have direct values
+            if (prev == null) {
+                map[parsedEntry.name] = entry
+            } else {
+                // If current value is direct and previous was preprocessor, override
+                val prevEntries = prev.split(ENTRY_SEP)
+                val hasDirectValue = prevEntries.any { prevEntry ->
+                    val prevValue = prevEntry.split(DELIMITER).getOrNull(1) ?: ""
+                    !prevValue.matches(Regex("""[@$][\w-]+"""))
                 }
 
-                lastComment = null
+                if (!isPreprocessorRef || !hasDirectValue) {
+                    map[parsedEntry.name] = prev + ENTRY_SEP + entry
+                }
+                // else: skip preprocessor reference if we already have direct values
             }
         }
     }
@@ -231,4 +161,3 @@ class CssVariableIndex : FileBasedIndexExtension<String, String>() {
             override fun read(`in`: DataInput): String = IOUtil.readUTF(`in`)
         }
 }
-
