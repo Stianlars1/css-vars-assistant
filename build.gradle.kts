@@ -38,6 +38,7 @@ dependencies {
     testImplementation("junit:junit:4.13.2")
     testImplementation(kotlin("test"))
     testImplementation(kotlin("test-junit5"))
+    testRuntimeOnly("org.junit.vintage:junit-vintage-engine:5.10.1")
 }
 
 // Configuration cache compatible version task that increments on every build
