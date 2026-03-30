@@ -84,6 +84,8 @@ class CssVariableCompletion : CompletionContributor() {
                         /* ---------------------------------------------------- */
                         /*  for hver variabel-key                               */
                         /* ---------------------------------------------------- */
+                        val activeFileText = params.originalFile.text
+
                         keyCache.keys(cssScope).forEach { rawName ->
                             ProgressManager.checkCanceled()
 
@@ -120,11 +122,7 @@ class CssVariableCompletion : CompletionContributor() {
                                 .asReversed()
 
                             /* --- finn cascade-vinner --- */
-                            val localOverride = lastLocalValueInFile(params.position.text, rawName)
-
-                            val mainValue = localOverride
-                                ?: uniquePairs.filter { it.first == "default" }.lastOrNull()?.second
-                                ?: uniquePairs.last().second
+                            val mainValue = CssVarCascadeUtil.selectMainValue(rawName, activeFileText, uniquePairs)
 
 
                             val docEntry = allVals.firstOrNull {

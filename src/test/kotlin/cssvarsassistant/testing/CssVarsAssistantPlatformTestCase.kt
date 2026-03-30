@@ -41,15 +41,16 @@ abstract class CssVarsAssistantPlatformTestCase : BasePlatformTestCase() {
         settings.allowIdeCompletions = true
         settings.sortingOrder = CssVarsAssistantSettings.SortingOrder.ASC
 
-        CssVarKeyCache.get(project).clear()
-        ImportCache.get(project).clear()
-        CssVarCompletionCache.clearCaches()
-        PreprocessorUtil.clearCache()
-        ScopeUtil.clearCache(project)
+        clearPluginCaches()
     }
 
     protected fun addProjectStylesheet(path: String, text: String) {
         myFixture.addFileToProject(path, text.trimIndent())
+    }
+
+    protected fun updateSettings(block: CssVarsAssistantSettings.() -> Unit) {
+        CssVarsAssistantSettings.getInstance().apply(block)
+        clearPluginCaches()
     }
 
     protected fun completeCssVariables(path: String, text: String): List<RenderedLookup> {
@@ -57,6 +58,25 @@ abstract class CssVarsAssistantPlatformTestCase : BasePlatformTestCase() {
         return myFixture.completeBasic()
             ?.map(::renderLookup)
             .orEmpty()
+    }
+
+    protected fun completeCssVariablesInProjectFile(path: String, text: String): List<RenderedLookup> {
+        configureProjectFile(path, text)
+        return myFixture.completeBasic()
+            ?.map(::renderLookup)
+            .orEmpty()
+    }
+
+    protected fun configureProjectFile(path: String, text: String) {
+        val normalizedText = text.trimIndent()
+        val caretMarker = "<caret>"
+        val caretOffset = normalizedText.indexOf(caretMarker)
+        val fileText = normalizedText.replace(caretMarker, "")
+        val file = myFixture.addFileToProject(path, fileText).virtualFile
+        myFixture.configureFromExistingVirtualFile(file)
+        if (caretOffset >= 0) {
+            myFixture.editor.caretModel.moveToOffset(caretOffset)
+        }
     }
 
     protected fun readIndexedCssEntries(
@@ -90,5 +110,13 @@ abstract class CssVarsAssistantPlatformTestCase : BasePlatformTestCase() {
             tailText = presentation.tailText,
             typeText = presentation.typeText
         )
+    }
+
+    private fun clearPluginCaches() {
+        CssVarKeyCache.get(project).clear()
+        ImportCache.get(project).clear()
+        CssVarCompletionCache.clearCaches()
+        PreprocessorUtil.clearCache()
+        ScopeUtil.clearCache(project)
     }
 }
