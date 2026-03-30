@@ -2,13 +2,13 @@ import org.jetbrains.intellij.platform.gradle.tasks.VerifyPluginTask
 import org.jetbrains.intellij.platform.gradle.IntelliJPlatformType
 import org.jetbrains.intellij.platform.gradle.TestFrameworkType
 import org.jetbrains.intellij.platform.gradle.models.ProductRelease
+import org.gradle.jvm.toolchain.JavaLanguageVersion
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
-import java.io.ByteArrayOutputStream
 
 plugins {
-    id("org.jetbrains.intellij.platform") version "2.6.0"
+    id("org.jetbrains.intellij.platform") version "2.13.1"
     kotlin("jvm") version "2.1.20"
 
 }
@@ -41,89 +41,9 @@ dependencies {
     testRuntimeOnly("org.junit.vintage:junit-vintage-engine:5.10.1")
 }
 
-// Configuration cache compatible version task that increments on every build
-abstract class AutoIncrementVersionTask : DefaultTask() {
-
-    @get:OutputFile
-    abstract val indexVersionFile: RegularFileProperty
-
-    @get:Internal  // Internal property, not an input
-    abstract val buildCounterFile: RegularFileProperty
-
-    @get:Inject
-    abstract val execOperations: ExecOperations
-
-    @get:Inject
-    abstract val providers: ProviderFactory
-
-    @get:Inject
-    abstract val layout: ProjectLayout
-
-    init {
-        // Always run this task (don't cache it)
-        outputs.upToDateWhen { false }
-    }
-
-    @TaskAction
-    fun incrementVersion() {
-        val (newVersion, versionInfo) = getVersionInfo()
-
-        val newContent = """package cssvarsassistant.index
-
-const val INDEX_VERSION = $newVersion"""
-
-        indexVersionFile.asFile.get().writeText(newContent)
-        println("🔄 INDEX_VERSION updated to $newVersion ($versionInfo)")
-    }
-
-    private fun getVersionInfo(): Pair<Int, String> {
-        return try {
-            // Try Git-based versioning first, but add build counter for uniqueness
-            val commitCountOutput = ByteArrayOutputStream()
-            execOperations.exec {
-                commandLine("git", "rev-list", "--count", "HEAD")
-                standardOutput = commitCountOutput
-            }
-            val commitCount = commitCountOutput.toString().trim().toInt()
-
-            val branchOutput = ByteArrayOutputStream()
-            execOperations.exec {
-                commandLine("git", "rev-parse", "--abbrev-ref", "HEAD")
-                standardOutput = branchOutput
-            }
-            val branch = branchOutput.toString().trim()
-
-            // Get and increment build counter
-            val counterFile = buildCounterFile.asFile.get()
-            val buildCounter = if (counterFile.exists()) {
-                counterFile.readText().trim().toIntOrNull() ?: 0
-            } else {
-                // Create parent directory if it doesn't exist
-                counterFile.parentFile.mkdirs()
-                0
-            }
-            val newBuildCounter = buildCounter + 1
-            counterFile.writeText(newBuildCounter.toString())
-
-            // Use git commit count + base version + build counter for unique builds
-            val baseVersion = 500
-            val gitVersion = baseVersion + commitCount + newBuildCounter
-
-            Pair(gitVersion, "Git-based (commits: $commitCount, build: $newBuildCounter, branch: $branch)")
-        } catch (e: Exception) {
-            // Fallback to file-based increment if Git is not available
-            val indexFile = indexVersionFile.asFile.get()
-
-            if (indexFile.exists()) {
-                val content = indexFile.readText()
-                val currentVersion = Regex("""const val INDEX_VERSION = (\d+)""")
-                    .find(content)?.groupValues?.get(1)?.toInt() ?: 300
-                val newVersion = currentVersion + 1
-                Pair(newVersion, "File-based increment (previous: $currentVersion)")
-            } else {
-                Pair(300, "Default fallback")
-            }
-        }
+java {
+    toolchain {
+        languageVersion.set(JavaLanguageVersion.of(21))
     }
 }
 
@@ -152,7 +72,7 @@ intellijPlatform {
         }
 
         ideaVersion {
-            sinceBuild = "241"
+            sinceBuild = "251"
         }
 
         description = """
@@ -166,7 +86,7 @@ intellijPlatform {
   <li><b>Instant variable lookup</b> – blazing-fast completions for <code>CSS</code>, <code>SCSS</code>, <code>SASS</code> and <code>LESS</code> variables.</li>
   <li><b>Smart autocomplete</b> – context-aware suggestions inside <code>var(--…)</code>, <code>@less</code> and <code>${'$'}scss</code>, sorted by value or context.</li>
   <li><b>Rich documentation pop-ups</b> – value tables (px equivalents), context labels, color swatches with contrast info, plus <i>dynamic</i> <code>px Eq.</code>, <code>Hex</code> and <code>WCAG</code> columns that appear only when relevant.</li>
-  <li><b>IntelliJ 2024.1+ API support</b> – leverages the new docs API for richer pop-ups, with graceful fallback for older IDEs.</li>
+  <li><b>IntelliJ 2025.1+ platform support</b> – targets the current 251 platform line with the modern documentation and completion APIs used by the plugin.</li>
   <li><b>Derived-variable indicator</b> – alias / recursive completions are marked with <code>↗</code> so you instantly know the value is inherited.</li>
   <li><b>JSDoc-style comments</b> – auto-parsing and display of <code>@name</code>, <code>@description</code>, and <code>@example</code>.</li>
   <li><b>Advanced <code>@import</code> resolution</b> – follows and indexes nested imports with depth and scope controls.</li>
@@ -232,22 +152,11 @@ intellijPlatform {
 
 
 tasks {
-    // Register the version increment task
-    val autoIncrementVersion = register<AutoIncrementVersionTask>("autoIncrementVersion") {
-        group = "versioning"
-        description = "Automatically increments INDEX_VERSION for both local dev and production"
-
-        indexVersionFile.set(layout.projectDirectory.file("src/main/kotlin/cssvarsassistant/index/indexVersion.kt"))
-        buildCounterFile.set(layout.projectDirectory.file(".gradle/build-counter.txt"))
-    }
-
     withType<KotlinCompile> {
-        // Run version increment before compilation
-        dependsOn(autoIncrementVersion)
-
         compilerOptions {
             jvmTarget.set(JvmTarget.JVM_21)
-            languageVersion.set(KotlinVersion.KOTLIN_2_0)
+            languageVersion.set(KotlinVersion.KOTLIN_2_1)
+            apiVersion.set(KotlinVersion.KOTLIN_2_1)
         }
     }
 
@@ -258,18 +167,9 @@ tasks {
             events("passed", "skipped", "failed")
         }
     }
-
     buildPlugin {
-        // Ensure version is updated before building plugin
-        dependsOn(autoIncrementVersion)
-
         from(fileTree("lib")) {
             exclude("kotlin-stdlib*.jar")
         }
-    }
-
-    // Also update version before running IDE (if you use runIde)
-    named("runIde") {
-        dependsOn(autoIncrementVersion)
     }
 }

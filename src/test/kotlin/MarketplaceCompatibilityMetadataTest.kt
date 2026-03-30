@@ -4,6 +4,7 @@ import java.nio.file.Files
 import java.nio.file.Path
 import javax.xml.parsers.DocumentBuilderFactory
 import kotlin.test.Test
+import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class MarketplaceCompatibilityMetadataTest {
@@ -35,12 +36,19 @@ class MarketplaceCompatibilityMetadataTest {
         val buildScript = Files.readString(projectRoot.resolve("build.gradle.kts"))
 
         assertTrue("intellijIdeaUltimate(\"2025.1\")" in buildScript)
+        assertTrue("id(\"org.jetbrains.intellij.platform\") version \"2.13.1\"" in buildScript)
         assertTrue("bundledPlugin(\"JavaScript\")" in buildScript)
         assertTrue("bundledPlugin(\"com.intellij.css\")" in buildScript)
+        assertTrue("sinceBuild = \"251\"" in buildScript)
+        assertTrue("JavaLanguageVersion.of(21)" in buildScript)
+        assertTrue("jvmTarget.set(JvmTarget.JVM_21)" in buildScript)
+        assertTrue("languageVersion.set(KotlinVersion.KOTLIN_2_1)" in buildScript)
+        assertTrue("apiVersion.set(KotlinVersion.KOTLIN_2_1)" in buildScript)
         assertTrue("select {" in buildScript)
         assertTrue("IntelliJPlatformType.IntellijIdeaUltimate" in buildScript)
         assertTrue("IntelliJPlatformType.WebStorm" in buildScript)
         assertTrue("IntelliJPlatformType.GoLand" in buildScript)
         assertTrue("IntelliJPlatformType.PhpStorm" in buildScript)
+        assertFalse("dependsOn(autoIncrementVersion)" in buildScript)
     }
 }
