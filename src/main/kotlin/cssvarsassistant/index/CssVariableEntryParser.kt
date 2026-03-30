@@ -11,6 +11,7 @@ internal object CssVariableEntryParser {
 
     private const val DEFAULT_CONTEXT = "default"
     private val variableDeclarationRegex = Regex("""(--[A-Za-z0-9\-_]+)\s*:\s*([^;]+);""")
+    private val variableDeclarationStartRegex = Regex("""(--[A-Za-z0-9\-_]+)\s*:\s*(.*)$""")
 
     private data class MediaContext(
         val label: String,
@@ -26,6 +27,10 @@ internal object CssVariableEntryParser {
         var lastComment: String? = null
         var inBlockComment = false
         val blockComment = StringBuilder()
+        var pendingVariableName: String? = null
+        var pendingVariableContext: String? = null
+        var pendingVariableComment: String? = null
+        val pendingVariableValue = StringBuilder()
 
         for (rawLine in text.lines()) {
             val line = rawLine.trim()
@@ -76,19 +81,54 @@ internal object CssVariableEntryParser {
             }
 
             val currentContext = mediaContexts.lastOrNull()?.label ?: DEFAULT_CONTEXT
-            val matches = variableDeclarationRegex.findAll(line).toList()
+            if (pendingVariableName != null) {
+                val endIndex = line.indexOf(';')
+                if (endIndex >= 0) {
+                    if (pendingVariableValue.isNotEmpty()) {
+                        pendingVariableValue.append('\n')
+                    }
+                    pendingVariableValue.append(line.substring(0, endIndex).trim())
+                    entries += ParsedCssVariableEntry(
+                        name = requireNotNull(pendingVariableName),
+                        context = requireNotNull(pendingVariableContext),
+                        value = normalizeValue(pendingVariableValue.toString()),
+                        comment = pendingVariableComment.orEmpty()
+                    )
+                    pendingVariableName = null
+                    pendingVariableContext = null
+                    pendingVariableComment = null
+                    pendingVariableValue.clear()
+                    lastComment = null
+                } else {
+                    if (pendingVariableValue.isNotEmpty()) {
+                        pendingVariableValue.append('\n')
+                    }
+                    pendingVariableValue.append(line)
+                }
+            } else {
+                val matches = variableDeclarationRegex.findAll(line).toList()
 
-            matches.forEachIndexed { index, match ->
-                entries += ParsedCssVariableEntry(
-                    name = match.groupValues[1],
-                    context = currentContext,
-                    value = match.groupValues[2].trim(),
-                    comment = if (index == 0) lastComment ?: "" else ""
-                )
-            }
+                matches.forEachIndexed { index, match ->
+                    entries += ParsedCssVariableEntry(
+                        name = match.groupValues[1],
+                        context = currentContext,
+                        value = match.groupValues[2].trim(),
+                        comment = if (index == 0) lastComment ?: "" else ""
+                    )
+                }
 
-            if (matches.isNotEmpty()) {
-                lastComment = null
+                if (matches.isNotEmpty()) {
+                    lastComment = null
+                } else {
+                    val multilineMatch = variableDeclarationStartRegex.find(line)
+                    if (multilineMatch != null && ';' !in multilineMatch.groupValues[2]) {
+                        pendingVariableName = multilineMatch.groupValues[1]
+                        pendingVariableContext = currentContext
+                        pendingVariableComment = lastComment
+                        pendingVariableValue.clear()
+                        pendingVariableValue.append(multilineMatch.groupValues[2].trim())
+                    }
+                }
             }
 
             braceDepth = (braceDepth + openingBraces - closingBraces).coerceAtLeast(0)
@@ -111,4 +151,11 @@ internal object CssVariableEntryParser {
             .trim()
             .ifEmpty { "media" }
     }
+
+    private fun normalizeValue(value: String): String =
+        value
+            .lineSequence()
+            .joinToString(" ") { it.trim() }
+            .replace(Regex("""\s+"""), " ")
+            .trim()
 }

@@ -6,6 +6,10 @@ import java.awt.Color
 
 object ValueUtil {
     enum class ValueType { SIZE, COLOR, NUMBER, OTHER }
+    private val sizeValueRegex = Regex(
+        """^\d+(\.\d+)?(px|rem|em|%|vh|vw|vmin|vmax|svh|svw|lvh|lvw|dvh|dvw|pt|pc|ch|ex|cm|mm|in)$""",
+        RegexOption.IGNORE_CASE
+    )
 
     
     fun getValueType(value: String): ValueType {
@@ -32,8 +36,7 @@ object ValueUtil {
 
     fun isSizeValue(value: String): Boolean {
         val cleaned = value.trim()
-        val isSizeValue = Regex("""^\d+(\.\d+)?(px|rem|em|%|vh|vw|pt)$""", RegexOption.IGNORE_CASE).matches(cleaned)
-        return isSizeValue
+        return sizeValueRegex.matches(cleaned)
     }
 
     fun isNumericValue(value: String): Boolean {
@@ -43,17 +46,26 @@ object ValueUtil {
 
     fun convertToPixels(value: String): Double {
         val trimmed = value.trim()
-        val number = Regex("""^(\d+(?:\.\d+)?)""").find(trimmed)?.groupValues?.get(1)?.toDoubleOrNull() ?: 0.0
+        val match = Regex("""^(\d+(?:\.\d+)?)([a-z%]+)$""", RegexOption.IGNORE_CASE).find(trimmed)
+        val number = match?.groupValues?.get(1)?.toDoubleOrNull() ?: 0.0
+        val unit = match?.groupValues?.get(2)?.lowercase().orEmpty()
 
 
         return when {
-            trimmed.endsWith("rem") -> number * 16
-            trimmed.endsWith("em") -> number * 16
-            trimmed.endsWith("px") -> number
-            trimmed.endsWith("pt") -> number * 1.33
-            trimmed.endsWith("%") -> number
-            trimmed.endsWith("vh") -> number * 10
-            trimmed.endsWith("vw") -> number * 10
+            unit == "rem" -> number * 16
+            unit == "em" -> number * 16
+            unit == "px" -> number
+            unit == "pt" -> number * 1.33
+            unit == "pc" -> number * 16
+            unit == "%" -> number
+            unit == "vh" || unit == "svh" || unit == "lvh" || unit == "dvh" -> number * 10
+            unit == "vw" || unit == "svw" || unit == "lvw" || unit == "dvw" -> number * 10
+            unit == "vmin" || unit == "vmax" -> number * 10
+            unit == "ch" -> number * 8
+            unit == "ex" -> number * 7.5
+            unit == "cm" -> number * 37.8
+            unit == "mm" -> number * 3.78
+            unit == "in" -> number * 96
             else -> number
         }
     }

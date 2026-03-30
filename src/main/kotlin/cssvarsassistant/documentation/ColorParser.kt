@@ -3,6 +3,7 @@ package cssvarsassistant.documentation
 import com.intellij.ui.Gray
 import java.awt.Color
 import kotlin.math.abs
+import kotlin.math.PI
 import kotlin.math.roundToInt
 
 object ColorParser {
@@ -26,7 +27,27 @@ object ColorParser {
         "brown" to Color(165, 42, 42),
         "pink" to Color(255, 192, 203),
         "gray" to Gray._128,
-        "grey" to Gray._128
+        "grey" to Gray._128,
+        "transparent" to Color(0, 0, 0, 0),
+        "aliceblue" to Color(240, 248, 255),
+        "aqua" to Color(0, 255, 255),
+        "coral" to Color(255, 127, 80),
+        "crimson" to Color(220, 20, 60),
+        "deepskyblue" to Color(0, 191, 255),
+        "dodgerblue" to Color(30, 144, 255),
+        "gold" to Color(255, 215, 0),
+        "lightgray" to Color(211, 211, 211),
+        "lightgrey" to Color(211, 211, 211),
+        "lime" to Color(0, 255, 0),
+        "maroon" to Color(128, 0, 0),
+        "navy" to Color(0, 0, 128),
+        "olive" to Color(128, 128, 0),
+        "rebeccapurple" to Color(102, 51, 153),
+        "salmon" to Color(250, 128, 114),
+        "silver" to Color(192, 192, 192),
+        "slategray" to Color(112, 128, 144),
+        "slategrey" to Color(112, 128, 144),
+        "teal" to Color(0, 128, 128)
     )
 
     /**
@@ -104,7 +125,7 @@ object ColorParser {
         val cleaned = hsl.replace("/", " ").replace(",", " ")
         val parts = cleaned.split(' ').filter { it.isNotBlank() }
         return try {
-            val h = parts[0].toFloat()
+            val h = parseHue(parts[0]) ?: return null
             val s = parts[1].removeSuffix("%").toFloat()
             val l = parts[2].removeSuffix("%").toFloat()
             hslToColor(h, s, l)
@@ -168,6 +189,17 @@ object ColorParser {
             )
         } catch (_: Exception) {
             null
+        }
+    }
+
+    private fun parseHue(value: String): Float? {
+        val cleaned = value.trim().lowercase()
+        return when {
+            cleaned.endsWith("deg") -> cleaned.removeSuffix("deg").toFloatOrNull()
+            cleaned.endsWith("turn") -> cleaned.removeSuffix("turn").toFloatOrNull()?.times(360f)
+            cleaned.endsWith("grad") -> cleaned.removeSuffix("grad").toFloatOrNull()?.times(0.9f)
+            cleaned.endsWith("rad") -> cleaned.removeSuffix("rad").toFloatOrNull()?.times((180f / PI).toFloat())
+            else -> cleaned.toFloatOrNull()
         }
     }
 
