@@ -6,7 +6,7 @@ class CssVariableCompletionHarnessTest : CssVarsAssistantPlatformTestCase() {
 
     fun testCompletionReturnsProjectCustomProperties() {
         addProjectStylesheet(
-            "tokens.css",
+            "accent-tokens.css",
             """
             :root {
               --accent-1: #111111;
@@ -30,7 +30,7 @@ class CssVariableCompletionHarnessTest : CssVarsAssistantPlatformTestCase() {
 
     fun testCssIndexCanBeQueriedFromTests() {
         addProjectStylesheet(
-            "tokens.css",
+            "space-index.css",
             """
             :root {
               --space-sm: 8px;
@@ -43,5 +43,34 @@ class CssVariableCompletionHarnessTest : CssVarsAssistantPlatformTestCase() {
         assertEquals(1, entries.size)
         assertEquals("default", entries.single().context)
         assertEquals("8px", entries.single().value)
+    }
+
+    fun testStrongPrefixMatchesHideWeakerSubstringMatches() {
+        addProjectStylesheet(
+            "spacing-tokens.css",
+            """
+            :root {
+              --spacing-3xs: 2px;
+              --spacing-2xs: 4px;
+              --spacing-xs: 8px;
+              --typography-body-medium-letter-spacing: 0.005em;
+              --typography-body-large-letter-spacing: 0.01em;
+            }
+            """
+        )
+
+        val lookups = completeCssVariables(
+            "app.css",
+            """
+            .card {
+              padding: var(--spacing<caret>);
+            }
+            """
+        )
+
+        val displayedNames = lookups.mapNotNull { it.itemText }
+        assertContainsElements(displayedNames, "spacing-3xs", "spacing-2xs", "spacing-xs")
+        assertDoesntContain(displayedNames, "typography-body-medium-letter-spacing")
+        assertDoesntContain(displayedNames, "typography-body-large-letter-spacing")
     }
 }

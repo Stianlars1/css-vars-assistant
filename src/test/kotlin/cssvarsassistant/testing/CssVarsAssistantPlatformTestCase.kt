@@ -5,9 +5,14 @@ import com.intellij.codeInsight.lookup.LookupElementPresentation
 import com.intellij.psi.search.GlobalSearchScope
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
 import com.intellij.util.indexing.FileBasedIndex
+import cssvarsassistant.completion.CssVarCompletionCache
+import cssvarsassistant.completion.CssVarKeyCache
 import cssvarsassistant.index.CSS_VARIABLE_INDEXER_NAME
 import cssvarsassistant.index.DELIMITER
+import cssvarsassistant.index.ImportCache
 import cssvarsassistant.settings.CssVarsAssistantSettings
+import cssvarsassistant.util.PreprocessorUtil
+import cssvarsassistant.util.ScopeUtil
 
 private const val ENTRY_SEPARATOR = "|||"
 
@@ -35,6 +40,12 @@ abstract class CssVarsAssistantPlatformTestCase : BasePlatformTestCase() {
         settings.showContextValues = true
         settings.allowIdeCompletions = true
         settings.sortingOrder = CssVarsAssistantSettings.SortingOrder.ASC
+
+        CssVarKeyCache.get(project).clear()
+        ImportCache.get(project).clear()
+        CssVarCompletionCache.clearCaches()
+        PreprocessorUtil.clearCache()
+        ScopeUtil.clearCache(project)
     }
 
     protected fun addProjectStylesheet(path: String, text: String) {
