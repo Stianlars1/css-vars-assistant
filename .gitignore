@@ -59,4 +59,5 @@ build/distributions/
 .kotlin/
 *.salive
 build/generated/
-
+verification-*/
+.signing/

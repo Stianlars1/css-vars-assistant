@@ -1,7 +1,7 @@
 # CSS Variables Assistant  🔧🎨
 
-**Version:** 1.6.0<br/>
-**Compatible IDEs:** WebStorm / IntelliJ Ultimate 2024.1+ (and 2025.1+)  
+**Version:** 1.7.0<br/>
+**Compatible IDEs:** JetBrains IDEs with bundled JavaScript + CSS support, including WebStorm, IntelliJ IDEA Ultimate, GoLand, and PhpStorm.  
 **Author:** Stian Larsen  
 **Repo:** [github.com/Stianlars1/css-vars-assistant](https://github.com/Stianlars1/css-vars-assistant)
 
@@ -14,15 +14,14 @@
 Supercharge your CSS custom properties and preprocessor variables in JetBrains IDEs with advanced autocomplete, documentation, and debugging tools.
 ---
 
-## ✨ What's new in 1.6.0
+## ✨ What's new in 1.7.0
 
 | Category                    | Highlights                                                                                      |
 |-----------------------------|-------------------------------------------------------------------------------------------------|
-| **✨ Customizable Docs**    | You can now **choose which columns** to display in the documentation popup!                     |
-| **🔗 Resolution Chain**      | A new tooltip shows the **entire resolution path** for a variable, explaining its final value.  |
-| **🚀 Performance**            | Caching has been significantly improved for **better performance and memory management**.       |
-| **💅 Dynamic UI**             | The documentation table now **dynamically adjusts its columns** based on your settings.         |
-| **⚙️ New Settings**           | Easily manage the new column visibility options from the settings panel.                        |
+| **🧩 Broader IDE Support**   | Marketplace metadata now targets the wider JetBrains JavaScript/CSS IDE family.                 |
+| **🧪 Compatibility Tests**   | Added regression tests to prevent future Marketplace compatibility drift.                       |
+| **🔎 Verifier Coverage**     | Verification is now configured for IntelliJ IDEA Ultimate, WebStorm, GoLand, and PhpStorm.     |
+| **📦 Release Metadata**      | Plugin release notes and README now reflect the broader compatibility contract.                 |
 
 [Full Changelog →](https://github.com/Stianlars1/css-vars-assistant/blob/main/CHANGELOG.md)
 
