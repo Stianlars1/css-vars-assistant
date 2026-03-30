@@ -157,7 +157,9 @@ class CssVariableCompletion : CompletionContributor() {
                             .toMutableList()
 
                         /* ------------- sortering -------------------------- */
-                        strongestEntries.sortWith(createSmartComparator(settings.sortingOrder))
+                        strongestEntries.sortWith(
+                            createSmartComparator(settings.sortingOrder, activeQuery.normalizedPrefix)
+                        )
 
                         /* ------------- bygg Lookup-elementer -------------- */
                         strongestEntries.forEachIndexed { idx, e ->
@@ -289,8 +291,17 @@ class CssVariableCompletion : CompletionContributor() {
         }
     }
 
-    private fun createSmartComparator(order: CssVarsAssistantSettings.SortingOrder): Comparator<Entry> {
+    private fun createSmartComparator(
+        order: CssVarsAssistantSettings.SortingOrder,
+        query: String
+    ): Comparator<Entry> {
         val baseComparator = Comparator<Entry> { a, b ->
+            compareMatchedNumericFamily(a, b, query)?.let { matchedFamilyOrder ->
+                if (matchedFamilyOrder != 0) {
+                    return@Comparator matchedFamilyOrder
+                }
+            }
+
             // 1. Group by value type
             val aType = ValueUtil.getValueType(a.mainValue)
             val bType = ValueUtil.getValueType(b.mainValue)
@@ -313,6 +324,30 @@ class CssVariableCompletion : CompletionContributor() {
         } else {
             baseComparator
         }
+    }
+
+    private fun compareMatchedNumericFamily(a: Entry, b: Entry, query: String): Int? {
+        if (query.isBlank()) return null
+
+        val aNumericSuffix = numericSuffixForQuery(a.display, query)
+        val bNumericSuffix = numericSuffixForQuery(b.display, query)
+
+        return when {
+            aNumericSuffix != null && bNumericSuffix != null -> aNumericSuffix.compareTo(bNumericSuffix)
+            aNumericSuffix != null -> -1
+            bNumericSuffix != null -> 1
+            else -> null
+        }
+    }
+
+    private fun numericSuffixForQuery(displayName: String, query: String): Int? {
+        val normalizedPrefix = "${query.lowercase()}-"
+        val normalizedName = displayName.lowercase()
+        if (!normalizedName.startsWith(normalizedPrefix)) return null
+
+        return normalizedName
+            .removePrefix(normalizedPrefix)
+            .toIntOrNull()
     }
 
     private fun isInsideVarFunction(params: CompletionParameters): Boolean {

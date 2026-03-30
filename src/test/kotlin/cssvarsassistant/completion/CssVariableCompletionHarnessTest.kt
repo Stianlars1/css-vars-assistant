@@ -73,4 +73,29 @@ class CssVariableCompletionHarnessTest : CssVarsAssistantPlatformTestCase() {
         assertDoesntContain(displayedNames, "typography-body-medium-letter-spacing")
         assertDoesntContain(displayedNames, "typography-body-large-letter-spacing")
     }
+
+    fun testMatchedNumericFamiliesSortNaturally() {
+        addProjectStylesheet(
+            "accent-tokens-natural-order.css",
+            """
+            :root {
+              --accent-1: #0000ff;
+              --accent-2: #ff0000;
+              --accent-10: #00ff00;
+            }
+            """
+        )
+
+        val lookups = completeCssVariables(
+            "app.css",
+            """
+            .card {
+              color: var(--accent<caret>);
+            }
+            """
+        )
+
+        val displayedNames = lookups.mapNotNull { it.itemText }
+        assertEquals(listOf("accent-1", "accent-2", "accent-10"), displayedNames.take(3))
+    }
 }
