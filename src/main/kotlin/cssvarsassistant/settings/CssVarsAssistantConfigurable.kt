@@ -66,7 +66,7 @@ class CssVarsAssistantConfigurable : Configurable, Disposable {
         settings.indexingScope == CssVarsAssistantSettings.IndexingScope.PROJECT_ONLY
     )
     private val projectWithImportsRadio = JRadioButton(
-        "Project files + @import resolution",
+        "Project files + @import resolution (default)",
         settings.indexingScope == CssVarsAssistantSettings.IndexingScope.PROJECT_WITH_IMPORTS
     )
     private val globalRadio = JRadioButton(

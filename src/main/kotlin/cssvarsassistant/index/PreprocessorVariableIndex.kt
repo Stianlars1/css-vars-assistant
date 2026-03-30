@@ -5,6 +5,7 @@ import com.intellij.util.io.DataExternalizer
 import com.intellij.util.io.EnumeratorStringDescriptor
 import com.intellij.util.io.IOUtil
 import com.intellij.util.io.KeyDescriptor
+import cssvarsassistant.settings.CssVarsAssistantSettings
 import java.io.DataInput
 import java.io.DataOutput
 
@@ -22,7 +23,16 @@ class PreprocessorVariableIndex : FileBasedIndexExtension<String, String>() {
         val exts = setOf("scss", "sass", "less")
         return FileBasedIndex.InputFilter { file ->
             val ext = file.extension?.lowercase()
-            ext in exts
+            if (ext !in exts) {
+                return@InputFilter false
+            }
+
+            val settings = CssVarsAssistantSettings.getInstance()
+            if (settings.indexingScope == CssVarsAssistantSettings.IndexingScope.PROJECT_ONLY) {
+                return@InputFilter !file.path.contains("/node_modules/")
+            }
+
+            true
         }
     }
 

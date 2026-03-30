@@ -78,7 +78,7 @@ Open **Settings → Tools → CSS Variables Assistant**
 |--------|-------------------------------------------------------------------------------|
 | **Show context values** | Display dark/light & media-query variants                                     |
 | **Allow IDE built-in completions** | Fall back to IntelliJ suggestions for misses                                  |
-| **Indexing scope** | *Project only* • *Project + imports* (experimental) • *Full global* (default) |
+| **Indexing scope** | *Project only* • *Project + imports* (default) • *Full global* |
 | **Max @import depth** | 1 – 20 (default 20)                                                           |
 | **Completion sorting** | Ascending or descending value order                                           |
 | **🔄 Re-index Now** | Flush caches and rebuild the variable index immediately                       |

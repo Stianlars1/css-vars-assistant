@@ -29,6 +29,11 @@ import javax.swing.Icon
 
 private const val COMPLETION_LOOKUP_ELEMENT_PRIORITY_BASE = 10000
 
+internal fun shouldStopAfterCssVarCompletion(
+    entryCount: Int,
+    allowIdeCompletions: Boolean
+): Boolean = entryCount > 0 || !allowIdeCompletions
+
 class CssVariableCompletion : CompletionContributor() {
     private val logger = Logger.getInstance(CssVariableCompletion::class.java)
     private val ENTRY_SEP = "|||"
@@ -209,7 +214,9 @@ class CssVariableCompletion : CompletionContributor() {
                             )
                         }
 
-                        result.stopHere()
+                        if (shouldStopAfterCssVarCompletion(strongestEntries.size, settings.allowIdeCompletions)) {
+                            result.stopHere()
+                        }
                         logger.info(
                             "CSS var completion: ${System.currentTimeMillis() - startTime}ms, " +
                                     "${strongestEntries.size} entries."
