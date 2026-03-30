@@ -10,12 +10,11 @@ import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.progress.Task
-import com.intellij.openapi.project.guessProjectDir
 import com.intellij.openapi.ui.DialogWrapper
-import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.ui.components.JBScrollPane
 import com.intellij.util.ui.JBUI
+import cssvarsassistant.index.ImportResolver
 import cssvarsassistant.settings.CssVarsAssistantSettings
 import java.awt.Dimension
 import java.awt.Font
@@ -28,8 +27,6 @@ import javax.swing.*
 class DebugImportResolutionAction : AnAction() {
 
     private val LOG = Logger.getInstance(DebugImportResolutionAction::class.java)
-    private val IMPORT_RE =
-        Regex("""@import\s+(?:"([^"]+)"|'([^']+)'|\burl\(\s*(?:"([^"]+)"|'([^']+)'|([^)]+))\s*\))""")
 
     /* ---------------- Action availability ------------------------------- */
     override fun getActionUpdateThread(): ActionUpdateThread = ActionUpdateThread.BGT
@@ -129,116 +126,15 @@ class DebugImportResolutionAction : AnAction() {
 
         out.append("$indent📄 ${file.name}\n")
 
-        val content = runCatching { String(file.contentsToByteArray()) }.getOrNull() ?: return
-        val imports = IMPORT_RE.findAll(content)
-            .mapNotNull { it.groupValues.drop(1).firstOrNull { s -> s.isNotBlank() } }
-            .toList()
+        val imports = ImportResolver.resolveDirectImports(file, project)
 
-        imports.forEachIndexed { i, imp ->
+        imports.forEachIndexed { i, resolvedImport ->
             val connector = if (i == imports.lastIndex) "└─" else "├─"
-            val resolved = resolveImportPath(file, imp, project)
-            out.append("$indent  $connector $imp → ${resolved?.path ?: "❌"}\n")
-            resolved?.let {
+            out.append("$indent  $connector ${resolvedImport.requestedPath} → ${resolvedImport.resolvedFile?.path ?: "❌"}\n")
+            resolvedImport.resolvedFile?.let {
                 buildTree(it, project, maxDepth, depth + 1, out, indicator, visited, stats)
             }
         }
-    }
-
-    /* ------------------------------------------------------------------ */
-    /*  Path resolution helpers (same rules as ImportResolver)            */
-    /* ------------------------------------------------------------------ */
-    private fun resolveImportPath(
-        currentFile: VirtualFile,
-        importPath: String,
-        project: com.intellij.openapi.project.Project
-    ): VirtualFile? = try {
-        when {
-            importPath.startsWith("./") || importPath.startsWith("../") ->
-                resolveRelativePath(currentFile, importPath)
-
-            importPath.startsWith("/") ->
-                project.guessProjectDir()?.findFileByRelativePath(importPath.removePrefix("/"))
-
-            importPath.startsWith("@") ->
-                resolveNodeModulesPath(currentFile, importPath, project)
-
-            else -> {   // bare import – try same dir first, then node_modules
-                resolveRelativePath(currentFile, importPath)
-                    ?: resolveNodeModulesPath(currentFile, importPath, project)
-            }
-        }
-    } catch (_: Exception) {
-        null
-    }
-
-    /* --- relative ------------------------------------------------------ */
-    private fun resolveRelativePath(currentFile: VirtualFile, rel: String): VirtualFile? {
-        val dir = currentFile.parent ?: return null
-        if (rel.contains('.')) {
-            return VfsUtil.findRelativeFile(dir, *rel.split('/').toTypedArray())
-        }
-        val pref = when (currentFile.extension?.lowercase()) {
-            "scss" -> listOf("scss", "css", "sass", "less")
-            "sass" -> listOf("sass", "scss", "css", "less")
-            "less" -> listOf("less", "css", "scss", "sass")
-            else -> listOf("css", "scss", "sass", "less")
-        }
-        for (ext in pref) {
-            val vf = VfsUtil.findRelativeFile(dir, *("$rel.$ext").split('/').toTypedArray())
-            if (vf != null && vf.exists()) return vf
-        }
-        return null
-    }
-
-    /* --- node_modules -------------------------------------------------- */
-    private fun resolveNodeModulesPath(
-        currentFile: VirtualFile,
-        pkgPath: String,
-        project: com.intellij.openapi.project.Project
-    ): VirtualFile? {
-        var search = currentFile.parent
-        while (search != null) {
-            val nm = search.findChild("node_modules")
-            if (nm != null) {
-                resolveInNodeModules(nm, pkgPath, currentFile)?.let { return it }
-            }
-            search = search.parent
-        }
-        project.guessProjectDir()
-            ?.findChild("node_modules")
-            ?.let { resolveInNodeModules(it, pkgPath, currentFile) }
-            ?.let { return it }
-        return null
-    }
-
-    private fun resolveInNodeModules(
-        nodeModules: VirtualFile,
-        pkgPath: String,
-        importing: VirtualFile
-    ): VirtualFile? {
-        if (pkgPath.contains('.')) {
-            var cur = nodeModules
-            for (part in pkgPath.split('/')) {
-                cur = cur.findChild(part) ?: return null
-            }
-            return if (!cur.isDirectory) cur else null
-        }
-
-        val pref = when (importing.extension?.lowercase()) {
-            "scss" -> listOf("scss", "css", "sass", "less")
-            "sass" -> listOf("sass", "scss", "css", "less")
-            "less" -> listOf("less", "css", "scss", "sass")
-            else -> listOf("css", "scss", "sass", "less")
-        }
-        for (ext in pref) {
-            val parts = "$pkgPath.$ext".split('/')
-            var cur = nodeModules
-            for (p in parts) {
-                cur = cur.findChild(p) ?: break
-            }
-            if (cur != nodeModules && !cur.isDirectory && cur.exists()) return cur
-        }
-        return null
     }
 
     /* ------------------------------------------------------------------ */
