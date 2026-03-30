@@ -1,8 +1,9 @@
 package cssvarsassistant.util
 
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.openapi.module.Module
 import com.intellij.psi.search.GlobalSearchScope
-import com.intellij.psi.search.ProjectScope
 import com.intellij.util.containers.CollectionFactory
 import cssvarsassistant.index.ImportCache
 import cssvarsassistant.settings.CssVarsAssistantSettings
@@ -13,6 +14,16 @@ import cssvarsassistant.settings.CssVarsAssistantSettings
  */
 object ScopeUtil {
 
+    private data class ScopeFingerprint(
+        val indexingScope: CssVarsAssistantSettings.IndexingScope,
+        val importedPaths: List<String>
+    )
+
+    private data class CachedPreprocessorScope(
+        val fingerprint: ScopeFingerprint,
+        val scope: GlobalSearchScope
+    )
+
     /**
      * Prosjekt → pre-processor-scope cache.
      *
@@ -22,7 +33,7 @@ object ScopeUtil {
      * pluginen dynamisk avlastes.
      */
     private val preprocessorScopes =
-        CollectionFactory.createConcurrentWeakKeySoftValueMap<Project, GlobalSearchScope>()
+        CollectionFactory.createConcurrentWeakKeySoftValueMap<Project, CachedPreprocessorScope>()
 
     /* ---------- CSS scopes ------------------------------------------------ */
 
@@ -45,31 +56,47 @@ object ScopeUtil {
                     GlobalSearchScope.projectScope(project)
                         .uniteWith(GlobalSearchScope.filesScope(project, extra))
             }
-        }
+    }
 
     /* ---------- Pre-processor scopes -------------------------------------- */
 
-    fun currentPreprocessorScope(project: Project): GlobalSearchScope =
-        preprocessorScopes.computeIfAbsent(project) {
-            val projectRoots = ProjectScope.getProjectScope(project)
-            val libraryRoots = ProjectScope.getLibrariesScope(project)
-            val settings = CssVarsAssistantSettings.getInstance()
+    fun currentPreprocessorScope(project: Project): GlobalSearchScope {
+        val settings = CssVarsAssistantSettings.getInstance()
+        val importedFiles = when (settings.indexingScope) {
+            CssVarsAssistantSettings.IndexingScope.PROJECT_WITH_IMPORTS ->
+                ImportCache.get(project).get()
 
-            when (settings.indexingScope) {
-                CssVarsAssistantSettings.IndexingScope.PROJECT_ONLY ->
-                    projectRoots.uniteWith(libraryRoots)
+            else -> emptySet()
+        }
+        val fingerprint = ScopeFingerprint(
+            settings.indexingScope,
+            importedFiles.asSequence().map(VirtualFile::getPath).sorted().toList()
+        )
 
-                CssVarsAssistantSettings.IndexingScope.PROJECT_WITH_IMPORTS -> {
-                    val extra = ImportCache.get(project).get()
-                    val base = projectRoots.uniteWith(libraryRoots)
-                    if (extra.isEmpty()) base
-                    else base.uniteWith(GlobalSearchScope.filesScope(project, extra))
-                }
-
-                CssVarsAssistantSettings.IndexingScope.GLOBAL ->
-                    GlobalSearchScope.allScope(project)
+        preprocessorScopes[project]?.let { cached ->
+            if (cached.fingerprint == fingerprint) {
+                return cached.scope
             }
         }
+        val scope = when (settings.indexingScope) {
+            CssVarsAssistantSettings.IndexingScope.PROJECT_ONLY ->
+                projectFilesScopeExcludingNodeModules(project)
+
+            CssVarsAssistantSettings.IndexingScope.PROJECT_WITH_IMPORTS -> {
+                val base = projectFilesScopeExcludingNodeModules(project)
+                if (importedFiles.isEmpty()) {
+                    base
+                } else {
+                    base.uniteWith(GlobalSearchScope.filesScope(project, importedFiles))
+                }
+            }
+
+            CssVarsAssistantSettings.IndexingScope.GLOBAL ->
+                GlobalSearchScope.allScope(project)
+        }
+        preprocessorScopes[project] = CachedPreprocessorScope(fingerprint, scope)
+        return scope
+    }
 
     /* ---------- Cache maintenance ----------------------------------------- */
 
@@ -78,4 +105,20 @@ object ScopeUtil {
     }
 
     fun clearAll() = preprocessorScopes.clear()
+
+    private fun projectFilesScopeExcludingNodeModules(project: Project): GlobalSearchScope {
+        val baseScope = GlobalSearchScope.projectScope(project)
+        return object : GlobalSearchScope(project) {
+            override fun contains(file: VirtualFile): Boolean =
+                baseScope.contains(file) && !file.path.contains("/node_modules/")
+
+            override fun compare(file1: VirtualFile, file2: VirtualFile): Int =
+                baseScope.compare(file1, file2)
+
+            override fun isSearchInModuleContent(aModule: Module): Boolean =
+                baseScope.isSearchInModuleContent(aModule)
+
+            override fun isSearchInLibraries(): Boolean = false
+        }
+    }
 }
