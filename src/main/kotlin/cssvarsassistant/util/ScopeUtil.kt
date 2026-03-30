@@ -49,7 +49,7 @@ object ScopeUtil {
                 GlobalSearchScope.allScope(project)
 
             CssVarsAssistantSettings.IndexingScope.PROJECT_WITH_IMPORTS -> {
-                val extra = ImportCache.get(project).get()
+                val extra = ImportCache.get(project).getOrBuild(settings.maxImportDepth)
                 if (extra.isEmpty())
                     GlobalSearchScope.projectScope(project)
                 else
@@ -64,7 +64,7 @@ object ScopeUtil {
         val settings = CssVarsAssistantSettings.getInstance()
         val importedFiles = when (settings.indexingScope) {
             CssVarsAssistantSettings.IndexingScope.PROJECT_WITH_IMPORTS ->
-                ImportCache.get(project).get()
+                ImportCache.get(project).getOrBuild(settings.maxImportDepth)
 
             else -> emptySet()
         }

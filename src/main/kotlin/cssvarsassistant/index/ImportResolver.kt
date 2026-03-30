@@ -11,6 +11,49 @@ object ImportResolver {
     private val IMPORT_PATTERN =
         Regex("""@import\s+(?:"([^"]+)"|'([^']+)'|\burl\(\s*(?:"([^"]+)"|'([^']+)'|([^)]+))\s*\))""")
 
+    data class ResolvedImport(
+        val requestedPath: String,
+        val resolvedFile: VirtualFile?
+    )
+
+    fun resolveDirectImports(
+        file: VirtualFile,
+        project: Project
+    ): List<ResolvedImport> = try {
+        val content = String(file.contentsToByteArray())
+        extractImportPaths(content).map { importPath ->
+            ResolvedImport(importPath, resolveImportPath(file, importPath, project))
+        }
+    } catch (e: Exception) {
+        LOG.debug("Error reading imports for ${file.path}", e)
+        emptyList()
+    }
+
+    fun collectProjectImports(project: Project, maxDepth: Int): Set<VirtualFile> {
+        val projectRoot = project.guessProjectDir() ?: return emptySet()
+        val resolvedFiles = linkedSetOf<VirtualFile>()
+        val queue = ArrayDeque<VirtualFile>()
+        queue.add(projectRoot)
+
+        while (queue.isNotEmpty()) {
+            val current = queue.removeFirst()
+            if (current.isDirectory) {
+                if (current.name == "node_modules") {
+                    continue
+                }
+                current.children.forEach(queue::addLast)
+                continue
+            }
+
+            if (!isStylesheetFile(current)) {
+                continue
+            }
+
+            resolvedFiles.addAll(resolveImports(current, project, maxDepth))
+        }
+
+        return resolvedFiles
+    }
 
     /**
      * Resolves @import statements in a CSS file and returns a set of VirtualFiles
@@ -76,7 +119,7 @@ object ImportResolver {
     /**
      * Resolves a single import path relative to the current file
      */
-    private fun resolveImportPath(currentFile: VirtualFile, importPath: String, project: Project): VirtualFile? {
+    fun resolveImportPath(currentFile: VirtualFile, importPath: String, project: Project): VirtualFile? {
         try {
             return when {
                 importPath.startsWith("./") || importPath.startsWith("../") -> {
@@ -117,10 +160,16 @@ object ImportResolver {
      */
     private fun resolveRelativePath(currentFile: VirtualFile, relativePath: String): VirtualFile? {
         val currentDir = currentFile.parent ?: return null
+        val pathSegments = relativePath
+            .split('/')
+            .filter { it.isNotEmpty() && it != "." }
+        if (pathSegments.isEmpty()) {
+            return null
+        }
 
         // If path already has an extension, use it directly
         if (relativePath.contains('.')) {
-            return VfsUtil.findRelativeFile(currentDir, *relativePath.split('/').toTypedArray())
+            return VfsUtil.findRelativeFile(currentDir, *pathSegments.toTypedArray())
         }
 
         // Prioritize extensions based on the importing file's extension
@@ -133,8 +182,8 @@ object ImportResolver {
         }
 
         for (ext in prioritizedExtensions) {
-            val pathWithExtension = "$relativePath.$ext"
-            val resolved = VfsUtil.findRelativeFile(currentDir, *pathWithExtension.split('/').toTypedArray())
+            val pathWithExtension = pathSegments.dropLast(1) + "${pathSegments.last()}.$ext"
+            val resolved = VfsUtil.findRelativeFile(currentDir, *pathWithExtension.toTypedArray())
             if (resolved != null && resolved.exists()) {
                 return resolved
             }
@@ -218,4 +267,7 @@ object ImportResolver {
 
         return null
     }
+
+    private fun isStylesheetFile(file: VirtualFile): Boolean =
+        file.extension?.lowercase() in setOf("css", "scss", "sass", "less")
 }

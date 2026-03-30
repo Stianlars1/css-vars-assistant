@@ -15,27 +15,40 @@ import java.util.concurrent.ConcurrentHashMap
 class ImportCache(private val project: Project) : Disposable {
     private val LOG = Logger.getInstance(ImportCache::class.java)
     private val importedFiles = ConcurrentHashMap.newKeySet<VirtualFile>()
+    @Volatile
+    private var initialized = false
 
 
+    @Synchronized
+    fun getOrBuild(maxDepth: Int): Set<VirtualFile> {
+        if (!initialized) {
+            replaceInternal(ImportResolver.collectProjectImports(project, maxDepth))
+            initialized = true
+        }
+        return importedFiles.toSet()
+    }
+
+    @Synchronized
     fun add(files: Collection<VirtualFile>) {
-        val wasEmpty = importedFiles.isEmpty()
-        importedFiles.addAll(files)
-
-        if (wasEmpty && files.isNotEmpty()) {
-            PreprocessorUtil.clearCache()
-            CssVarCompletionCache.clearCaches()
-            ScopeUtil.clearCache(project)
+        initialized = true
+        if (files.any { importedFiles.add(it) }) {
+            invalidateDependentCaches()
         }
     }
 
     fun get(): Set<VirtualFile> = importedFiles.toSet()
 
+    @Synchronized
+    fun replace(files: Collection<VirtualFile>) {
+        initialized = true
+        replaceInternal(files)
+    }
+
     fun clear() {
         try {
+            initialized = false
             importedFiles.clear()
-            PreprocessorUtil.clearCache()
-            CssVarCompletionCache.clearCaches()
-            ScopeUtil.clearCache(project)
+            invalidateDependentCaches()
         } catch (e: Exception) {
             LOG.warn("Error clearing ImportCache", e)
         }
@@ -54,5 +67,22 @@ class ImportCache(private val project: Project) : Disposable {
         @JvmStatic
         fun get(project: Project): ImportCache =
             project.getService(ImportCache::class.java)
+    }
+
+    private fun replaceInternal(files: Collection<VirtualFile>) {
+        val newFiles = files.toSet()
+        if (importedFiles == newFiles) {
+            return
+        }
+
+        importedFiles.clear()
+        importedFiles.addAll(newFiles)
+        invalidateDependentCaches()
+    }
+
+    private fun invalidateDependentCaches() {
+        PreprocessorUtil.clearCache()
+        CssVarCompletionCache.clearCaches()
+        ScopeUtil.clearCache(project)
     }
 }

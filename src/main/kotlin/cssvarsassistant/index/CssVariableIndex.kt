@@ -8,9 +8,7 @@ import com.intellij.util.io.DataExternalizer
 import com.intellij.util.io.EnumeratorStringDescriptor
 import com.intellij.util.io.IOUtil
 import com.intellij.util.io.KeyDescriptor
-import cssvarsassistant.completion.CssVarCompletionCache
 import cssvarsassistant.settings.CssVarsAssistantSettings
-import cssvarsassistant.util.PreprocessorUtil
 import java.io.DataInput
 import java.io.DataOutput
 
@@ -104,11 +102,6 @@ class CssVariableIndex : FileBasedIndexExtension<String, String>() {
                 settings.maxImportDepth,
                 currentDepth = 0
             )
-
-            ImportCache.get(project).add(importedFiles)
-
-            PreprocessorUtil.clearCache()
-            CssVarCompletionCache.clearCaches()
             for (importedFile in importedFiles) {
                 try {
                     val importedContent = String(importedFile.contentsToByteArray())
