@@ -1,5 +1,6 @@
 package cssvarsassistant.completion
 
+import cssvarsassistant.documentation.CssVariableDocumentationService
 import cssvarsassistant.testing.CssVarsAssistantPlatformTestCase
 
 class CssVariableCompletionHarnessTest : CssVarsAssistantPlatformTestCase() {
@@ -97,5 +98,33 @@ class CssVariableCompletionHarnessTest : CssVarsAssistantPlatformTestCase() {
 
         val displayedNames = lookups.mapNotNull { it.itemText }
         assertEquals(listOf("accent-1", "accent-2", "accent-10"), displayedNames.take(3))
+    }
+
+    fun testLocalOverrideWinsInCompletionAndDocumentation() {
+        configureProjectFile(
+            "app.css",
+            """
+            :root {
+              --panel-gap: 8px;
+              --panel-gap: 16px;
+            }
+
+            .card {
+              gap: var(--panel<caret>);
+            }
+            """
+        )
+
+        val indexedValues = readIndexedCssEntries("--panel-gap").map { it.value }
+        assertContainsElements(indexedValues, "8px", "16px")
+
+        val variableElement = requireNotNull(myFixture.file.findElementAt(myFixture.caretOffset - 1))
+
+        val hint = CssVariableDocumentationService.generateHint(variableElement, "--panel-gap")
+        assertEquals("--panel-gap → 16px", hint)
+
+        val html = CssVariableDocumentationService.generateDocumentation(variableElement, "--panel-gap")
+        requireNotNull(html)
+        assertTrue("expected local override to render before imported value", html.indexOf("16px") < html.indexOf("8px"))
     }
 }

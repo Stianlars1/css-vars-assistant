@@ -40,9 +40,10 @@ object CssVariableDocumentationService {
                 val parts = it.split(DELIMITER, limit = 3)
                 if (parts.size >= 2) {
                     val ctx = parts[0]
-                    val resInfo = resolveVarValue(project, parts[1])
+                    val rawValue = parts[1]
+                    val resInfo = resolveVarValue(project, rawValue)
                     val comment = parts.getOrElse(2) { "" }
-                    Triple(ctx, resInfo, comment)
+                    ParsedEntry(ctx, rawValue, resInfo, comment)
                 } else null
             }
 
@@ -51,9 +52,14 @@ object CssVariableDocumentationService {
             val localValues = extractLocalValues(activeText, varName)
 
             // Mark entries as local or imported
-            val enrichedEntries = parsed.map { (ctx, resInfo, comment) ->
-                val isLocal = isLocalDeclaration(resInfo.resolved, localValues)
-                EntryWithSource(ctx, resInfo, comment, isLocal)
+            val enrichedEntries = parsed.map { entry ->
+                EntryWithSource(
+                    context = entry.context,
+                    rawValue = entry.rawValue,
+                    resInfo = entry.resInfo,
+                    comment = entry.comment,
+                    isLocal = isLocalDeclaration(entry.rawValue, localValues)
+                )
             }
 
 
@@ -103,9 +109,17 @@ object CssVariableDocumentationService {
 
     private data class EntryWithSource(
         val context: String,
+        val rawValue: String,
         val resInfo: ResolutionInfo,
         val comment: String,
         val isLocal: Boolean
+    )
+
+    private data class ParsedEntry(
+        val context: String,
+        val rawValue: String,
+        val resInfo: ResolutionInfo,
+        val comment: String
     )
 
     private fun extractLocalValues(fileText: String, varName: String): Set<String> {
@@ -115,8 +129,8 @@ object CssVariableDocumentationService {
             .toSet()
     }
 
-    private fun isLocalDeclaration(resolvedValue: String, localValues: Set<String>): Boolean {
-        return localValues.contains(resolvedValue)
+    private fun isLocalDeclaration(rawValue: String, localValues: Set<String>): Boolean {
+        return localValues.contains(rawValue)
     }
 
     private fun findCascadeWinner(sorted: List<EntryWithSource>): Int {
