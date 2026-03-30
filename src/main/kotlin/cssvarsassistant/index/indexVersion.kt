@@ -1,3 +1,3 @@
 package cssvarsassistant.index
 
-const val INDEX_VERSION = 1035
+const val INDEX_VERSION = 1042

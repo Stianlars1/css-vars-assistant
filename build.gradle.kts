@@ -1,4 +1,7 @@
 import org.jetbrains.intellij.platform.gradle.tasks.VerifyPluginTask
+import org.jetbrains.intellij.platform.gradle.IntelliJPlatformType
+import org.jetbrains.intellij.platform.gradle.TestFrameworkType
+import org.jetbrains.intellij.platform.gradle.models.ProductRelease
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
@@ -11,7 +14,7 @@ plugins {
 }
 
 group = "com.stianlarsen"
-version = "1.6.0"
+version = "1.7.0"
 
 repositories {
     mavenCentral()
@@ -20,14 +23,19 @@ repositories {
 
 dependencies {
     intellijPlatform {
-        webstorm("2025.1")
+        // Use a broad commercial IntelliJ Platform base so Marketplace compatibility
+        // is driven by the declared bundled plugin dependencies, not a WebStorm-only target.
+        intellijIdeaUltimate("2025.1")
+        bundledPlugin("JavaScript")
         bundledPlugin("com.intellij.css")
+        testFramework(TestFrameworkType.Platform)
 
         // Add verification tools (instrumentationTools() is deprecated and removed)
         pluginVerifier()
         zipSigner()
 
     }
+    testImplementation("junit:junit:4.13.2")
     testImplementation(kotlin("test"))
     testImplementation(kotlin("test-junit5"))
 }
@@ -122,6 +130,16 @@ intellijPlatform {
     sandboxContainer.set(layout.buildDirectory.dir("sandbox"))
     buildSearchableOptions = false
 
+    signing {
+        certificateChain.set(providers.environmentVariable("JETBRAINS_CERTIFICATE_CHAIN"))
+        privateKey.set(providers.environmentVariable("JETBRAINS_PRIVATE_KEY"))
+        password.set(providers.environmentVariable("JETBRAINS_PRIVATE_KEY_PASSWORD"))
+    }
+
+    publishing {
+        token.set(providers.environmentVariable("JETBRAINS_MARKETPLACE_TOKEN"))
+    }
+
     pluginConfiguration {
         id = "cssvarsassistant"
         name = "CSS Variables Assistant"
@@ -158,34 +176,37 @@ intellijPlatform {
   <li><b>Works everywhere</b> – <code>CSS</code>, <code>SCSS</code>, <code>SASS</code>, <code>LESS</code>.</li>
 </ul>
 <p>
-  <b>✨ New in 1.6.0:</b> Customizable documentation columns, a resolution chain tooltip for variables, and major performance/memory improvements.
+  <b>✨ New in 1.7.0:</b> Expanded JetBrains IDE compatibility metadata, broader verifier coverage, and regression tests for Marketplace compatibility.
 </p>
 """.trimIndent()
 
         changeNotes = """
-<h2>1.6.0 – 2025-06-20</h2>
+<h2>1.7.0 – 2026-03-29</h2>
 <h3>Added</h3>
 <ul>
-  <li><b>Customizable Documentation Columns:</b> Users can now select which columns (e.g., Context, Value, Source, WCAG Contrast) are visible in the documentation popup via the settings panel.</li>
-  <li><b>Resolution Chain Tooltip:</b> Hovering over a variable in the documentation now displays a detailed tooltip showing the full resolution chain, explaining how the final value was derived.</li>
+  <li><b>Marketplace compatibility coverage:</b> Added regression tests to lock the plugin manifest and build metadata required for broader JetBrains IDE support.</li>
 </ul>
 <h3>Changed</h3>
 <ul>
-  <li><b>Performance and Memory Management:</b> Caching mechanisms have been overhauled for better performance and reduced memory usage, especially in large projects.</li>
-  <li><b>Dynamic Documentation Table:</b> The documentation popup now dynamically generates columns based on user settings and the variable's value type, improving clarity and relevance.</li>
-  <li><b>Settings UI:</b> The settings panel has been updated to include controls for the new column visibility feature.</li>
-</ul>
-<h3>Fixed</h3>
-<ul>
-  <li><b>Resolution Accuracy:</b> Corrected a bug where the resolution chain was not always fully preserved in the cache, ensuring documentation is always accurate.</li>
-  <li><b>UI Styling:</b> Fixed minor styling issues in the documentation table for better readability.</li>
+  <li><b>Broader IDE targeting:</b> The plugin now declares JavaScript + CSS dependencies explicitly and is built from a broader IntelliJ IDEA Ultimate base instead of a WebStorm-only target.</li>
+  <li><b>Verification setup:</b> Plugin verification is now configured for IntelliJ IDEA Ultimate, WebStorm, GoLand, and PhpStorm.</li>
 </ul>
 """.trimIndent()
     }
 
     pluginVerification {
         ides {
-            recommended()
+            select {
+                types = listOf(
+                    IntelliJPlatformType.IntellijIdeaUltimate,
+                    IntelliJPlatformType.WebStorm,
+                    IntelliJPlatformType.GoLand,
+                    IntelliJPlatformType.PhpStorm
+                )
+                channels = listOf(ProductRelease.Channel.RELEASE)
+                sinceBuild = "251"
+                untilBuild = "251.*"
+            }
         }
 
         // Suppress experimental API warnings while keeping all critical checks

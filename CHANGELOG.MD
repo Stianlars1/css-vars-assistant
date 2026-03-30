@@ -3,6 +3,18 @@
 All notable changes to this project will be documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/) and semantic-versioning.
 
+## [1.7.0] – 2026-03-29
+
+### Added
+- **Marketplace compatibility regression tests:** Added tests to lock the manifest and Gradle metadata required for broader JetBrains IDE support.
+
+### Changed
+- **Broader IDE targeting:** The plugin now declares JavaScript + CSS dependencies explicitly and builds from an IntelliJ IDEA Ultimate base instead of a WebStorm-only target.
+- **Verifier coverage:** Plugin verification is now configured for IntelliJ IDEA Ultimate, WebStorm, GoLand, and PhpStorm.
+- **Release metadata:** Updated README and plugin change notes to reflect the expanded compatibility contract.
+
+---
+
 ## [1.6.0] – 2025-06-20
 
 ### Added
