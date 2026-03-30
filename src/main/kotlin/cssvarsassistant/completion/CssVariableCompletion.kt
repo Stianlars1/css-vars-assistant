@@ -40,9 +40,20 @@ class CssVariableCompletion : CompletionContributor() {
         val allValues: List<Pair<String, String>>,
         val doc: String,
         val isAllColor: Boolean,
-        val derived: Boolean
+        val derived: Boolean,
+        val matchPriority: Int = 0
 
-    )
+    ) {
+        constructor(
+            rawName: String,
+            display: String,
+            mainValue: String,
+            allValues: List<Pair<String, String>>,
+            doc: String,
+            isAllColor: Boolean,
+            derived: Boolean
+        ) : this(rawName, display, mainValue, allValues, doc, isAllColor, derived, 0)
+    }
 
     init {
         extend(
@@ -60,10 +71,9 @@ class CssVariableCompletion : CompletionContributor() {
                         if (DumbService.isDumb(project)) return
                         ProgressManager.checkCanceled()
 
-                        if (!isInsideVarFunction(params)) return
-
-                        val rawPref = extractVarPrefix(params)
-                        val simplePrefix = rawPref.removePrefix("--")
+                        val query = CssVarQueryMatcher.extractQuery(params.editor.document.text, params.offset)
+                        if (query == null && !isInsideVarFunction(params)) return
+                        val activeQuery = query ?: CssVarQueryMatcher.Query("", "")
 
                         val settings = CssVarsAssistantSettings.getInstance()
                         val cssScope = ScopeUtil.effectiveCssIndexingScope(project, settings)
@@ -78,9 +88,7 @@ class CssVariableCompletion : CompletionContributor() {
                             ProgressManager.checkCanceled()
 
                             val display = rawName.removePrefix("--")
-                            if (simplePrefix.isNotBlank() &&
-                                !display.startsWith(simplePrefix, ignoreCase = true)
-                            ) return@forEach
+                            val matchKind = CssVarQueryMatcher.classify(display, activeQuery) ?: return@forEach
 
                             /* ---- hent alle values -------------------------- */
                             val allVals = FileBasedIndex.getInstance()
@@ -139,15 +147,20 @@ class CssVariableCompletion : CompletionContributor() {
                                 uniquePairs,
                                 doc,
                                 isAllColor,
-                                didResolve
+                                didResolve,
+                                matchKind.priority
                             )
                         }
 
+                        val strongestEntries = CssVarQueryMatcher
+                            .keepStrongestMatches(entries, activeQuery) { it.display }
+                            .toMutableList()
+
                         /* ------------- sortering -------------------------- */
-                        entries.sortWith(createSmartComparator(settings.sortingOrder))
+                        strongestEntries.sortWith(createSmartComparator(settings.sortingOrder))
 
                         /* ------------- bygg Lookup-elementer -------------- */
-                        entries.forEachIndexed { idx, e ->
+                        strongestEntries.forEachIndexed { idx, e ->
                             ProgressManager.checkCanceled()
                             val priority = (COMPLETION_LOOKUP_ELEMENT_PRIORITY_BASE - idx).toDouble()
 
@@ -199,7 +212,7 @@ class CssVariableCompletion : CompletionContributor() {
                         result.stopHere()
                         logger.info(
                             "CSS var completion: ${System.currentTimeMillis() - startTime}ms, " +
-                                    "${entries.size} entries."
+                                    "${strongestEntries.size} entries."
                         )
 
                     } catch (e: ProcessCanceledException) {
@@ -375,33 +388,6 @@ class CssVariableCompletion : CompletionContributor() {
         } catch (e: Exception) {
             logger.debug("Error in var detection: ${e.message}")
             return false
-        }
-    }
-
-    private fun extractVarPrefix(params: CompletionParameters): String {
-        val offset = params.offset
-        val document = params.editor.document
-        val text = document.text
-
-        try {
-            val searchStart = maxOf(0, offset - 200)
-            val searchText = text.substring(searchStart, offset)
-
-            val varPattern = Regex("""var\s*\(""")
-            val matches = varPattern.findAll(searchText).toList()
-
-            if (matches.isNotEmpty()) {
-                val lastMatch = matches.last()
-                val varStart = searchStart + lastMatch.range.last + 1
-                val prefix = text.substring(varStart, offset).trim()
-                logger.debug("Extracted prefix: '$prefix'")
-                return prefix
-            }
-
-            return ""
-        } catch (e: Exception) {
-            logger.debug("Error extracting prefix: ${e.message}")
-            return ""
         }
     }
 
