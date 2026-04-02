@@ -301,6 +301,10 @@ class CssVariableCompletion : CompletionContributor() {
         query: String
     ): Comparator<Entry> {
         val baseComparator = Comparator<Entry> { a, b ->
+            if (a.matchPriority != b.matchPriority) {
+                return@Comparator a.matchPriority - b.matchPriority
+            }
+
             compareMatchedNumericFamily(a, b, query)?.let { matchedFamilyOrder ->
                 if (matchedFamilyOrder != 0) {
                     return@Comparator matchedFamilyOrder

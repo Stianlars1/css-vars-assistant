@@ -100,6 +100,71 @@ class CssVariableCompletionHarnessTest : CssVarsAssistantPlatformTestCase() {
         assertEquals(listOf("accent-1", "accent-2", "accent-10"), displayedNames.take(3))
     }
 
+    fun testSemanticSizeFamiliesSortByResolvedValue() {
+        addProjectStylesheet(
+            "spacing-tokens-semantic-order.css",
+            """
+            :root {
+              --spacing-2xs: 4px;
+              --spacing-xs: 8px;
+              --spacing-s: 12px;
+              --spacing-m: 16px;
+            }
+            """
+        )
+
+        val lookups = completeCssVariables(
+            "app.css",
+            """
+            .card {
+              gap: var(--spacing<caret>);
+            }
+            """
+        )
+
+        val displayedNames = lookups.mapNotNull { it.itemText }
+        assertEquals(listOf("spacing-2xs", "spacing-xs", "spacing-s", "spacing-m"), displayedNames.take(4))
+    }
+
+    fun testExactPrefixRanksAheadOfForegroundSuffixMatches() {
+        addProjectStylesheet(
+            "foreground-tokens.css",
+            """
+            :root {
+              --foreground: #111111;
+              --error-foreground: #ff0000;
+              --muted-foreground: #666666;
+            }
+            """
+        )
+
+        configureProjectFile(
+            "app.css",
+            """
+            .card {
+              color: var(--fore<caret>);
+            }
+            """
+        )
+
+        val lookups = myFixture.completeBasic()
+            ?.map {
+                val presentation = com.intellij.codeInsight.lookup.LookupElementPresentation()
+                it.renderElement(presentation)
+                presentation.itemText
+            }
+            .orEmpty()
+
+        if (lookups.isEmpty()) {
+            assertTrue(myFixture.file.text.contains("var(--foreground)"))
+        } else {
+            val displayedNames = lookups.filterNotNull()
+            assertEquals("foreground", displayedNames.first())
+            assertDoesntContain(displayedNames, "error-foreground")
+            assertDoesntContain(displayedNames, "muted-foreground")
+        }
+    }
+
     fun testLocalOverrideWinsInCompletionAndDocumentation() {
         configureProjectFile(
             "app.css",
