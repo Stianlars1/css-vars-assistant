@@ -48,4 +48,18 @@ class CssVarQueryMatcherTest {
 
         assertEquals(listOf("spacing-3xs", "spacing-xs"), strongest)
     }
+
+    @Test
+    fun `prefers exact foreground prefix over suffix matches`() {
+        val query = CssVarQueryMatcher.Query("--fore", "fore")
+        val names = listOf(
+            "foreground",
+            "error-foreground",
+            "muted-foreground"
+        )
+
+        val strongest = CssVarQueryMatcher.keepStrongestMatches(names, query) { it }
+
+        assertEquals(listOf("foreground"), strongest)
+    }
 }
