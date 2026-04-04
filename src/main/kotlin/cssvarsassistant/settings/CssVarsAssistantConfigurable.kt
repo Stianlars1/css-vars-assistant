@@ -9,7 +9,6 @@ import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.progress.Task
 import com.intellij.openapi.project.ProjectManager
 import com.intellij.util.ui.JBUI
-import cssvarsassistant.completion.CssVarCompletionCache
 import cssvarsassistant.index.CssVariableIndexRebuilder
 import cssvarsassistant.index.ImportCache
 import cssvarsassistant.util.PreprocessorUtil
@@ -127,11 +126,8 @@ class CssVarsAssistantConfigurable : Configurable, Disposable {
                             ImportCache.get(project).clear()      // ← ingen argument
                         }
                         step("Clearing pre-processor cache…", 0.30) {
-                            PreprocessorUtil.clearCache()
-                            ScopeUtil.clearAll()
-                        }
-                        step("Clearing completion cache…", 0.50) {
-                            CssVarCompletionCache.clearCaches()
+                            PreprocessorUtil.clearCache(project)
+                            ScopeUtil.clearCache(project)
                         }
                         step("Requesting index rebuild…", 0.70) {
                             CssVariableIndexRebuilder.forceRebuild()

@@ -15,10 +15,10 @@ import com.intellij.util.ProcessingContext
 import com.intellij.util.indexing.FileBasedIndex
 import com.intellij.util.ui.ColorIcon
 import cssvarsassistant.documentation.ColorParser
-import cssvarsassistant.documentation.findPreprocessorVariableValue
 import cssvarsassistant.documentation.lastLocalValueInFile
+import cssvarsassistant.documentation.resolveVarValue
 import cssvarsassistant.index.CSS_VARIABLE_INDEXER_NAME
-import cssvarsassistant.index.DELIMITER
+import cssvarsassistant.index.CssVariableIndexValueCodec
 import cssvarsassistant.model.DocParser
 import cssvarsassistant.settings.CssVarsAssistantSettings
 import cssvarsassistant.util.ScopeUtil
@@ -36,7 +36,6 @@ internal fun shouldStopAfterCssVarCompletion(
 
 class CssVariableCompletion : CompletionContributor() {
     private val logger = Logger.getInstance(CssVariableCompletion::class.java)
-    private val ENTRY_SEP = "|||"
 
     data class Entry(
         val rawName: String,
@@ -98,11 +97,9 @@ class CssVariableCompletion : CompletionContributor() {
                             val matchKind = CssVarQueryMatcher.classify(display, activeQuery) ?: return@forEach
 
                             /* ---- hent alle values -------------------------- */
-                            val allVals = FileBasedIndex.getInstance()
-                                .getValues(CSS_VARIABLE_INDEXER_NAME, rawName, cssScope)
-                                .flatMap { it.split(ENTRY_SEP) }
-                                .distinct()
-                                .filter { it.isNotBlank() }
+                            val allVals = CssVariableIndexValueCodec.decode(
+                                FileBasedIndex.getInstance().getValues(CSS_VARIABLE_INDEXER_NAME, rawName, cssScope)
+                            ).distinct()
 
                             if (allVals.isEmpty()) return@forEach
 
@@ -110,14 +107,9 @@ class CssVariableCompletion : CompletionContributor() {
                             var didResolve = false
 
                             val valuePairs = allVals.mapNotNull {
-                                val p = it.split(DELIMITER, limit = 3)
-                                if (p.size >= 2) {
-                                    val ctx = p[0]
-                                    val rawVal = p[1]
-                                    val resolved = resolveVarValue(project, cssScope, rawVal)
-                                    if (resolved != rawVal) didResolve = true
-                                    ctx to resolved
-                                } else null
+                                val resolved = resolveVarValue(project, it.value).resolved
+                                if (resolved != it.value) didResolve = true
+                                it.context to resolved
                             }
 
 
@@ -130,12 +122,8 @@ class CssVariableCompletion : CompletionContributor() {
                             val mainValue = CssVarCascadeUtil.selectMainValue(rawName, activeFileText, uniquePairs)
 
 
-                            val docEntry = allVals.firstOrNull {
-                                it.substringAfter(DELIMITER)
-                                    .substringAfter(DELIMITER)
-                                    .isNotBlank()
-                            } ?: allVals.first()
-                            val commentTxt = docEntry.split(DELIMITER).getOrNull(2) ?: ""
+                            val docEntry = allVals.firstOrNull { it.comment.isNotBlank() } ?: allVals.first()
+                            val commentTxt = docEntry.comment
                             val doc = DocParser.parse(commentTxt, mainValue).description
 
                             val values = uniquePairs.map { it.second }.distinct()
@@ -232,69 +220,6 @@ class CssVariableCompletion : CompletionContributor() {
         )
     }
 
-
-    private fun resolveVarValue(
-        project: Project,
-        scope: com.intellij.psi.search.GlobalSearchScope,
-        raw: String,
-        visited: Set<String> = emptySet(),
-        depth: Int = 0
-    ): String {
-        val settings = CssVarsAssistantSettings.getInstance()
-        if (depth > settings.maxImportDepth) return raw
-
-        try {
-            ProgressManager.checkCanceled()
-
-            /* var(--other) -------------------------------------------------- */
-            Regex("""var\(\s*(--[\w-]+)\s*\)""").find(raw)?.let { m ->
-                val ref = m.groupValues[1]
-                if (ref in visited) return raw
-
-                val entries = FileBasedIndex.getInstance()
-                    .getValues(CSS_VARIABLE_INDEXER_NAME, ref, scope)
-                    .flatMap { it.split(ENTRY_SEP) }
-                    .filter { it.isNotBlank() }
-
-                val defVal = entries.mapNotNull {
-                    val p = it.split(DELIMITER, limit = 3)
-                    if (p.size >= 2) p[0] to p[1] else null
-                }.let { list ->
-                    list.find { it.first == "default" }?.second ?: list.firstOrNull()?.second
-                }
-
-                if (defVal != null)
-                    return resolveVarValue(project, scope, defVal, visited + ref, depth + 1)
-                return raw
-            }
-
-            /* @less / $scss ----------------------------------------------- */
-            Regex("""^[\s]*[@$]([\w-]+)$""").find(raw.trim())?.let { m ->
-                val varName = m.groupValues[1]
-                // **FIXED**: Use getResolved method for backwards compatibility with completion
-                CssVarCompletionCache.getResolved(project, varName)?.let { return it }
-
-                val resolved = findPreprocessorVariableValue(project, varName)?.resolved
-                if (resolved != null && resolved != raw) {
-                    // **FIXED**: Store complete ResolutionInfo in cache, but extract resolved value for completion
-                    val resolutionInfo = findPreprocessorVariableValue(project, varName)
-                    if (resolutionInfo != null) {
-                        CssVarCompletionCache.put(project, varName, resolutionInfo)
-                    }
-                    return resolved
-                }
-                return raw
-            }
-
-            return raw
-
-        } catch (e: ProcessCanceledException) {
-            throw e
-        } catch (e: Exception) {
-            logger.warn("Failed to resolve var value: $raw", e)
-            return raw
-        }
-    }
 
     private fun createSmartComparator(
         order: CssVarsAssistantSettings.SortingOrder,

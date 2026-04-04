@@ -1,36 +1,77 @@
 package cssvarsassistant.util
 
+import com.intellij.openapi.Disposable
+import com.intellij.openapi.components.Service
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.project.ProjectManager
 import com.intellij.psi.search.GlobalSearchScope
-import com.intellij.util.containers.CollectionFactory
 import com.intellij.util.indexing.FileBasedIndex
 import cssvarsassistant.documentation.ResolutionInfo
 import cssvarsassistant.index.PREPROCESSOR_VARIABLE_INDEX_NAME
-import java.util.concurrent.ConcurrentHashMap
-import kotlin.math.*
+import kotlin.math.ceil
+import kotlin.math.floor
+import kotlin.math.max
+import kotlin.math.min
+import kotlin.math.pow
+import kotlin.math.round
+import kotlin.math.roundToInt
+
+private data class PreprocessorCacheKey(
+    val variableName: String,
+    val scopeHash: Int
+)
+
+internal data class CachedPreprocessorResolution(
+    val resolved: String,
+    val canonicalSteps: List<String>
+) {
+    fun toResolutionInfo(variableName: String, prefixSteps: List<String>): ResolutionInfo =
+        ResolutionInfo(
+            original = "@$variableName",
+            resolved = resolved,
+            steps = prefixSteps + canonicalSteps
+        )
+}
+
+@Service(Service.Level.PROJECT)
+internal class PreprocessorResolutionCache : Disposable {
+    private val values = java.util.concurrent.ConcurrentHashMap<PreprocessorCacheKey, CachedPreprocessorResolution>()
+
+    fun get(variableName: String, scope: GlobalSearchScope): CachedPreprocessorResolution? =
+        values[PreprocessorCacheKey(variableName, scope.hashCode())]
+
+    fun put(variableName: String, scope: GlobalSearchScope, resolution: CachedPreprocessorResolution) {
+        values[PreprocessorCacheKey(variableName, scope.hashCode())] = resolution
+    }
+
+    fun clear() = values.clear()
+
+    override fun dispose() = clear()
+}
 
 /**
  * Resolves LESS / SCSS variables and simple arithmetic expressions.
  *
- * Supports both simple resolution (for completion) and step tracking (for documentation).
+ * The cache is project-scoped and stores canonical resolution chains that start
+ * at the preprocessor variable itself, so caller-specific prefixes never leak
+ * across completion, documentation, or hint generation.
  */
 object PreprocessorUtil {
 
     private val LOG = Logger.getInstance(PreprocessorUtil::class.java)
+    private val preprocessorReferenceRegex = Regex("""^[\s]*[@$]([\w-]+)""")
 
-    /**
-     * Cache key uses project.hashCode() instead of Project object to avoid
-     * strong references that would pin the class-loader and block dynamic unload.
-     * Now stores complete ResolutionInfo objects to preserve resolution steps.
-     */
-    private val cache = CollectionFactory.createConcurrentWeakKeySoftValueMap<Triple<Int, String, Int>, ResolutionInfo?>()
+    /** Matches the full `(@foo * 0.5)` - style expression. */
+    private val arithmeticRegex = Regex(
+        """\(\s*[@$]([\w-]+)\s*(\*\*|[*/%+\-]|min|max|floor|ceil|round)\s*([+-]?\d*\.?\d+)?\s*\)""",
+        RegexOption.IGNORE_CASE
+    )
 
-    /**
-     * Simple resolution for completion - returns just the final resolved value.
-     */
+    private val numericUnitRegex = Regex("""([+-]?\d*\.?\d+)([a-z%]+)""", RegexOption.IGNORE_CASE)
+
     fun resolveVariable(
         project: Project,
         varName: String,
@@ -40,9 +81,6 @@ object PreprocessorUtil {
         return resolveVariableWithSteps(project, varName, scope, visited).resolved
     }
 
-    /**
-     * Full resolution with step tracking for documentation.
-     */
     fun resolveVariableWithSteps(
         project: Project,
         varName: String,
@@ -51,134 +89,160 @@ object PreprocessorUtil {
         steps: List<String> = emptyList()
     ): ResolutionInfo {
         ProgressManager.checkCanceled()
-        if (varName in visited) return ResolutionInfo(varName, varName, steps)
 
-        // Use project.hashCode() instead of project object for cache key
-        val key = Triple(project.hashCode(), varName, scope.hashCode())
-        cache[key]?.let { cachedResolutionInfo ->
-            // **FIXED**: Return the complete cached ResolutionInfo with preserved steps
-            return cachedResolutionInfo
+        val normalizedName = varName.removePrefix("@").removePrefix("$")
+        if (normalizedName in visited) {
+            return ResolutionInfo(normalizedName, normalizedName, steps)
+        }
+
+        cache(project).get(normalizedName, scope)?.let { cachedResolution ->
+            return cachedResolution.toResolutionInfo(normalizedName, steps)
         }
 
         return try {
             val values = FileBasedIndex.getInstance()
-                .getValues(PREPROCESSOR_VARIABLE_INDEX_NAME, varName, scope)
+                .getValues(PREPROCESSOR_VARIABLE_INDEX_NAME, normalizedName, scope)
 
-            if (values.isEmpty()) return ResolutionInfo(varName, varName, steps)
+            if (values.isEmpty()) {
+                return ResolutionInfo(normalizedName, normalizedName, steps)
+            }
 
             for (raw in values) {
                 ProgressManager.checkCanceled()
 
-                /* ---------- arithmetic expressions ----------------------------- */
                 parseArithmetic(raw)?.let { (baseVar, op, rhsMaybe) ->
                     val baseResolution = resolveVariableWithSteps(
-                        project, baseVar, scope, visited + varName, steps + "@$varName"
+                        project,
+                        baseVar,
+                        scope,
+                        visited + normalizedName,
+                        steps + "@$normalizedName"
                     )
-                    val baseVal = baseResolution.resolved
+                    val baseValue = baseResolution.resolved
 
-                    compute(baseVal, op, rhsMaybe)?.let { computed ->
+                    compute(baseValue, op, rhsMaybe)?.let { computed ->
                         val result = ResolutionInfo(
-                            original = "@$varName",
+                            original = "@$normalizedName",
                             resolved = computed,
-                            steps = baseResolution.steps + "($baseVal $op ${rhsMaybe ?: ""}) = $computed"
+                            steps = baseResolution.steps + "($baseValue $op ${rhsMaybe ?: ""}) = $computed"
                         )
-                        // **FIXED**: Cache complete ResolutionInfo instead of just final value
-                        cache[key] = result
+                        putCached(project, normalizedName, scope, result)
                         return result
                     }
                 }
 
-                /* ---------- reference to another variable ------------------- */
-                Regex("""^[\s]*[@$]([\w-]+)""").find(raw)?.let { m ->
-                    val refVar = m.groupValues[1]
+                preprocessorReferenceRegex.find(raw)?.let { match ->
+                    val referenceName = match.groupValues[1]
                     val resolution = resolveVariableWithSteps(
-                        project, refVar, scope, visited + varName, steps + "@$varName"
+                        project,
+                        referenceName,
+                        scope,
+                        visited + normalizedName,
+                        steps + "@$normalizedName"
                     )
                     val result = ResolutionInfo(
-                        original = "@$varName",
+                        original = "@$normalizedName",
                         resolved = resolution.resolved,
                         steps = resolution.steps
                     )
-                    // **FIXED**: Cache complete ResolutionInfo instead of just final value
-                    cache[key] = result
+                    putCached(project, normalizedName, scope, result)
                     return result
                 }
 
-                /* ---------- literal value ----------------------------------- */
                 val result = ResolutionInfo(
-                    original = "@$varName",
+                    original = "@$normalizedName",
                     resolved = raw,
-                    steps = steps + "@$varName"
+                    steps = steps + "@$normalizedName"
                 )
-                // **FIXED**: Cache complete ResolutionInfo instead of just final value
-                cache[key] = result
+                putCached(project, normalizedName, scope, result)
                 return result
             }
 
-            ResolutionInfo(varName, varName, steps)
+            ResolutionInfo(normalizedName, normalizedName, steps)
         } catch (e: ProcessCanceledException) {
             throw e
         } catch (e: Exception) {
-            LOG.warn("Error resolving @$varName", e)
-            ResolutionInfo(varName, varName, steps)
+            LOG.warn("Error resolving @$normalizedName", e)
+            ResolutionInfo(normalizedName, normalizedName, steps)
         }
     }
 
-    /* --------------------------------------------------------------------- */
-    /*  Helpers                                                              */
-    /* --------------------------------------------------------------------- */
+    fun isPreprocessorReference(value: String): Boolean =
+        preprocessorReferenceRegex.matches(value.trim())
 
-    /** Matches the full `(@foo * 0.5)` - style expression. */
-    private val ARITH_RE = Regex(
-        """\(\s*[@$]([\w-]+)\s*(\*\*|[*/%+\-]|min|max|floor|ceil|round)\s*([+-]?\d*\.?\d+)?\s*\)""",
-        RegexOption.IGNORE_CASE
-    )
+    fun clearCache(project: Project) {
+        cache(project).clear()
+    }
+
+    fun clearCache() {
+        ProjectManager.getInstance().openProjects.forEach { project ->
+            if (!project.isDisposed) {
+                cache(project).clear()
+            }
+        }
+    }
 
     private fun parseArithmetic(raw: String): Triple<String, String, String?>? =
-        ARITH_RE.find(raw)?.let { m ->
-            val base = m.groupValues[1]
-            val op = m.groupValues[2].lowercase()
-            val rhs = m.groupValues.getOrNull(3)?.takeIf { it.isNotBlank() }
+        arithmeticRegex.find(raw)?.let { match ->
+            val base = match.groupValues[1]
+            val op = match.groupValues[2].lowercase()
+            val rhs = match.groupValues.getOrNull(3)?.takeIf { it.isNotBlank() }
             Triple(base, op, rhs)
         }
 
-    private val NUM_UNIT = Regex("""([+-]?\d*\.?\d+)([a-z%]+)""", RegexOption.IGNORE_CASE)
+    private fun compute(baseValue: String, op: String, rhs: String?): String? {
+        val match = numericUnitRegex.find(baseValue) ?: return null
+        val number = match.groupValues[1].toDouble()
+        val unit = match.groupValues[2]
+        val rhsNumber = rhs?.toDoubleOrNull()
 
-    /**
-     * Computes `baseVal (op) rhs` and returns a formatted string with unit.
-     * `rhs` may be null for unary ops.
-     */
-    private fun compute(baseVal: String, op: String, rhs: String?): String? {
-        val m = NUM_UNIT.find(baseVal) ?: return null
-        val num = m.groupValues[1].toDouble()
-        val unit = m.groupValues[2]
-
-        val rhsNum = rhs?.toDoubleOrNull()
-
-        val resultNum = when (op) {
-            "*" -> rhsNum?.let { num * it }
-            "/" -> rhsNum?.let { num / it }
-            "+" -> rhsNum?.let { num + it }
-            "-" -> rhsNum?.let { num - it }
-            "%" -> rhsNum?.let { num % it }
-            "**" -> rhsNum?.let { num.pow(it) }
-            "min" -> rhsNum?.let { min(num, it) }
-            "max" -> rhsNum?.let { max(num, it) }
-            "floor" -> floor(num)
-            "ceil" -> ceil(num)
-            "round" -> round(num)
+        val resultNumber = when (op) {
+            "*" -> rhsNumber?.let { number * it }
+            "/" -> rhsNumber?.let { number / it }
+            "+" -> rhsNumber?.let { number + it }
+            "-" -> rhsNumber?.let { number - it }
+            "%" -> rhsNumber?.let { number % it }
+            "**" -> rhsNumber?.let { number.pow(it) }
+            "min" -> rhsNumber?.let { min(number, it) }
+            "max" -> rhsNumber?.let { max(number, it) }
+            "floor" -> floor(number)
+            "ceil" -> ceil(number)
+            "round" -> round(number)
             else -> null
         } ?: return null
 
-        if (resultNum.isNaN() || resultNum.isInfinite()) return null
+        if (resultNumber.isNaN() || resultNumber.isInfinite()) {
+            return null
+        }
 
-        return format(resultNum, unit)
+        return format(resultNumber, unit)
     }
 
-    /** Keeps integers pretty, decimals ≤ 3 dp. */
-    private fun format(n: Double, unit: String): String =
-        if (n % 1 == 0.0) "${n.roundToInt()}$unit"
-        else "${"%.3f".format(n).trimEnd('0').trimEnd('.')}$unit"
+    private fun format(number: Double, unit: String): String =
+        if (number % 1 == 0.0) "${number.roundToInt()}$unit"
+        else "${"%.3f".format(number).trimEnd('0').trimEnd('.')}$unit"
 
-    fun clearCache() = cache.clear()
+    private fun putCached(
+        project: Project,
+        variableName: String,
+        scope: GlobalSearchScope,
+        resolution: ResolutionInfo
+    ) {
+        cache(project).put(
+            variableName,
+            scope,
+            CachedPreprocessorResolution(
+                resolved = resolution.resolved,
+                canonicalSteps = canonicalizeSteps(variableName, resolution.steps)
+            )
+        )
+    }
+
+    private fun canonicalizeSteps(variableName: String, steps: List<String>): List<String> {
+        val canonicalStart = steps.indexOfFirst { it == "@$variableName" || it == "\$$variableName" }
+        return if (canonicalStart >= 0) steps.drop(canonicalStart) else steps
+    }
+
+    private fun cache(project: Project): PreprocessorResolutionCache =
+        project.getService(PreprocessorResolutionCache::class.java)
 }

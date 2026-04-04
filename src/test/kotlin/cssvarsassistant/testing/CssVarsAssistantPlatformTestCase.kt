@@ -5,16 +5,13 @@ import com.intellij.codeInsight.lookup.LookupElementPresentation
 import com.intellij.psi.search.GlobalSearchScope
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
 import com.intellij.util.indexing.FileBasedIndex
-import cssvarsassistant.completion.CssVarCompletionCache
 import cssvarsassistant.completion.CssVarKeyCache
 import cssvarsassistant.index.CSS_VARIABLE_INDEXER_NAME
-import cssvarsassistant.index.DELIMITER
+import cssvarsassistant.index.CssVariableIndexValueCodec
 import cssvarsassistant.index.ImportCache
 import cssvarsassistant.settings.CssVarsAssistantSettings
 import cssvarsassistant.util.PreprocessorUtil
 import cssvarsassistant.util.ScopeUtil
-
-private const val ENTRY_SEPARATOR = "|||"
 
 abstract class CssVarsAssistantPlatformTestCase : BasePlatformTestCase() {
 
@@ -85,19 +82,13 @@ abstract class CssVarsAssistantPlatformTestCase : BasePlatformTestCase() {
     ): List<IndexedCssEntry> {
         return FileBasedIndex.getInstance()
             .getValues(CSS_VARIABLE_INDEXER_NAME, variableName, scope)
-            .flatMap { it.split(ENTRY_SEPARATOR) }
-            .filter { it.isNotBlank() }
-            .mapNotNull { entry ->
-                val parts = entry.split(DELIMITER, limit = 3)
-                if (parts.size < 2) {
-                    null
-                } else {
-                    IndexedCssEntry(
-                        context = parts[0],
-                        value = parts[1],
-                        comment = parts.getOrElse(2) { "" }
-                    )
-                }
+            .let(CssVariableIndexValueCodec::decode)
+            .map { entry ->
+                IndexedCssEntry(
+                    context = entry.context,
+                    value = entry.value,
+                    comment = entry.comment
+                )
             }
     }
 
@@ -115,8 +106,7 @@ abstract class CssVarsAssistantPlatformTestCase : BasePlatformTestCase() {
     private fun clearPluginCaches() {
         CssVarKeyCache.get(project).clear()
         ImportCache.get(project).clear()
-        CssVarCompletionCache.clearCaches()
-        PreprocessorUtil.clearCache()
+        PreprocessorUtil.clearCache(project)
         ScopeUtil.clearCache(project)
     }
 }
