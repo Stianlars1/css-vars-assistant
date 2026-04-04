@@ -5,7 +5,6 @@ import com.intellij.ide.plugins.IdeaPluginDescriptor
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.project.ProjectManager
 import com.intellij.util.indexing.FileBasedIndex
-import cssvarsassistant.completion.CssVarCompletionCache
 import cssvarsassistant.completion.CssVarKeyCache
 import cssvarsassistant.index.CSS_VARIABLE_INDEXER_NAME
 import cssvarsassistant.index.ImportCache
@@ -24,7 +23,6 @@ class DynamicPluginCleanup : DynamicPluginListener {
                 // 1. Clear all static caches first
                 PreprocessorUtil.clearCache()
                 ScopeUtil.clearAll()
-                CssVarCompletionCache.clearCaches()
 
                 // 2. Clear project-level services for all open projects
                 val openProjects = ProjectManager.getInstance().openProjects

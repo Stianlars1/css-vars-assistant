@@ -6,9 +6,8 @@ import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiElement
 import com.intellij.util.indexing.FileBasedIndex
-import cssvarsassistant.completion.CssVarCompletionCache
 import cssvarsassistant.index.CSS_VARIABLE_INDEXER_NAME
-import cssvarsassistant.index.DELIMITER
+import cssvarsassistant.index.CssVariableIndexValueCodec
 import cssvarsassistant.settings.CssVarsAssistantSettings
 import cssvarsassistant.util.PreprocessorUtil
 import cssvarsassistant.util.ScopeUtil
@@ -38,17 +37,14 @@ fun resolveVarValue(
             if (ref !in visited) {
                 val newSteps = steps + "var($ref)"
                 val cssScope = ScopeUtil.effectiveCssIndexingScope(project, settings)
-                val entries = FileBasedIndex.getInstance()
-                    .getValues(CSS_VARIABLE_INDEXER_NAME, ref, cssScope)
-                    .flatMap { it.split(ENTRY_SEP) }
-                    .filter { it.isNotBlank() }
+                val entries = CssVariableIndexValueCodec.decode(
+                    FileBasedIndex.getInstance().getValues(CSS_VARIABLE_INDEXER_NAME, ref, cssScope)
+                )
 
-                val defVal = entries.mapNotNull {
-                    val p = it.split(DELIMITER, limit = 3)
-                    if (p.size >= 2) p[0] to p[1] else null
-                }.let { list ->
-                    list.find { it.first == "default" }?.second ?: list.firstOrNull()?.second
-                }
+                val defVal = entries
+                    .let { list ->
+                        list.find { it.context == "default" }?.value ?: list.firstOrNull()?.value
+                    }
                 if (defVal != null)
                     return resolveVarValue(project, defVal, visited + ref, depth + 1, newSteps)
             }
@@ -58,22 +54,12 @@ fun resolveVarValue(
         val preprocessorMatch = Regex("""^[\s]*[@$]([\w-]+)$""").find(raw.trim())
         if (preprocessorMatch != null) {
             val varName = preprocessorMatch.groupValues[1]
-            val currentScope = ScopeUtil.currentPreprocessorScope(project)
-
-            // **KEEP**: Check cache first (important for performance!)
-            CssVarCompletionCache.get(project, varName, currentScope)?.let { cachedResolutionInfo ->
-                // Return the cached ResolutionInfo with preserved steps
-                return cachedResolutionInfo
-            }
-
-            // **FIXED**: Get resolution info with steps from preprocessor
             val resolution = findPreprocessorVariableValue(project, varName, steps)
             if (resolution != null && resolution.resolved != raw) {
-                CssVarCompletionCache.put(project, varName, currentScope, resolution)
                 return ResolutionInfo(
                     original = raw,
                     resolved = resolution.resolved,
-                    steps = resolution.steps  // **This now contains the full chain!**
+                    steps = resolution.steps
                 )
             }
         }
@@ -142,4 +128,3 @@ fun lastLocalValueInFile(fileText: String, varName: String): String? =
         .findAll(fileText)
         .map { it.groupValues[1].trim() }
         .lastOrNull()
-

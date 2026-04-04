@@ -9,15 +9,13 @@ import com.intellij.psi.PsiElement
 import com.intellij.util.indexing.FileBasedIndex
 import cssvarsassistant.completion.CssVariableCompletion
 import cssvarsassistant.index.CSS_VARIABLE_INDEXER_NAME
-import cssvarsassistant.index.DELIMITER
+import cssvarsassistant.index.CssVariableIndexValueCodec
 import cssvarsassistant.model.DocParser
 import cssvarsassistant.settings.CssVarsAssistantSettings
 import cssvarsassistant.util.RankUtil.rank
 import cssvarsassistant.util.ScopeUtil
 import cssvarsassistant.util.ValueUtil
 import kotlin.math.roundToInt
-
-val ENTRY_SEP = "|||"
 
 object CssVariableDocumentationService {
     private val logger = Logger.getInstance(CssVariableCompletion::class.java)
@@ -31,20 +29,15 @@ object CssVariableDocumentationService {
             val settings = CssVarsAssistantSettings.getInstance()
             val cssScope = ScopeUtil.effectiveCssIndexingScope(project, settings)
 
-            val rawEntries = FileBasedIndex.getInstance().getValues(CSS_VARIABLE_INDEXER_NAME, varName, cssScope)
-                .flatMap { it.split(ENTRY_SEP) }.filter { it.isNotBlank() }
+            val rawEntries = CssVariableIndexValueCodec.decode(
+                FileBasedIndex.getInstance().getValues(CSS_VARIABLE_INDEXER_NAME, varName, cssScope)
+            )
 
             if (rawEntries.isEmpty()) return null
 
-            val parsed = rawEntries.mapNotNull {
-                val parts = it.split(DELIMITER, limit = 3)
-                if (parts.size >= 2) {
-                    val ctx = parts[0]
-                    val rawValue = parts[1]
-                    val resInfo = resolveVarValue(project, rawValue)
-                    val comment = parts.getOrElse(2) { "" }
-                    ParsedEntry(ctx, rawValue, resInfo, comment)
-                } else null
+            val parsed = rawEntries.map { entry ->
+                val resInfo = resolveVarValue(project, entry.value)
+                ParsedEntry(entry.context, entry.value, resInfo, entry.comment)
             }
 
             // Get local file text and find local values
@@ -161,8 +154,9 @@ object CssVariableDocumentationService {
         val scope = ScopeUtil.effectiveCssIndexingScope(project, settings)
 
         return try {
-            val rawEntries = FileBasedIndex.getInstance().getValues(CSS_VARIABLE_INDEXER_NAME, varName, scope)
-                .flatMap { it.split(ENTRY_SEP) }.filter { it.isNotBlank() }
+            val rawEntries = CssVariableIndexValueCodec.decode(
+                FileBasedIndex.getInstance().getValues(CSS_VARIABLE_INDEXER_NAME, varName, scope)
+            )
 
             // Use same cascade logic for hint generation
             val activeText = element.containingFile.text
@@ -173,11 +167,8 @@ object CssVariableDocumentationService {
                 resolveVarValue(project, localWinner)
             } else {
                 // Fallback to indexed values
-                rawEntries.mapNotNull {
-                    val parts = it.split(DELIMITER, limit = 3)
-                    if (parts.size >= 2) parts[0] to parts[1] else null
-                }.let { list ->
-                    val rawValue = list.find { it.first == "default" }?.second ?: list.firstOrNull()?.second
+                rawEntries.let { list ->
+                    val rawValue = list.find { it.context == "default" }?.value ?: list.firstOrNull()?.value
                     rawValue?.let { resolveVarValue(project, it) }
                 }
             }

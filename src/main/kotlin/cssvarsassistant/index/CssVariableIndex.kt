@@ -9,11 +9,9 @@ import com.intellij.util.io.EnumeratorStringDescriptor
 import com.intellij.util.io.IOUtil
 import com.intellij.util.io.KeyDescriptor
 import cssvarsassistant.settings.CssVarsAssistantSettings
+import cssvarsassistant.util.PreprocessorUtil
 import java.io.DataInput
 import java.io.DataOutput
-
-const val DELIMITER = "\u001F"
-private const val ENTRY_SEP = "|||"
 
 val CSS_VARIABLE_INDEXER_NAME = ID.create<String, String>("cssvarsassistant.index")
 
@@ -122,24 +120,26 @@ class CssVariableIndex : FileBasedIndexExtension<String, String>() {
      */
     private fun indexFileContent(text: CharSequence, map: MutableMap<String, String>) {
         CssVariableEntryParser.parse(text).forEach { parsedEntry ->
-            val entry = "${parsedEntry.context}$DELIMITER${parsedEntry.value}$DELIMITER${parsedEntry.comment}"
+            val entry = CssVariableIndexValueCodec.encode(
+                parsedEntry.context,
+                parsedEntry.value,
+                parsedEntry.comment
+            )
 
             // PRIORITY LOGIC: Direct values (non-preprocessor) win
-            val isPreprocessorRef = parsedEntry.value.matches(Regex("""[@$][\w-]+"""))
+            val isPreprocessorRef = PreprocessorUtil.isPreprocessorReference(parsedEntry.value)
             val prev = map[parsedEntry.name]
 
             if (prev == null) {
                 map[parsedEntry.name] = entry
             } else {
                 // If current value is direct and previous was preprocessor, override
-                val prevEntries = prev.split(ENTRY_SEP)
-                val hasDirectValue = prevEntries.any { prevEntry ->
-                    val prevValue = prevEntry.split(DELIMITER).getOrNull(1) ?: ""
-                    !prevValue.matches(Regex("""[@$][\w-]+"""))
+                val hasDirectValue = CssVariableIndexValueCodec.decodePacked(prev).any { previousEntry ->
+                    !PreprocessorUtil.isPreprocessorReference(previousEntry.value)
                 }
 
                 if (!isPreprocessorRef || !hasDirectValue) {
-                    map[parsedEntry.name] = prev + ENTRY_SEP + entry
+                    map[parsedEntry.name] = prev + ENTRY_SEPARATOR + entry
                 }
                 // else: skip preprocessor reference if we already have direct values
             }

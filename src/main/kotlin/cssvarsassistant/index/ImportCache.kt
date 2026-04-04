@@ -6,7 +6,6 @@ import com.intellij.openapi.components.Service
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
-import cssvarsassistant.completion.CssVarCompletionCache
 import cssvarsassistant.util.PreprocessorUtil
 import cssvarsassistant.util.ScopeUtil
 import java.util.concurrent.ConcurrentHashMap
@@ -81,8 +80,7 @@ class ImportCache(private val project: Project) : Disposable {
     }
 
     private fun invalidateDependentCaches() {
-        PreprocessorUtil.clearCache()
-        CssVarCompletionCache.clearCaches()
+        PreprocessorUtil.clearCache(project)
         ScopeUtil.clearCache(project)
     }
 }
