@@ -132,8 +132,9 @@ class CssVariableCompletionHarnessTest : CssVarsAssistantPlatformTestCase() {
             """
             :root {
               --foreground: #111111;
+              --foreground-subtle: #666666;
               --error-foreground: #ff0000;
-              --muted-foreground: #666666;
+              --muted-foreground: #777777;
             }
             """
         )
@@ -160,9 +161,36 @@ class CssVariableCompletionHarnessTest : CssVarsAssistantPlatformTestCase() {
         } else {
             val displayedNames = lookups.filterNotNull()
             assertEquals("foreground", displayedNames.first())
+            assertEquals("foreground-subtle", displayedNames.drop(1).first())
             assertDoesntContain(displayedNames, "error-foreground")
             assertDoesntContain(displayedNames, "muted-foreground")
         }
+    }
+
+    fun testForegroundColorQueryFallsBackToForegroundFamily() {
+        addProjectStylesheet(
+            "foreground-color-query.css",
+            """
+            :root {
+              --foreground: #111111;
+              --foreground-subtle: #666666;
+              --error-foreground: #ff0000;
+            }
+            """
+        )
+
+        val lookups = completeCssVariables(
+            "app.css",
+            """
+            .card {
+              color: hsl(var(--foreground-color<caret>));
+            }
+            """
+        )
+
+        val displayedNames = lookups.mapNotNull { it.itemText }
+        assertEquals(listOf("foreground", "foreground-subtle"), displayedNames.take(2))
+        assertDoesntContain(displayedNames, "error-foreground")
     }
 
     fun testLocalOverrideWinsInCompletionAndDocumentation() {

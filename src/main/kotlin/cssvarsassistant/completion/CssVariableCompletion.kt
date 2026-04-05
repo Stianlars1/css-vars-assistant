@@ -45,7 +45,8 @@ class CssVariableCompletion : CompletionContributor() {
         val doc: String,
         val isAllColor: Boolean,
         val derived: Boolean,
-        val matchPriority: Int = 0
+        val matchPriority: Int = 0,
+        val matchedQuery: String = ""
 
     ) {
         constructor(
@@ -56,7 +57,7 @@ class CssVariableCompletion : CompletionContributor() {
             doc: String,
             isAllColor: Boolean,
             derived: Boolean
-        ) : this(rawName, display, mainValue, allValues, doc, isAllColor, derived, 0)
+        ) : this(rawName, display, mainValue, allValues, doc, isAllColor, derived, 0, "")
     }
 
     init {
@@ -75,9 +76,16 @@ class CssVariableCompletion : CompletionContributor() {
                         if (DumbService.isDumb(project)) return
                         ProgressManager.checkCanceled()
 
-                        val query = CssVarQueryMatcher.extractQuery(params.editor.document.text, params.offset)
+                        val caretOffset = params.editor.caretModel.offset
+                        val query = CssVarQueryMatcher.withFallback(
+                            primary = CssVarQueryMatcher.extractQuery(params.originalFile.text, caretOffset)
+                                ?: CssVarQueryMatcher.extractQuery(params.editor.document.text, caretOffset)
+                                ?: CssVarQueryMatcher.extractQuery(params.editor.document.text, params.offset),
+                            prefixMatcherPrefix = result.prefixMatcher.prefix
+                        )
                         if (query == null && !isInsideVarFunction(params)) return
                         val activeQuery = query ?: CssVarQueryMatcher.Query("", "")
+                        val completionResult = result.withPrefixMatcher("")
 
                         val settings = CssVarsAssistantSettings.getInstance()
                         val cssScope = ScopeUtil.effectiveCssIndexingScope(project, settings)
@@ -94,7 +102,7 @@ class CssVariableCompletion : CompletionContributor() {
                             ProgressManager.checkCanceled()
 
                             val display = rawName.removePrefix("--")
-                            val matchKind = CssVarQueryMatcher.classify(display, activeQuery) ?: return@forEach
+                            val match = CssVarQueryMatcher.bestMatch(display, activeQuery) ?: return@forEach
 
                             /* ---- hent alle values -------------------------- */
                             val allVals = CssVariableIndexValueCodec.decode(
@@ -139,7 +147,8 @@ class CssVariableCompletion : CompletionContributor() {
                                 doc,
                                 isAllColor,
                                 didResolve,
-                                matchKind.priority
+                                match.kind.priority,
+                                match.matchedPrefix
                             )
                         }
 
@@ -196,7 +205,7 @@ class CssVariableCompletion : CompletionContributor() {
                                 .withTypeText(valueText, true)
                                 .withTailText(if (shortDoc.isNotBlank()) " — $shortDoc" else "", true)
 
-                            result.addElement(
+                            completionResult.addElement(
                                 PrioritizedLookupElement
                                     .withPriority(element, priority)
                             )
@@ -236,6 +245,12 @@ class CssVariableCompletion : CompletionContributor() {
                 }
             }
 
+            compareQuerySpecificity(a, b)?.let { specificityOrder ->
+                if (specificityOrder != 0) {
+                    return@Comparator specificityOrder
+                }
+            }
+
             // 1. Group by value type
             val aType = ValueUtil.getValueType(a.mainValue)
             val bType = ValueUtil.getValueType(b.mainValue)
@@ -272,6 +287,37 @@ class CssVariableCompletion : CompletionContributor() {
             bNumericSuffix != null -> 1
             else -> null
         }
+    }
+
+    private fun compareQuerySpecificity(a: Entry, b: Entry): Int? {
+        if (a.matchedQuery.isBlank() || b.matchedQuery.isBlank()) {
+            return null
+        }
+
+        val aExact = a.display.equals(a.matchedQuery, ignoreCase = true)
+        val bExact = b.display.equals(b.matchedQuery, ignoreCase = true)
+        if (aExact != bExact) {
+            return if (aExact) -1 else 1
+        }
+
+        val aType = ValueUtil.getValueType(a.mainValue)
+        val bType = ValueUtil.getValueType(b.mainValue)
+        if (aType in setOf(ValueUtil.ValueType.SIZE, ValueUtil.ValueType.NUMBER) &&
+            bType in setOf(ValueUtil.ValueType.SIZE, ValueUtil.ValueType.NUMBER)
+        ) {
+            return null
+        }
+
+        val aStartsWithMatch = a.display.startsWith(a.matchedQuery, ignoreCase = true)
+        val bStartsWithMatch = b.display.startsWith(b.matchedQuery, ignoreCase = true)
+        if (aStartsWithMatch && bStartsWithMatch) {
+            val lengthOrder = a.display.length.compareTo(b.display.length)
+            if (lengthOrder != 0) {
+                return lengthOrder
+            }
+        }
+
+        return null
     }
 
     private fun numericSuffixForQuery(displayName: String, query: String): Int? {
