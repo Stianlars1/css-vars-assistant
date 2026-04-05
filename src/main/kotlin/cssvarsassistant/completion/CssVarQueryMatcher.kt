@@ -8,6 +8,11 @@ internal object CssVarQueryMatcher {
         SUBSTRING(2)
     }
 
+    data class Match(
+        val kind: MatchKind,
+        val matchedPrefix: String
+    )
+
     data class Query(
         val rawPrefix: String,
         val normalizedPrefix: String
@@ -33,18 +38,49 @@ internal object CssVarQueryMatcher {
         )
     }
 
+    fun withFallback(primary: Query?, prefixMatcherPrefix: String?): Query? {
+        if (primary?.normalizedPrefix?.isNotBlank() == true) {
+            return primary
+        }
+
+        val normalizedPrefix = prefixMatcherPrefix
+            ?.trim()
+            ?.removePrefix("--")
+            ?.takeIf { it.isNotBlank() }
+            ?: return primary
+
+        return Query(
+            rawPrefix = "--$normalizedPrefix",
+            normalizedPrefix = normalizedPrefix
+        )
+    }
+
     fun classify(displayName: String, query: Query): MatchKind? {
+        return bestMatch(displayName, query)?.kind
+    }
+
+    fun bestMatch(displayName: String, query: Query): Match? {
         if (query.normalizedPrefix.isBlank()) return MatchKind.PREFIX
+            .let { Match(it, "") }
 
         val normalizedName = displayName.lowercase()
-        val normalizedQuery = query.normalizedPrefix.lowercase()
 
-        return when {
-            normalizedName.startsWith(normalizedQuery) -> MatchKind.PREFIX
-            normalizedName.split('-').any { it.startsWith(normalizedQuery) } -> MatchKind.TOKEN_PREFIX
-            normalizedName.contains(normalizedQuery) -> MatchKind.SUBSTRING
-            else -> null
+        for (candidate in candidatePrefixes(query.normalizedPrefix)) {
+            val normalizedCandidate = candidate.lowercase()
+
+            when {
+                normalizedName.startsWith(normalizedCandidate) ->
+                    return Match(MatchKind.PREFIX, candidate)
+
+                normalizedName.split('-').any { it.startsWith(normalizedCandidate) } ->
+                    return Match(MatchKind.TOKEN_PREFIX, candidate)
+
+                normalizedName.contains(normalizedCandidate) ->
+                    return Match(MatchKind.SUBSTRING, candidate)
+            }
         }
+
+        return null
     }
 
     fun <T> keepStrongestMatches(
@@ -61,5 +97,22 @@ internal object CssVarQueryMatcher {
         return ranked
             .filter { (_, matchKind) -> matchKind.priority == strongestPriority }
             .map { (entry, _) -> entry }
+    }
+
+    private fun candidatePrefixes(normalizedPrefix: String): List<String> {
+        if (normalizedPrefix.isBlank()) {
+            return listOf("")
+        }
+
+        val parts = normalizedPrefix.split('-').filter { it.isNotBlank() }
+        if (parts.isEmpty()) {
+            return listOf(normalizedPrefix)
+        }
+
+        return generateSequence(parts.size) { size ->
+            (size - 1).takeIf { it > 0 }
+        }.map { size ->
+            parts.take(size).joinToString("-")
+        }.toList()
     }
 }

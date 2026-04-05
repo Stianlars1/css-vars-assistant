@@ -62,4 +62,17 @@ class CssVarQueryMatcherTest {
 
         assertEquals(listOf("foreground"), strongest)
     }
+
+    @Test
+    fun `trims trailing query segments until a usable match is found`() {
+        val query = CssVarQueryMatcher.Query("--foreground-color", "foreground-color")
+
+        val directMatch = CssVarQueryMatcher.bestMatch("foreground", query)
+        val suffixMatch = CssVarQueryMatcher.bestMatch("error-foreground", query)
+
+        assertEquals(CssVarQueryMatcher.MatchKind.PREFIX, directMatch?.kind)
+        assertEquals("foreground", directMatch?.matchedPrefix)
+        assertEquals(CssVarQueryMatcher.MatchKind.TOKEN_PREFIX, suffixMatch?.kind)
+        assertEquals("foreground", suffixMatch?.matchedPrefix)
+    }
 }
