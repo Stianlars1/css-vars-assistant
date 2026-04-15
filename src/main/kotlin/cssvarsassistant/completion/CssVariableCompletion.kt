@@ -76,6 +76,9 @@ class CssVariableCompletion : CompletionContributor() {
                         if (DumbService.isDumb(project)) return
                         ProgressManager.checkCanceled()
 
+                        val insideVarFunction = isInsideVarFunction(params)
+                        if (!insideVarFunction) return
+
                         val caretOffset = params.editor.caretModel.offset
                         val query = CssVarQueryMatcher.withFallback(
                             primary = CssVarQueryMatcher.extractQuery(params.originalFile.text, caretOffset)
@@ -83,9 +86,21 @@ class CssVariableCompletion : CompletionContributor() {
                                 ?: CssVarQueryMatcher.extractQuery(params.editor.document.text, params.offset),
                             prefixMatcherPrefix = result.prefixMatcher.prefix
                         )
-                        if (query == null && !isInsideVarFunction(params)) return
                         val activeQuery = query ?: CssVarQueryMatcher.Query("", "")
-                        val completionResult = result.withPrefixMatcher("")
+
+                        // Permissive prefix matcher that keeps the correct prefix LENGTH
+                        // (so IntelliJ replaces the typed `--foo` when inserting the lookup
+                        // string) but accepts every element we add — our own
+                        // CssVarQueryMatcher already decides what to surface. This also
+                        // works for `var()` nested inside other CSS functions
+                        // (hsl/rgb/calc/color-mix/etc.) because `activeQuery.rawPrefix`
+                        // is always the text typed inside the innermost `var(`.
+                        val completionResult = result.withPrefixMatcher(
+                            object : PrefixMatcher(activeQuery.rawPrefix) {
+                                override fun prefixMatches(name: String): Boolean = true
+                                override fun cloneWithPrefix(prefix: String): PrefixMatcher = this
+                            }
+                        )
 
                         val settings = CssVarsAssistantSettings.getInstance()
                         val cssScope = ScopeUtil.effectiveCssIndexingScope(project, settings)

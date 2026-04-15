@@ -14,7 +14,7 @@ plugins {
 }
 
 group = "com.stianlarsen"
-version = "1.7.0"
+version = "1.7.2"
 
 repositories {
     mavenCentral()
@@ -97,20 +97,30 @@ intellijPlatform {
   <li><b>Works everywhere</b> – <code>CSS</code>, <code>SCSS</code>, <code>SASS</code>, <code>LESS</code>.</li>
 </ul>
 <p>
-  <b>✨ New in 1.7.0:</b> Expanded JetBrains IDE compatibility metadata, broader verifier coverage, and regression tests for Marketplace compatibility.
+  <b>✨ New in 1.7.2:</b> Completion insertions inside <code>var(...)</code> are once again clean — no more duplicated dashes (<code>var(----name)</code>) or trailing-dash variants, including when <code>var()</code> is nested inside other CSS functions like <code>hsl(var(--bg))</code>, <code>color-mix(...)</code>, or <code>calc(...)</code>.
 </p>
 """.trimIndent()
 
         changeNotes = """
-<h2>1.7.0 – 2026-03-29</h2>
+<h2>1.7.2 – 2026-04-15</h2>
+<h3>Fixed</h3>
+<ul>
+  <li><b>Clean <code>var(--name)</code> insertion:</b> Selecting a completion inside <code>var(...)</code> now always produces the correct <code>var(--name)</code> — the 1.7.1 release could insert <code>var(----name)</code>, <code>var(---name)</code>, or a trailing dash (<code>var(--name-)</code>) depending on when the popup opened.</li>
+  <li><b>Works inside any CSS function:</b> Fix also covers <code>var()</code> nested inside other CSS functions, e.g. <code>hsl(var(--bg))</code>, <code>rgba(var(--bg), 0.5)</code>, <code>color-mix(in oklch, var(--bg) 50%, white)</code>, <code>calc(var(--size) * 2)</code>, and <code>linear-gradient(hsl(var(--a)), hsl(var(--b)))</code>. Only the <code>var(...)</code> containing the caret is rewritten.</li>
+</ul>
 <h3>Added</h3>
 <ul>
-  <li><b>Marketplace compatibility coverage:</b> Added regression tests to lock the plugin manifest and build metadata required for broader JetBrains IDE support.</li>
+  <li><b>Insertion-based completion regression tests:</b> New tests assert the actual document state after selecting a completion (not just which items are offered), covering bare <code>var(...)</code> and <code>var()</code> nested inside <code>hsl</code> / <code>hsla</code> / <code>rgb</code> / <code>rgba</code> / <code>oklch</code> / <code>color-mix</code> / <code>calc</code> / <code>clamp</code> / <code>linear-gradient</code>, plus multi-<code>var()</code> declarations and non-<code>var()</code> contexts.</li>
 </ul>
-<h3>Changed</h3>
+<h2>1.7.1 – 2026-04-08</h2>
+<h3>Added</h3>
 <ul>
-  <li><b>Broader IDE targeting:</b> The plugin now declares JavaScript + CSS dependencies explicitly and is built from a broader IntelliJ IDEA Ultimate base instead of a WebStorm-only target.</li>
-  <li><b>Verification setup:</b> Plugin verification is now configured for IntelliJ IDEA Ultimate, WebStorm, GoLand, and PhpStorm.</li>
+  <li><b>Completion-scope regression coverage:</b> Added tests that lock CSS variable completion to stylesheet files and valid <code>var(...)</code> value contexts.</li>
+</ul>
+<h3>Fixed</h3>
+<ul>
+  <li><b>Stylesheet-only completion:</b> CSS variable completions are no longer registered in JavaScript, TypeScript, JSX, or TSX files.</li>
+  <li><b>Value-context completion:</b> CSS variable suggestions now require a real <code>var(...)</code> context and no longer interfere with CSS property-name completion such as <code>background</code>.</li>
 </ul>
 """.trimIndent()
     }

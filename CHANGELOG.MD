@@ -1,7 +1,28 @@
-[# CSS Variables Assistant **(--)** Changelog
+# CSS Variables Assistant **(--)** Changelog
 
 All notable changes to this project will be documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/) and semantic-versioning.
+
+## [1.7.2] – 2026-04-15
+
+### Fixed
+- **Completion insertion no longer duplicates `--`:** Selecting a suggestion inside `var(...)` now always produces the correct `var(--name)` — the previous release could insert `var(----name)`, `var(---name)`, or a trailing dash (`var(--name-)`) depending on when the popup opened. The fix also covers `var()` nested inside any other CSS function, e.g. `hsl(var(--bg))`, `rgba(var(--bg), 0.5)`, `color-mix(in oklch, var(--bg) 50%, white)`, `calc(var(--size) * 2)`, and arbitrarily nested constructs such as `linear-gradient(hsl(var(--a)), hsl(var(--b)))`.
+
+### Added
+- **Insertion-based completion regression tests:** New tests exercise actual document state after selecting a completion (not just which items are offered), covering bare `var(...)` usage and `var()` nested inside `hsl` / `hsla` / `rgb` / `rgba` / `oklch` / `color-mix` / `calc` / `clamp` / `linear-gradient`, plus multi-`var()` declarations and non-`var()` contexts.
+
+---
+
+## [1.7.1] – 2026-04-08
+
+### Added
+- **Completion scope regression tests:** Added tests to ensure CSS variable suggestions stay out of TypeScript files and CSS property-name completion.
+
+### Fixed
+- **Stylesheet-only completion registration:** The plugin no longer registers CSS variable completions for JavaScript, TypeScript, JSX, or TSX.
+- **Value-context completion gating:** CSS variable suggestions now require a real `var(...)` context, preventing them from hijacking CSS property-name completion such as `background`.
+
+---
 
 ## [1.7.0] – 2026-03-29
 

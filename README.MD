@@ -6,7 +6,7 @@
 
 If you find CSS Variables Assistant helpful, please consider rating it on [JetBrains Marketplace](https://plugins.jetbrains.com/plugin/27392-css-variables-assistant/reviews) ★★★★★ 🙏.
 
-**Version:** 1.7.0<br/>
+**Version:** 1.7.2<br/>
 **Compatible IDEs:** JetBrains IDEs with bundled JavaScript + CSS support, including WebStorm, IntelliJ IDEA Ultimate, GoLand, and PhpStorm.  
 **Author:** Stian Larsen  
 **Repo:** [github.com/Stianlars1/css-vars-assistant](https://github.com/Stianlars1/css-vars-assistant)
@@ -20,14 +20,13 @@ If you find CSS Variables Assistant helpful, please consider rating it on [JetBr
 Supercharge your CSS custom properties and preprocessor variables in JetBrains IDEs with advanced autocomplete, documentation, and debugging tools.
 ---
 
-## ✨ What's new in 1.7.0
+## ✨ What's new in 1.7.2
 
-| Category                    | Highlights                                                                                      |
-|-----------------------------|-------------------------------------------------------------------------------------------------|
-| **🧩 Broader IDE Support**   | Marketplace metadata now targets the wider JetBrains JavaScript/CSS IDE family.                 |
-| **🧪 Compatibility Tests**   | Added regression tests to prevent future Marketplace compatibility drift.                       |
-| **🔎 Verifier Coverage**     | Verification is now configured for IntelliJ IDEA Ultimate, WebStorm, GoLand, and PhpStorm.     |
-| **📦 Release Metadata**      | Plugin release notes and README now reflect the broader compatibility contract.                 |
+| Category                       | Highlights                                                                                                                                                                        |
+|--------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **🩹 Clean `var(--name)` inserts** | Selecting a completion inside `var(...)` now always produces `var(--name)` — no more `var(----name)`, `var(---name)`, or trailing-dash variants that could appear in 1.7.1.       |
+| **🎨 Works inside any CSS function** | Fix also covers nested usage like `hsl(var(--bg))`, `rgba(var(--bg), 0.5)`, `color-mix(in oklch, var(--bg) 50%, white)`, `calc(var(--size) * 2)`, and `linear-gradient(hsl(var(--a)), hsl(var(--b)))`. |
+| **🧪 Insertion-based tests**        | New regression tests exercise the actual document state after selection, locking in behavior for bare `var()`, nested CSS functions, multi-`var()` declarations, and non-`var` contexts.      |
 
 [Full Changelog →](https://github.com/Stianlars1/css-vars-assistant/blob/main/CHANGELOG.md)
 

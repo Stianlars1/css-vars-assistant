@@ -27,18 +27,6 @@
         <completion.contributor language="LESS"
                                 implementationClass="cssvarsassistant.completion.CssVariableCompletion"
                                 order="first"/>
-        <completion.contributor language="JavaScript"
-                                implementationClass="cssvarsassistant.completion.CssVariableCompletion"
-                                order="first"/>
-        <completion.contributor language="TypeScript"
-                                implementationClass="cssvarsassistant.completion.CssVariableCompletion"
-                                order="first"/>
-        <completion.contributor language="JSX Harmony"
-                                implementationClass="cssvarsassistant.completion.CssVariableCompletion"
-                                order="first"/>
-        <completion.contributor language="TypeScript JSX"
-                                implementationClass="cssvarsassistant.completion.CssVariableCompletion"
-                                order="first"/>
 
 
         <!-- New API (2023.1+) -->
