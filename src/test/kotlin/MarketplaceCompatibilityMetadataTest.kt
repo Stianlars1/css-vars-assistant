@@ -32,6 +32,34 @@ class MarketplaceCompatibilityMetadataTest {
     }
 
     @Test
+    fun `plugin manifest limits completion contributors to stylesheet languages`() {
+        val pluginXml = projectRoot.resolve("src/main/resources/META-INF/plugin.xml").toFile()
+        val document = DocumentBuilderFactory.newInstance()
+            .newDocumentBuilder()
+            .parse(pluginXml)
+
+        val languages = buildSet {
+            val nodes = document.getElementsByTagName("completion.contributor")
+            for (i in 0 until nodes.length) {
+                val node = nodes.item(i)
+                val language = node.attributes?.getNamedItem("language")?.textContent?.trim()
+                if (!language.isNullOrBlank()) {
+                    add(language)
+                }
+            }
+        }
+
+        assertTrue("CSS" in languages)
+        assertTrue("SCSS" in languages)
+        assertTrue("Sass" in languages)
+        assertTrue("LESS" in languages)
+        assertFalse("JavaScript" in languages)
+        assertFalse("TypeScript" in languages)
+        assertFalse("JSX Harmony" in languages)
+        assertFalse("TypeScript JSX" in languages)
+    }
+
+    @Test
     fun `build script targets broader ide family and verifier coverage`() {
         val buildScript = Files.readString(projectRoot.resolve("build.gradle.kts"))
 

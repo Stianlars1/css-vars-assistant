@@ -193,6 +193,56 @@ class CssVariableCompletionHarnessTest : CssVarsAssistantPlatformTestCase() {
         assertDoesntContain(displayedNames, "error-foreground")
     }
 
+    fun testDoesNotOfferCssVariablesInTypeScriptFiles() {
+        addProjectStylesheet(
+            "accent-tokens.css",
+            """
+            :root {
+              --accent-1: #111111;
+              --accent-2: #222222;
+            }
+            """
+        )
+
+        val lookups = completeCssVariables(
+            "app.ts",
+            """
+            const accent = "var(--acc<caret>)";
+            """
+        )
+
+        val displayedNames = lookups.mapNotNull { it.itemText }
+        assertDoesntContain(displayedNames, "accent-1")
+        assertDoesntContain(displayedNames, "accent-2")
+    }
+
+    fun testDoesNotOfferCssVariablesWhenCompletingPropertyNames() {
+        addProjectStylesheet(
+            "background-tokens.css",
+            """
+            :root {
+              --background: #111111;
+            }
+            """
+        )
+
+        val lookups = completeCssVariables(
+            "app.css",
+            """
+            .wrapper {
+              backgro<caret>
+            }
+            """
+        )
+
+        val pluginSignaturePresent = lookups.any { lookup ->
+            lookup.lookupString == "--background" &&
+                lookup.itemText == "background" &&
+                lookup.typeText == "#111111"
+        }
+        assertFalse(lookups.joinToString(), pluginSignaturePresent)
+    }
+
     fun testLocalOverrideWinsInCompletionAndDocumentation() {
         configureProjectFile(
             "app.css",
@@ -240,6 +290,214 @@ class CssVariableCompletionHarnessTest : CssVarsAssistantPlatformTestCase() {
         val entries = readIndexedCssEntries("--layout-gap")
 
         assertContainsElements(entries.map { it.context }, "(min-width: 768px)")
+    }
+
+    // ---------------------------------------------------------------------
+    // Insertion regression tests (1.7.1 → 1.7.2)
+    //
+    // `result.withPrefixMatcher("")` left the replacement range mis-aligned
+    // with what the user had typed, producing `var(----name)` /
+    // `var(---name)` / `var(--name-)` when a lookup element was inserted.
+    // The fix keeps the prefix *length* correct (so IntelliJ replaces the
+    // typed `--xxx`) while still permissively accepting every element we
+    // add. These cases must also hold for `var()` nested inside any other
+    // CSS function (hsl / rgb / calc / color-mix / linear-gradient / …).
+    // ---------------------------------------------------------------------
+
+    /**
+     * Verifies that selecting the lookup element for [pickLookupString]
+     * (e.g. `"--bg"`) rewrites the `var(...)` at the caret into the clean
+     * expected form. When the typed prefix already narrows the list to a
+     * single candidate, IntelliJ auto-inserts and we skip the lookup.
+     */
+    private fun assertCleanInsertion(
+        beforeBody: String,
+        expectedBody: String,
+        pickLookupString: String
+    ) {
+        configureProjectFile(
+            "app.css",
+            """
+            :root {
+              --background: #111111;
+              --bg: 0 0% 0%;
+              --size: 16px;
+            }
+
+            .card {
+              $beforeBody
+            }
+            """
+        )
+        val elements = myFixture.completeBasic()
+        if (elements != null && elements.isNotEmpty()) {
+            val target = elements.firstOrNull { it.lookupString == pickLookupString }
+                ?: error(
+                    "lookup did not contain '$pickLookupString'; available: " +
+                        elements.joinToString { it.lookupString }
+                )
+            myFixture.lookup.currentItem = target
+            myFixture.finishLookup('\n')
+        }
+        myFixture.checkResult(
+            """
+            :root {
+              --background: #111111;
+              --bg: 0 0% 0%;
+              --size: 16px;
+            }
+
+            .card {
+              $expectedBody
+            }
+            """.trimIndent()
+        )
+    }
+
+    fun testInsertionWithPartialDashedPrefixProducesCleanVar() {
+        assertCleanInsertion(
+            beforeBody = "color: var(--back<caret>);",
+            expectedBody = "color: var(--background);",
+            pickLookupString = "--background"
+        )
+    }
+
+    fun testInsertionRightAfterDashesProducesCleanVar() {
+        assertCleanInsertion(
+            beforeBody = "color: var(--<caret>);",
+            expectedBody = "color: var(--background);",
+            pickLookupString = "--background"
+        )
+    }
+
+    fun testInsertionOnAlreadyCompleteNameDoesNotAddTrailingDash() {
+        assertCleanInsertion(
+            beforeBody = "color: var(--background<caret>);",
+            expectedBody = "color: var(--background);",
+            pickLookupString = "--background"
+        )
+    }
+
+    fun testInsertionInsideHslFunctionProducesCleanVar() {
+        assertCleanInsertion(
+            beforeBody = "background: hsl(var(--b<caret>));",
+            expectedBody = "background: hsl(var(--bg));",
+            pickLookupString = "--bg"
+        )
+    }
+
+    fun testInsertionInsideHslaWithTrailingArgsProducesCleanVar() {
+        assertCleanInsertion(
+            beforeBody = "color: hsla(var(--b<caret>), 0.5);",
+            expectedBody = "color: hsla(var(--bg), 0.5);",
+            pickLookupString = "--bg"
+        )
+    }
+
+    fun testInsertionInsideRgbFunctionProducesCleanVar() {
+        assertCleanInsertion(
+            beforeBody = "color: rgb(var(--b<caret>));",
+            expectedBody = "color: rgb(var(--bg));",
+            pickLookupString = "--bg"
+        )
+    }
+
+    fun testInsertionInsideRgbaFunctionProducesCleanVar() {
+        assertCleanInsertion(
+            beforeBody = "color: rgba(var(--b<caret>), 1);",
+            expectedBody = "color: rgba(var(--bg), 1);",
+            pickLookupString = "--bg"
+        )
+    }
+
+    fun testInsertionInsideOklchFunctionProducesCleanVar() {
+        assertCleanInsertion(
+            beforeBody = "color: oklch(var(--b<caret>));",
+            expectedBody = "color: oklch(var(--bg));",
+            pickLookupString = "--bg"
+        )
+    }
+
+    fun testInsertionInsideColorMixProducesCleanVar() {
+        assertCleanInsertion(
+            beforeBody = "background: color-mix(in oklch, var(--b<caret>) 50%, white);",
+            expectedBody = "background: color-mix(in oklch, var(--bg) 50%, white);",
+            pickLookupString = "--bg"
+        )
+    }
+
+    fun testInsertionInsideCalcProducesCleanVar() {
+        assertCleanInsertion(
+            beforeBody = "width: calc(var(--s<caret>) * 2);",
+            expectedBody = "width: calc(var(--size) * 2);",
+            pickLookupString = "--size"
+        )
+    }
+
+    fun testInsertionInsideClampAsMiddleArgProducesCleanVar() {
+        assertCleanInsertion(
+            beforeBody = "width: clamp(0px, var(--s<caret>), 100px);",
+            expectedBody = "width: clamp(0px, var(--size), 100px);",
+            pickLookupString = "--size"
+        )
+    }
+
+    fun testInsertionRewritesOnlyTheVarContainingTheCaret_Second() {
+        assertCleanInsertion(
+            beforeBody = "color: hsl(var(--background), var(--b<caret>));",
+            expectedBody = "color: hsl(var(--background), var(--bg));",
+            pickLookupString = "--bg"
+        )
+    }
+
+    fun testInsertionRewritesOnlyTheVarContainingTheCaret_First() {
+        assertCleanInsertion(
+            beforeBody = "color: hsl(var(--b<caret>), var(--background));",
+            expectedBody = "color: hsl(var(--bg), var(--background));",
+            pickLookupString = "--bg"
+        )
+    }
+
+    fun testInsertionInDoubleNestedFunctionsProducesCleanVar() {
+        assertCleanInsertion(
+            beforeBody = "background: linear-gradient(hsl(var(--background)), hsl(var(--b<caret>)));",
+            expectedBody = "background: linear-gradient(hsl(var(--background)), hsl(var(--bg)));",
+            pickLookupString = "--bg"
+        )
+    }
+
+    fun testInsertionOutsideVarLeavesDocumentUnchanged() {
+        // Caret is inside `hsl(...)` but NOT inside a `var(...)`. Our plugin
+        // must not hijack the insertion here; the text must stay literally
+        // the same (completion is effectively a no-op for us).
+        configureProjectFile(
+            "app.css",
+            """
+            :root {
+              --background: #111111;
+            }
+
+            .card {
+              background: hsl(100, 50%, 50<caret>);
+            }
+            """
+        )
+        val textBefore = myFixture.file.text
+        myFixture.completeBasic()
+        // Nothing starting with `--` was typed; our contributor must not
+        // have rewritten `50` into a CSS variable. The document may have
+        // IDE-level suggestions applied, but our plugin's signature output
+        // (`var(--background)` etc.) must not appear at the caret location.
+        assertFalse(
+            "plugin must not rewrite non-var() contexts",
+            myFixture.file.text.contains("var(--background)")
+        )
+        assertTrue(
+            "document body unchanged near caret",
+            myFixture.file.text.contains("hsl(100, 50%, 50")
+        )
+        // Silences unused warning in the rare case completeBasic() returns null.
+        textBefore.hashCode()
     }
 
     fun testCompoundMediaQueryContextIsNormalized() {
