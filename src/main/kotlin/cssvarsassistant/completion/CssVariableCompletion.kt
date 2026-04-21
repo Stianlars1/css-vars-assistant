@@ -17,6 +17,7 @@ import com.intellij.util.ui.ColorIcon
 import cssvarsassistant.documentation.ColorParser
 import cssvarsassistant.documentation.lastLocalValueInFile
 import cssvarsassistant.documentation.resolveVarValue
+import cssvarsassistant.feedback.RatePromptService
 import cssvarsassistant.index.CSS_VARIABLE_INDEXER_NAME
 import cssvarsassistant.index.CssVariableIndexValueCodec
 import cssvarsassistant.model.DocParser
@@ -177,12 +178,23 @@ class CssVariableCompletion : CompletionContributor() {
                         )
 
                         /* ------------- bygg Lookup-elementer -------------- */
+                        val descMaxLen =
+                            if (settings.showCompletionDescription) settings.completionDescriptionMaxLength
+                            else 0
                         strongestEntries.forEachIndexed { idx, e ->
                             ProgressManager.checkCanceled()
                             val priority = (COMPLETION_LOOKUP_ELEMENT_PRIORITY_BASE - idx).toDouble()
 
-                            val shortDoc = e.doc.takeIf { it.isNotBlank() }
-                                ?.let { it.take(40) + if (it.length > 40) "…" else "" } ?: ""
+                            val shortDoc = if (descMaxLen <= 0) "" else e.doc
+                                .takeIf { it.isNotBlank() }
+                                ?.let {
+                                    val trimmed = it.lineSequence()
+                                        .map(String::trim)
+                                        .filter { line -> line.isNotBlank() }
+                                        .joinToString(" ")
+                                    if (trimmed.length > descMaxLen) trimmed.take(descMaxLen) + "…"
+                                    else trimmed
+                                } ?: ""
 
                             val colorIcons = e.allValues.mapNotNull { (_, v) ->
                                 ColorParser.parseCssColor(v)?.let { ColorIcon(12, it, false) }
@@ -229,6 +241,11 @@ class CssVariableCompletion : CompletionContributor() {
                         if (shouldStopAfterCssVarCompletion(strongestEntries.size, settings.allowIdeCompletions)) {
                             result.stopHere()
                         }
+
+                        if (strongestEntries.isNotEmpty()) {
+                            RatePromptService.getInstance().recordUsage()
+                        }
+
                         logger.info(
                             "CSS var completion: ${System.currentTimeMillis() - startTime}ms, " +
                                     "${strongestEntries.size} entries."
@@ -345,82 +362,93 @@ class CssVariableCompletion : CompletionContributor() {
             .toIntOrNull()
     }
 
+    /**
+     * Returns true if the caret sits strictly inside an unclosed `var(...)`
+     * expression — i.e. between its opening `(` and the matching `)`.
+     *
+     * Issue #18 Bug B: the old line-based check returned true whenever the
+     * caret was after *any* `var(` on the line, even when the matching `)`
+     * had already been passed. That caused the plugin to offer every indexed
+     * CSS variable on lines that happened to contain a `var()` call
+     * somewhere, flooding completion with irrelevant suggestions.
+     *
+     * Correctness rules enforced here:
+     *   1. PSI check first (authoritative when available).
+     *   2. Text fallback tracks paren depth from each `var(` until the caret
+     *      or the matching `)`. Depth must stay ≥ 1 at the caret.
+     *   3. `(?<![\w-])var\s*\(` stops identifiers like `myvar(` from counting.
+     */
     private fun isInsideVarFunction(params: CompletionParameters): Boolean {
         val offset = params.offset
-        val document = params.editor.document
-        val text = document.text
 
+        // 1. PSI-first, the authoritative answer when available.
         try {
-            val lineNumber = document.getLineNumber(offset)
-            val lineStart = document.getLineStartOffset(lineNumber)
-            val lineEnd = document.getLineEndOffset(lineNumber)
-            val lineText = text.substring(lineStart, lineEnd)
-            val positionInLine = offset - lineStart
-
-            logger.debug("Line analysis: '$lineText' at position $positionInLine")
-
-            val varPattern = Regex("""var\s*\(""")
-            val matches = varPattern.findAll(lineText).toList()
-
-            for (match in matches) {
-                val varOpenParenPos = match.range.last
-
-                if (positionInLine > varOpenParenPos) {
-                    val remainingText = lineText.substring(positionInLine)
-                    val closingParenIndex = remainingText.indexOf(')')
-
-                    if (closingParenIndex == -1) {
-                        logger.debug("✅ Found var( without closing paren")
-                        return true
-                    } else {
-                        logger.debug("✅ Found var( with closing paren at ${positionInLine + closingParenIndex}")
-                        return true
-                    }
-                }
-            }
-
-            val searchStart = maxOf(0, offset - 100)
-            val searchEnd = minOf(text.length, offset + 20)
-            val searchText = text.substring(searchStart, searchEnd)
-            val cursorInSearch = offset - searchStart
-
-            logger.debug("Broader search: '${searchText.replace('\n', '↵')}' cursor at $cursorInSearch")
-
-            val nearbyMatches = varPattern.findAll(searchText).toList()
-            for (match in nearbyMatches) {
-                val varOpenParenPos = match.range.last
-
-                if (cursorInSearch > varOpenParenPos) {
-                    val afterVarText = searchText.substring(varOpenParenPos + 1)
-                    val closingParenIndex = afterVarText.indexOf(')')
-
-                    if (closingParenIndex == -1 || cursorInSearch <= varOpenParenPos + 1 + closingParenIndex) {
-                        logger.debug("✅ Found var( in broader search")
-                        return true
-                    }
-                }
-            }
-
-            val pos = params.position
-            val fn = PsiTreeUtil.getParentOfType(pos, CssFunction::class.java)
-            if (fn?.name == "var") {
+            val fn = PsiTreeUtil.getParentOfType(params.position, CssFunction::class.java)
+            if (fn != null && fn.name.equals("var", ignoreCase = true)) {
                 val l = fn.lParenthesis?.textOffset
                 val r = fn.rParenthesis?.textOffset
-                if (l != null && (r == null || (offset > l && offset <= r))) {
-                    logger.debug("✅ PSI detection success")
+                if (l != null && offset > l && (r == null || offset <= r)) {
+                    logger.debug("✅ PSI detected var() context")
+                    return true
+                }
+            }
+        } catch (e: Exception) {
+            logger.debug("PSI var() probe failed: ${e.message}")
+        }
+
+        // 2. Textual fallback — used in dumb mode, non-indexed files, and the
+        //    SCSS/LESS contexts where the CSS PSI sometimes does not see var.
+        return try {
+            val text = params.editor.document.text
+            val searchStart = maxOf(0, offset - 200)
+            val searchText = text.substring(searchStart, offset)
+            val cursorInSearch = offset - searchStart
+
+            val varMatches = VAR_OPEN_REGEX.findAll(searchText).toList()
+            if (varMatches.isEmpty()) {
+                logger.debug("❌ No var( before caret")
+                return false
+            }
+
+            // Prefer the innermost `var(` that still contains the caret: walk
+            // the matches in reverse. For each candidate, simulate paren depth
+            // from its `(` up to the caret; if depth stays ≥ 1 the caret is
+            // inside that var(...) call.
+            for (match in varMatches.asReversed()) {
+                val openParenIndex = match.range.last
+                if (cursorInSearch <= openParenIndex) continue
+
+                var depth = 1
+                var i = openParenIndex + 1
+                while (i < cursorInSearch) {
+                    when (searchText[i]) {
+                        '(' -> depth++
+                        ')' -> {
+                            depth--
+                            if (depth == 0) break
+                        }
+                    }
+                    i++
+                }
+                if (depth >= 1) {
+                    logger.debug("✅ Text scan confirms inside var(), depth=$depth")
                     return true
                 }
             }
 
-            logger.debug("❌ No var() context detected")
-            return false
-
+            logger.debug("❌ Caret is outside every var() before it")
+            false
         } catch (e: Exception) {
-            logger.debug("Error in var detection: ${e.message}")
-            return false
+            logger.debug("Text var() probe failed: ${e.message}")
+            false
         }
     }
 
+    private companion object {
+        // Guarded with a non-word look-behind so identifiers that merely end
+        // in "var" (e.g. `myvar(`, `ivar(`) don't count as a var() call.
+        val VAR_OPEN_REGEX = Regex("""(?<![A-Za-z0-9_-])var\s*\(""", RegexOption.IGNORE_CASE)
+    }
 }
 
 class DoubleColorIcon(private val icon1: Icon, private val icon2: Icon) : Icon {

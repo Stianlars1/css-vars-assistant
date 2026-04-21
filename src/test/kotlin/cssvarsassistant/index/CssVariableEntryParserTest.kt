@@ -102,4 +102,61 @@ class CssVariableEntryParserTest {
             entries
         )
     }
+
+    // Regression: a single line that starts with /* ... */ and then has a real
+    // variable declaration after the comment must still index the variable.
+    // Historic bug: the parser fell into `continue` after consuming the inline
+    // comment and never processed the rest of the line.
+    @Test
+    fun `inline leading block comment does not drop trailing declaration`() {
+        val entries = CssVariableEntryParser.parse(
+            """
+            :root {
+              /* blue */ --primary: #0000ff;
+            }
+            """.trimIndent()
+        )
+
+        assertEquals(
+            listOf(ParsedCssVariableEntry("--primary", "default", "#0000ff", "blue")),
+            entries
+        )
+    }
+
+    // Regression: an inline /* ... */ segment inside a value must not leak
+    // into the stored value text. Without the fix the indexed value was
+    // `/* inline */ 1` which then showed up in completion/documentation.
+    @Test
+    fun `inline comment inside value is stripped`() {
+        val entries = CssVariableEntryParser.parse(
+            """
+            :root {
+              --size: /* legacy */ 1px;
+            }
+            """.trimIndent()
+        )
+
+        assertEquals(
+            listOf(ParsedCssVariableEntry("--size", "default", "1px", "")),
+            entries
+        )
+    }
+
+    // Regression: a trailing /* ... */ after the declaration on the same line
+    // must also be stripped from the value.
+    @Test
+    fun `trailing inline comment in value is stripped`() {
+        val entries = CssVariableEntryParser.parse(
+            """
+            :root {
+              --size: 1px /* px */;
+            }
+            """.trimIndent()
+        )
+
+        assertEquals(
+            listOf(ParsedCssVariableEntry("--size", "default", "1px", "")),
+            entries
+        )
+    }
 }

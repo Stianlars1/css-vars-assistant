@@ -39,16 +39,26 @@ class CssVarsAssistantSettings : PersistentStateComponent<CssVarsAssistantSettin
         var indexingScope: IndexingScope = IndexingScope.PROJECT_WITH_IMPORTS,
         var maxImportDepth: Int = 20,
         var sortingOrder: SortingOrder = SortingOrder.ASC,
-        var columnVisibility: ColumnVisibility = ColumnVisibility()
-
+        var columnVisibility: ColumnVisibility = ColumnVisibility(),
+        // Controls the trailing `— description` that appears in the
+        // completion popup next to each variable. Some users find it noisy
+        // on narrow popups; disabling it keeps only the colour icon + value.
+        var showCompletionDescription: Boolean = true,
+        // Maximum characters of the description to render in the popup.
+        // 0 = suppress entirely (equivalent to showCompletionDescription=false).
+        var completionDescriptionMaxLength: Int = DEFAULT_DESC_MAX_LENGTH
     )
 
     private var state = State()
 
     override fun getState() = state
     override fun loadState(state: State) {
-        val clamped = state.maxImportDepth.coerceIn(1, MAX_IMPORT_DEPTH)
-        this.state = state.copy(maxImportDepth = clamped)
+        val clampedDepth = state.maxImportDepth.coerceIn(1, MAX_IMPORT_DEPTH)
+        val clampedDescLen = state.completionDescriptionMaxLength.coerceIn(0, MAX_DESC_MAX_LENGTH)
+        this.state = state.copy(
+            maxImportDepth = clampedDepth,
+            completionDescriptionMaxLength = clampedDescLen
+        )
     }
 
     var showContextValues: Boolean
@@ -88,6 +98,18 @@ class CssVarsAssistantSettings : PersistentStateComponent<CssVarsAssistantSettin
             state.columnVisibility = value
         }
 
+    var showCompletionDescription: Boolean
+        get() = state.showCompletionDescription
+        set(value) {
+            state.showCompletionDescription = value
+        }
+
+    var completionDescriptionMaxLength: Int
+        get() = state.completionDescriptionMaxLength
+        set(value) {
+            state.completionDescriptionMaxLength = value.coerceIn(0, MAX_DESC_MAX_LENGTH)
+        }
+
     // Computed properties for backward compatibility and clarity
     val useGlobalSearchScope: Boolean
         get() = indexingScope == IndexingScope.GLOBAL
@@ -100,6 +122,8 @@ class CssVarsAssistantSettings : PersistentStateComponent<CssVarsAssistantSettin
 
     companion object {
         const val MAX_IMPORT_DEPTH = 20
+        const val DEFAULT_DESC_MAX_LENGTH = 40
+        const val MAX_DESC_MAX_LENGTH = 120
 
         @JvmStatic
         fun getInstance() = com.intellij.openapi.application.ApplicationManager

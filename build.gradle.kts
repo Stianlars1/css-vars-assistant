@@ -14,7 +14,7 @@ plugins {
 }
 
 group = "com.stianlarsen"
-version = "1.7.2"
+version = "1.8.0"
 
 repositories {
     mavenCentral()
@@ -97,11 +97,40 @@ intellijPlatform {
   <li><b>Works everywhere</b> – <code>CSS</code>, <code>SCSS</code>, <code>SASS</code>, <code>LESS</code>.</li>
 </ul>
 <p>
-  <b>✨ New in 1.7.2:</b> Completion insertions inside <code>var(...)</code> are once again clean — no more duplicated dashes (<code>var(----name)</code>) or trailing-dash variants, including when <code>var()</code> is nested inside other CSS functions like <code>hsl(var(--bg))</code>, <code>color-mix(...)</code>, or <code>calc(...)</code>.
+  <b>✨ New in 1.8.0:</b> Fixes the completion regressions reported in issue
+  #18. The popup no longer shows a comment's description in place of the
+  real value, and CSS variables are no longer offered after a closed
+  <code>var(...)</code> call on the same line. Plus two new settings so you
+  can tune how descriptions appear next to each completion item.
+</p>
+<p>
+  <b>Pairs well with:</b>
+  <a href="https://plugins.jetbrains.com/plugin/31286-pxpeek--css-pixel-hints">PxPeek</a>
+  — inline pixel-equivalent hints for every relative CSS unit.
 </p>
 """.trimIndent()
 
         changeNotes = """
+<h2>1.8.0 – 2026-04-21</h2>
+<h3>Fixed</h3>
+<ul>
+  <li><b>Value column no longer shows a comment (issue #18):</b> When a CSS custom property has a JSDoc/block comment above it, the completion popup now always shows the resolved value — it no longer scrapes a <code>--name: ...;</code> sample out of an unrelated comment block. Both completion <i>and</i> hover documentation respect the real cascade winner.</li>
+  <li><b>Autocompletion no longer fires outside <code>var()</code> (issue #18):</b> The gate now tracks parenthesis depth from each <code>var(</code> to the caret, so typing after a closed <code>var(--x)</code> on the same line stops surfacing every indexed variable. Identifiers ending in <code>var</code> (e.g. <code>myvar(</code>) also no longer trigger completions.</li>
+  <li><b>Inline <code>/* ... */</code> in values and declarations:</b> The indexer now strips inline CSS comments from captured values and still indexes variables even when a leading <code>/* comment */</code> and the declaration share one line.</li>
+  <li><b>Scope leaks <code>node_modules</code> fewer places:</b> <code>PROJECT_ONLY</code> and <code>PROJECT_WITH_IMPORTS</code> scopes now consistently exclude <code>node_modules</code> at the CSS query layer, matching the settings panel's wording.</li>
+</ul>
+<h3>Added</h3>
+<ul>
+  <li><b>Completion description toggle + length:</b> New settings under <i>Display Options</i> let you hide the description that appears next to each completion item, or clamp it to a custom length (0 = hide, up to 120 chars).</li>
+  <li><b>Optional feedback prompt:</b> After ~14 days and 20 uses of CSS variable completion, a single non-intrusive balloon asks if you'd like to rate the plugin on Marketplace. "Remind me later" and "Don't show again" actions included. Prompt conditions are conservative — it will never re-appear once dismissed.</li>
+  <li><b>Pairs well with <a href="https://plugins.jetbrains.com/plugin/31286-pxpeek--css-pixel-hints">PxPeek</a>:</b> sibling plugin by the same author adding inline px-equivalents for <code>rem</code> / <code>em</code> / <code>vh</code> / <code>%</code> and all modern viewport units. Linked from the Marketplace description and the README.</li>
+  <li><b>Broader verifier coverage:</b> Plugin verification now also runs against PyCharm Professional and RubyMine — both bundle the JavaScript and CSS plugins the plugin depends on.</li>
+  <li><b>Regression tests:</b> New tests lock in each of the fixes above so the classes of bug in issue #18 don't come back.</li>
+</ul>
+<h3>Notes</h3>
+<ul>
+  <li>The CSS variable index will rebuild once on first launch after upgrade because the parser now captures values differently.</li>
+</ul>
 <h2>1.7.2 – 2026-04-15</h2>
 <h3>Fixed</h3>
 <ul>
@@ -132,7 +161,9 @@ intellijPlatform {
                     IntelliJPlatformType.IntellijIdeaUltimate,
                     IntelliJPlatformType.WebStorm,
                     IntelliJPlatformType.GoLand,
-                    IntelliJPlatformType.PhpStorm
+                    IntelliJPlatformType.PhpStorm,
+                    IntelliJPlatformType.PyCharmProfessional,
+                    IntelliJPlatformType.RubyMine
                 )
                 channels = listOf(ProductRelease.Channel.RELEASE)
                 sinceBuild = "251"

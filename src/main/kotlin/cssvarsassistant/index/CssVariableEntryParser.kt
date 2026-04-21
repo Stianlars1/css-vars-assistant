@@ -13,6 +13,16 @@ internal object CssVariableEntryParser {
     private val variableDeclarationRegex = Regex("""(--[A-Za-z0-9\-_]+)\s*:\s*([^;]+);""")
     private val variableDeclarationStartRegex = Regex("""(--[A-Za-z0-9\-_]+)\s*:\s*(.*)$""")
 
+    // Single-line `/* ... */` comments embedded inside an otherwise normal
+    // line. Multi-line block comments are handled separately via the
+    // `inBlockComment` state machine below.
+    private val inlineBlockCommentRegex = Regex("""/\*.*?\*/""")
+
+    // SCSS/Less `// comment` to end of line. CSS itself doesn't support
+    // `//` comments but the Jetbrains CSS plugin treats them as such inside
+    // SCSS/Less files, so we strip them here too.
+    private val lineCommentRegex = Regex("""//[^\n]*$""")
+
     private data class MediaContext(
         val label: String,
         val depthAfterOpen: Int
@@ -33,39 +43,57 @@ internal object CssVariableEntryParser {
         val pendingVariableValue = StringBuilder()
 
         for (rawLine in text.lines()) {
-            val line = rawLine.trim()
+            var line = rawLine.trim()
 
-            if (!inBlockComment && (line.startsWith("/*") || line.startsWith("/**"))) {
-                inBlockComment = true
-                blockComment.clear()
-                if (line.contains("*/")) {
-                    blockComment.append(
-                        line
-                            .removePrefix("/**").removePrefix("/*")
-                            .substringBefore("*/")
-                            .trim()
-                    )
-                    lastComment = blockComment.toString().trim()
-                    inBlockComment = false
-                } else {
-                    blockComment.append(
-                        line
-                            .removePrefix("/**").removePrefix("/*").trim()
-                    )
-                }
-                continue
-            }
-
+            // 1) Multi-line block comment continuation (opened on an earlier line)
             if (inBlockComment) {
-                if (line.contains("*/")) {
-                    blockComment.append("\n" + line.substringBefore("*/"))
+                val closeIdx = line.indexOf("*/")
+                if (closeIdx >= 0) {
+                    blockComment.append("\n" + line.substring(0, closeIdx))
                     lastComment = blockComment.toString().trim()
                     inBlockComment = false
+                    line = line.substring(closeIdx + 2).trim()
+                    // fall through — the remainder of the line may be a
+                    // legit declaration (Issue #18 F6).
                 } else {
                     blockComment.append("\n" + line)
+                    continue
                 }
-                continue
             }
+
+            // 2) Peel any number of leading `/* ... */` block comments from
+            //    the line. The LAST one wins as `lastComment` because it's
+            //    the one nearest the upcoming declaration. An unclosed
+            //    `/* ...` flips into multi-line mode and we break.
+            while (line.startsWith("/*")) {
+                val closeIdx = line.indexOf("*/")
+                if (closeIdx < 0) {
+                    inBlockComment = true
+                    blockComment.clear()
+                    blockComment.append(
+                        line.removePrefix("/**").removePrefix("/*").trim()
+                    )
+                    line = ""
+                    break
+                }
+                blockComment.clear()
+                blockComment.append(
+                    line.substring(0, closeIdx)
+                        .removePrefix("/**").removePrefix("/*")
+                        .trim()
+                )
+                lastComment = blockComment.toString().trim()
+                line = line.substring(closeIdx + 2).trim()
+            }
+            if (inBlockComment || line.isEmpty()) continue
+
+            // 3) Strip any remaining embedded comments from the line so they
+            //    don't leak into captured values (Issue #18 F7).
+            //    `--x: /* inline */ 1;` must yield value = "1", not
+            //    "/* inline */ 1".
+            line = inlineBlockCommentRegex.replace(line, " ")
+            line = lineCommentRegex.replace(line, "").trim()
+            if (line.isEmpty()) continue
 
             val mediaContext = extractMediaContext(line)
             if (mediaContext != null) {

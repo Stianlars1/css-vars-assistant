@@ -43,18 +43,22 @@ object ScopeUtil {
     ): GlobalSearchScope =
         when (settings.indexingScope) {
             CssVarsAssistantSettings.IndexingScope.PROJECT_ONLY ->
-                GlobalSearchScope.projectScope(project)
+                projectFilesScopeExcludingNodeModules(project)
 
             CssVarsAssistantSettings.IndexingScope.GLOBAL ->
                 GlobalSearchScope.allScope(project)
 
             CssVarsAssistantSettings.IndexingScope.PROJECT_WITH_IMPORTS -> {
+                // Use project files *excluding* node_modules as the base, then
+                // union in whichever node_modules files actually got walked via
+                // `@import` resolution. Without this, an uninitialised import
+                // cache fell back to plain projectScope which includes every
+                // node_modules CSS file on disk — thousands of irrelevant
+                // --foo entries polluted completion.
+                val base = projectFilesScopeExcludingNodeModules(project)
                 val extra = ImportCache.get(project).getOrBuild(settings.maxImportDepth)
-                if (extra.isEmpty())
-                    GlobalSearchScope.projectScope(project)
-                else
-                    GlobalSearchScope.projectScope(project)
-                        .uniteWith(GlobalSearchScope.filesScope(project, extra))
+                if (extra.isEmpty()) base
+                else base.uniteWith(GlobalSearchScope.filesScope(project, extra))
             }
     }
 

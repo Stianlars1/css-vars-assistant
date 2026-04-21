@@ -77,6 +77,9 @@ class MarketplaceCompatibilityMetadataTest {
         assertTrue("IntelliJPlatformType.WebStorm" in buildScript)
         assertTrue("IntelliJPlatformType.GoLand" in buildScript)
         assertTrue("IntelliJPlatformType.PhpStorm" in buildScript)
+        // 1.8.0 widened verifier coverage
+        assertTrue("IntelliJPlatformType.PyCharmProfessional" in buildScript)
+        assertTrue("IntelliJPlatformType.RubyMine" in buildScript)
         assertFalse("dependsOn(autoIncrementVersion)" in buildScript)
     }
 }

@@ -48,6 +48,22 @@ class CssVarsAssistantConfigurable : Configurable, Disposable {
             settings.allowIdeCompletions
         )
 
+    // 1.8.0 — description display in completion popup.
+    private val showCompletionDescriptionCheck =
+        JCheckBox(
+            "Show description next to completion items",
+            settings.showCompletionDescription
+        )
+
+    private val completionDescriptionMaxLengthSpinner = JSpinner(
+        SpinnerNumberModel(
+            settings.completionDescriptionMaxLength.coerceIn(0, CssVarsAssistantSettings.MAX_DESC_MAX_LENGTH),
+            0,
+            CssVarsAssistantSettings.MAX_DESC_MAX_LENGTH,
+            1
+        )
+    )
+
     // Column visibility checkboxes
     private val showContextColumnCheck = JCheckBox("Context", settings.columnVisibility.showContext)
     private val showColorSwatchCheck = JCheckBox("Color Swatch", settings.columnVisibility.showColorSwatch)
@@ -187,6 +203,8 @@ class CssVarsAssistantConfigurable : Configurable, Disposable {
     override fun isModified(): Boolean =
         showContextValuesCheck.isSelected != settings.showContextValues ||
                 allowIdeCompletionsCheck.isSelected != settings.allowIdeCompletions ||
+                showCompletionDescriptionCheck.isSelected != settings.showCompletionDescription ||
+                (completionDescriptionMaxLengthSpinner.value as Int) != settings.completionDescriptionMaxLength ||
                 getSelectedScope() != settings.indexingScope ||
                 (maxImportDepthSpinner.value as Int) != settings.maxImportDepth ||
                 getSelectedSortingOrder() != settings.sortingOrder ||
@@ -195,6 +213,8 @@ class CssVarsAssistantConfigurable : Configurable, Disposable {
     override fun apply() {
         settings.showContextValues = showContextValuesCheck.isSelected
         settings.allowIdeCompletions = allowIdeCompletionsCheck.isSelected
+        settings.showCompletionDescription = showCompletionDescriptionCheck.isSelected
+        settings.completionDescriptionMaxLength = completionDescriptionMaxLengthSpinner.value as Int
         settings.indexingScope = getSelectedScope()
         settings.maxImportDepth = maxImportDepthSpinner.value as Int
         settings.sortingOrder = getSelectedSortingOrder()
@@ -214,6 +234,8 @@ class CssVarsAssistantConfigurable : Configurable, Disposable {
     override fun reset() {
         showContextValuesCheck.isSelected = settings.showContextValues
         allowIdeCompletionsCheck.isSelected = settings.allowIdeCompletions
+        showCompletionDescriptionCheck.isSelected = settings.showCompletionDescription
+        completionDescriptionMaxLengthSpinner.value = settings.completionDescriptionMaxLength
         when (settings.indexingScope) {
             CssVarsAssistantSettings.IndexingScope.PROJECT_ONLY -> projectOnlyRadio.isSelected = true
             CssVarsAssistantSettings.IndexingScope.PROJECT_WITH_IMPORTS -> projectWithImportsRadio.isSelected = true
@@ -271,6 +293,12 @@ class CssVarsAssistantConfigurable : Configurable, Disposable {
         section("Display Options:")
         item(showContextValuesCheck)
         item(allowIdeCompletionsCheck)
+        item(showCompletionDescriptionCheck)
+        item(JPanel().apply {
+            add(JLabel("Description max length in completion popup:"))
+            add(completionDescriptionMaxLengthSpinner)
+            add(JLabel("(0 = hide)"))
+        })
 
 
         section("Documentation Popup Columns:")

@@ -9,6 +9,7 @@ import com.intellij.util.indexing.FileBasedIndex
 import cssvarsassistant.index.CSS_VARIABLE_INDEXER_NAME
 import cssvarsassistant.index.CssVariableIndexValueCodec
 import cssvarsassistant.settings.CssVarsAssistantSettings
+import cssvarsassistant.util.CssTextUtil
 import cssvarsassistant.util.PreprocessorUtil
 import cssvarsassistant.util.ScopeUtil
 
@@ -123,8 +124,14 @@ fun extractCssVariableName(element: PsiElement): String? {
 }
 
 /* ─────────────────────── other helpers ───────────────────────── */
+// Returns the last `--varName: value;` declaration in the file, IGNORING
+// matches that appear inside /* ... */ or // ... comments. Issue #18 Bug A:
+// prior versions scanned raw text and picked up commented-out example
+// declarations as if they were real overrides, so the popup/hover showed
+// the wrong value. Comments are replaced with whitespace first so we still
+// respect token boundaries.
 fun lastLocalValueInFile(fileText: String, varName: String): String? =
     Regex("""\Q$varName\E\s*:\s*([^;]+);""")
-        .findAll(fileText)
+        .findAll(CssTextUtil.stripCssComments(fileText))
         .map { it.groupValues[1].trim() }
         .lastOrNull()

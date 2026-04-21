@@ -6,8 +6,8 @@
 
 If you find CSS Variables Assistant helpful, please consider rating it on [JetBrains Marketplace](https://plugins.jetbrains.com/plugin/27392-css-variables-assistant/reviews) ★★★★★ 🙏.
 
-**Version:** 1.7.2<br/>
-**Compatible IDEs:** JetBrains IDEs with bundled JavaScript + CSS support, including WebStorm, IntelliJ IDEA Ultimate, GoLand, and PhpStorm.  
+**Version:** 1.8.0<br/>
+**Compatible IDEs:** JetBrains IDEs with bundled JavaScript + CSS support — IntelliJ IDEA Ultimate, WebStorm, GoLand, PhpStorm, PyCharm Professional, and RubyMine.  
 **Author:** Stian Larsen  
 **Repo:** [github.com/Stianlars1/css-vars-assistant](https://github.com/Stianlars1/css-vars-assistant)
 
@@ -20,13 +20,17 @@ If you find CSS Variables Assistant helpful, please consider rating it on [JetBr
 Supercharge your CSS custom properties and preprocessor variables in JetBrains IDEs with advanced autocomplete, documentation, and debugging tools.
 ---
 
-## ✨ What's new in 1.7.2
+## ✨ What's new in 1.8.0
 
-| Category                       | Highlights                                                                                                                                                                        |
-|--------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| **🩹 Clean `var(--name)` inserts** | Selecting a completion inside `var(...)` now always produces `var(--name)` — no more `var(----name)`, `var(---name)`, or trailing-dash variants that could appear in 1.7.1.       |
-| **🎨 Works inside any CSS function** | Fix also covers nested usage like `hsl(var(--bg))`, `rgba(var(--bg), 0.5)`, `color-mix(in oklch, var(--bg) 50%, white)`, `calc(var(--size) * 2)`, and `linear-gradient(hsl(var(--a)), hsl(var(--b)))`. |
-| **🧪 Insertion-based tests**        | New regression tests exercise the actual document state after selection, locking in behavior for bare `var()`, nested CSS functions, multi-`var()` declarations, and non-`var` contexts.      |
+| Category                                   | Highlights                                                                                                                                                                                                                                                                               |
+|--------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **🐛 Value column no longer shows a description** | Fixes issue [#18](https://github.com/Stianlars1/css-vars-assistant/issues/18). When a CSS property had a JSDoc/block comment above it, the popup could scrape a commented-out `--name: sample;` from elsewhere in the file and display it as the value. Comments are now stripped before the local-value scan runs.|
+| **🎯 Completion doesn't fire outside `var()`** | Also from #18. The "am I inside `var(…)`?" check now tracks parenthesis depth from each `var(` to the caret, so typing after a closed `var(--x)` or between two sibling `var()` calls no longer surfaces every indexed variable. `myvar(` and other word-boundary false matches are out too. |
+| **🧹 Parser tidies up inline comments**        | `--x: /* legacy */ 1px;` and `--x: 1px /* px */;` are parsed as `1px`. A leading `/* comment */ --y: 2;` on one line still indexes `--y` (it used to drop the declaration entirely).                                                                                                  |
+| **⚙️ Two new completion-popup settings**       | Toggle the description next to each completion item on/off, or clamp it to a custom length (0 hides, up to 120 chars). Under *Settings → Tools → CSS Variables Assistant → Display Options*.                                                                                        |
+| **📦 Broader verifier coverage**                | Plugin verification now also runs against PyCharm Professional and RubyMine, in addition to IntelliJ IDEA Ultimate, WebStorm, GoLand, and PhpStorm.                                                                                                                                     |
+
+> Upgrading from an earlier 1.7.x? The CSS variable index will rebuild once on first launch after install — the parser's value capture changed, and a rebuild ensures no stale values survive.
 
 [Full Changelog →](https://github.com/Stianlars1/css-vars-assistant/blob/main/CHANGELOG.md)
 
@@ -106,6 +110,12 @@ Need to verify *exactly* which files your `@import`s resolve to?
 | Completions missing after changing scope | Re-index or restart IDE (button normally suffices). |
 | Slow indexing | Use *Project + imports*, lower max-depth, exclude large folders. |
 | Need to see where a variable came from | Right-click file → **Debug CSS Import Resolution**. |
+
+---
+
+## Also by this author
+
+If you also write CSS with `rem`, `em`, or viewport units, try **[PxPeek](https://plugins.jetbrains.com/plugin/31286-pxpeek--css-pixel-hints)** — inline pixel-equivalent hints for every relative CSS unit, right in the editor.
 
 ---
 

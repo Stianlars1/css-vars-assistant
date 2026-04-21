@@ -3,6 +3,31 @@
 All notable changes to this project will be documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/) and semantic-versioning.
 
+## [1.8.0] – 2026-04-21
+
+### Fixed
+- **Autocomplete value column no longer shows the description (issue [#18](https://github.com/Stianlars1/css-vars-assistant/issues/18)):** When a CSS custom property had a JSDoc/block comment above it, completion and hover documentation could display a commented-out `--name: sample;` snippet as if it were the real value. The local-value scan now strips `/* ... */` and `// ...` comments before it runs, so both the popup's value column and the cascade winner reflect the real declaration.
+- **Autocompletion no longer fires outside `var()` (issue [#18](https://github.com/Stianlars1/css-vars-assistant/issues/18)):** The "caret is inside `var(…)`" gate now tracks parenthesis depth from each `var(` to the caret, so typing after a closed `var(--x)` on the same line (or between two sibling `var()` calls) stops surfacing every indexed variable. Identifiers ending in `var` (e.g. `myvar(`) also no longer trigger completions.
+- **Inline `/* … */` in values and declarations:** The parser now strips inline CSS comments from captured values and still indexes variables even when a leading `/* comment */` and the declaration share one line (`/* blue */ --primary: #0000ff;`).
+- **`PROJECT_ONLY` / `PROJECT_WITH_IMPORTS` now consistently exclude `node_modules`** at the CSS query layer, matching the settings panel's own description.
+
+### Added
+- **Completion description toggle + length setting:** Two new options under *Display Options* — a checkbox to hide the description that appears next to each completion item, and a spinner to clamp its length (0 hides, up to 120 characters).
+- **Optional feedback prompt:** After ~14 days and 20 uses of CSS variable completion, a single non-intrusive balloon asks if you'd like to rate the plugin on Marketplace. Includes **Rate on Marketplace**, **Try PxPeek**, **Remind me later** (14-day snooze) and **Don't show again** actions. Prompt conditions are conservative and it will never re-appear once dismissed.
+- **Cross-promotion with [PxPeek](https://plugins.jetbrains.com/plugin/31286-pxpeek--css-pixel-hints):** sibling plugin by the same author that adds inline pixel-equivalent hints for `rem`, `em`, `vh`, `%` and modern viewport units. Linked from the Marketplace description and the README.
+- **Regression tests** for every fix above, including:
+  - Commented-out declarations no longer appear as local overrides (`DocHelpersTest`).
+  - Leading inline block comments no longer drop their declaration (`CssVariableEntryParserTest`).
+  - Embedded and trailing `/* ... */` in values are stripped (`CssVariableEntryParserTest`).
+  - Completion does not fire after `)` on the same line or between two `var()` calls (`CssVariableCompletionHarnessTest`).
+  - Comment text does not leak into the completion value column (`CssVariableCompletionHarnessTest`).
+- **Broader plugin verifier coverage:** PyCharm Professional and RubyMine added to the verifier IDE list — both bundle the JavaScript and CSS plugins we depend on.
+
+### Changed
+- **CSS variable index version bumped** so all users re-index once on first launch after upgrade — the parser now normalises values differently (inline comments stripped, leading inline comments no longer eat the declaration), and a rebuild avoids stale cached values bleeding into the popup.
+
+---
+
 ## [1.7.2] – 2026-04-15
 
 ### Fixed

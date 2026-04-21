@@ -139,7 +139,7 @@ class CssVariableCompletionHarnessTest : CssVarsAssistantPlatformTestCase() {
             """
         )
 
-        configureProjectFile(
+        val lookups = completeCssVariables(
             "app.css",
             """
             .card {
@@ -148,23 +148,15 @@ class CssVariableCompletionHarnessTest : CssVarsAssistantPlatformTestCase() {
             """
         )
 
-        val lookups = myFixture.completeBasic()
-            ?.map {
-                val presentation = com.intellij.codeInsight.lookup.LookupElementPresentation()
-                it.renderElement(presentation)
-                presentation.itemText
-            }
-            .orEmpty()
-
-        if (lookups.isEmpty()) {
-            assertTrue(myFixture.file.text.contains("var(--foreground)"))
-        } else {
-            val displayedNames = lookups.filterNotNull()
-            assertEquals("foreground", displayedNames.first())
-            assertEquals("foreground-subtle", displayedNames.drop(1).first())
-            assertDoesntContain(displayedNames, "error-foreground")
-            assertDoesntContain(displayedNames, "muted-foreground")
-        }
+        // With multiple matching --foreground*/--*-foreground variables there is no
+        // single-match auto-insert, so the lookup must stay open and we can assert
+        // ranking directly. The earlier `if (lookups.isEmpty())` escape hatch
+        // quietly accepted auto-insert as a pass and masked real regressions.
+        val displayedNames = lookups.mapNotNull { it.itemText }
+        assertEquals("foreground", displayedNames.first())
+        assertEquals("foreground-subtle", displayedNames.drop(1).first())
+        assertDoesntContain(displayedNames, "error-foreground")
+        assertDoesntContain(displayedNames, "muted-foreground")
     }
 
     fun testForegroundColorQueryFallsBackToForegroundFamily() {
@@ -517,6 +509,173 @@ class CssVariableCompletionHarnessTest : CssVarsAssistantPlatformTestCase() {
         assertContainsElements(
             entries.map { it.context },
             "screen and (min-width: 768px) and (prefers-color-scheme: dark)"
+        )
+    }
+
+    // ---------------------------------------------------------------------
+    // Issue #18 — Bug A: a block comment above a custom property must not
+    // leak its text into the completion popup's value slot. The popup must
+    // still surface the *resolved* value (`#0000ff`), not description text
+    // scraped from the comment.
+    // ---------------------------------------------------------------------
+
+    fun testDocCommentDoesNotLeakIntoValueColumn() {
+        // Multiple `--primary*` variants so the popup stays open instead of
+        // auto-inserting a single-variant match.
+        configureProjectFile(
+            "app.css",
+            """
+            :root {
+              /**
+               * @name Primary
+               * @description Used for primary action buttons
+               */
+              --primary: #0000ff;
+              --primary-hover: #0033ff;
+              --primary-active: #0066ff;
+            }
+
+            .card {
+              color: var(--prim<caret>);
+            }
+            """
+        )
+
+        val lookups = myFixture.completeBasic()
+            ?.map {
+                val presentation = com.intellij.codeInsight.lookup.LookupElementPresentation()
+                it.renderElement(presentation)
+                presentation
+            }.orEmpty()
+
+        val pluginEntry = lookups.firstOrNull { it.itemText == "primary" }
+            ?: error("plugin did not surface --primary; items: " + lookups.joinToString { it.itemText ?: "<null>" })
+
+        // The resolved value must appear somewhere in the lookup (typeText or
+        // tailText). It must not be replaced by the description ("Used for
+        // primary action").
+        val rendered = "${pluginEntry.typeText.orEmpty()} ${pluginEntry.tailText.orEmpty()}"
+        assertTrue(
+            "expected resolved value in lookup presentation, got: $rendered",
+            rendered.contains("#0000ff")
+        )
+        assertFalse(
+            "description text must not replace the value slot: typeText='${pluginEntry.typeText}'",
+            (pluginEntry.typeText ?: "").contains("Used for primary action")
+        )
+    }
+
+    // ---------------------------------------------------------------------
+    // Issue #18 — Bug A (local-override regression). A CSS file that
+    // documents a past value inside a block comment used to make the popup
+    // and hover show the commented-out value because the lastLocalValueInFile
+    // regex did not strip comments. Locks in the fix: commented-out samples
+    // are ignored, the real declaration wins.
+    // ---------------------------------------------------------------------
+    fun testLocalOverrideIgnoresCommentedOutDeclaration() {
+        configureProjectFile(
+            "app.css",
+            """
+            :root {
+              --primary: #0000ff;
+              --primary-hover: #0033ff;
+              --primary-active: #0066ff;
+            }
+
+            /*
+             * Changelog:
+             *   --primary: purple; was used in v1 (deprecated).
+             */
+
+            .card {
+              color: var(--prim<caret>);
+            }
+            """
+        )
+
+        val lookups = myFixture.completeBasic()
+            ?.map {
+                val presentation = com.intellij.codeInsight.lookup.LookupElementPresentation()
+                it.renderElement(presentation)
+                presentation
+            }.orEmpty()
+
+        val pluginEntry = lookups.firstOrNull { it.itemText == "primary" }
+            ?: error("plugin did not surface --primary; items: " + lookups.joinToString { it.itemText ?: "<null>" })
+
+        val rendered = "${pluginEntry.typeText.orEmpty()} ${pluginEntry.tailText.orEmpty()}"
+        assertTrue(
+            "expected real value '#0000ff' in lookup, got: $rendered",
+            rendered.contains("#0000ff")
+        )
+        assertFalse(
+            "commented-out 'purple' must not leak into lookup, got: $rendered",
+            rendered.contains("purple")
+        )
+    }
+
+    // ---------------------------------------------------------------------
+    // Issue #18 — Bug B: the plugin must not offer CSS variable completions
+    // when the caret is past the closing `)` of a `var(...)` on the same
+    // line. The old isInsideVarFunction returned true for any caret position
+    // that came after `var(` on the line, even when the matching `)` had
+    // already been passed.
+    // ---------------------------------------------------------------------
+    fun testDoesNotFireAfterClosingParenOnSameLine() {
+        addProjectStylesheet(
+            "tokens.css",
+            """
+            :root {
+              --primary: #0000ff;
+              --secondary: #00ff00;
+            }
+            """
+        )
+
+        val lookups = completeCssVariables(
+            "app.css",
+            """
+            .card {
+              color: var(--primary) <caret>;
+            }
+            """
+        )
+
+        // Our contributor must not have added any --* items: the caret is
+        // outside any `var(...)`. Other IDE-level completions are allowed.
+        val pluginItems = lookups.filter { it.lookupString.startsWith("--") }
+        assertTrue(
+            "plugin must not add CSS variable lookups outside var(); got: ${pluginItems.joinToString { it.lookupString }}",
+            pluginItems.isEmpty()
+        )
+    }
+
+    // As above but between two var() calls, where the cursor is between them
+    // and therefore outside both parenthesised regions.
+    fun testDoesNotFireBetweenTwoVarsOnSameLine() {
+        addProjectStylesheet(
+            "tokens.css",
+            """
+            :root {
+              --a: #0000ff;
+              --b: #00ff00;
+            }
+            """
+        )
+
+        val lookups = completeCssVariables(
+            "app.css",
+            """
+            .card {
+              background: hsl(var(--a)) <caret> var(--b);
+            }
+            """
+        )
+
+        val pluginItems = lookups.filter { it.lookupString.startsWith("--") }
+        assertTrue(
+            "plugin must not add CSS variable lookups between var() calls; got: ${pluginItems.joinToString { it.lookupString }}",
+            pluginItems.isEmpty()
         )
     }
 }

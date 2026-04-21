@@ -12,6 +12,7 @@ import cssvarsassistant.index.CSS_VARIABLE_INDEXER_NAME
 import cssvarsassistant.index.CssVariableIndexValueCodec
 import cssvarsassistant.model.DocParser
 import cssvarsassistant.settings.CssVarsAssistantSettings
+import cssvarsassistant.util.CssTextUtil
 import cssvarsassistant.util.RankUtil.rank
 import cssvarsassistant.util.ScopeUtil
 import cssvarsassistant.util.ValueUtil
@@ -116,8 +117,11 @@ object CssVariableDocumentationService {
     )
 
     private fun extractLocalValues(fileText: String, varName: String): Set<String> {
+        // Issue #18 Bug A mirror: the same comment-leak that affected completion
+        // also affected the "is this a local declaration?" check here, causing
+        // commented-out example declarations to be counted as local.
         return Regex("""\Q$varName\E\s*:\s*([^;]+);""")
-            .findAll(fileText)
+            .findAll(CssTextUtil.stripCssComments(fileText))
             .map { it.groupValues[1].trim() }
             .toSet()
     }
