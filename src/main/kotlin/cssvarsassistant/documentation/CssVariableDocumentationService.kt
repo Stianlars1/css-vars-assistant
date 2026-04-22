@@ -90,10 +90,10 @@ object CssVariableDocumentationService {
                 .asReversed()
 
             val sorted = collapsed.sortedWith(
-                compareBy(
-                    { rank(it.context).first },
-                    { rank(it.context).second ?: Int.MAX_VALUE },
-                    { rank(it.context).third }
+                hoverRowComparator(
+                    context = { it.context },
+                    sourceFile = { it.sourceFile },
+                    sourceLine = { it.sourceLine }
                 )
             )
 
