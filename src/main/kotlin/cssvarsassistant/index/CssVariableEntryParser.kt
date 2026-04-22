@@ -10,7 +10,17 @@ internal data class ParsedCssVariableEntry(
 internal object CssVariableEntryParser {
 
     private const val DEFAULT_CONTEXT = "default"
-    private val variableDeclarationRegex = Regex("""(--[A-Za-z0-9\-_]+)\s*:\s*([^;]+);""")
+
+    // Declaration terminator is `;` OR a lookahead for `}`. The second form
+    // catches the last declaration in a minified block where the trailing
+    // semicolon is omitted: `:root{--primary:#ff0000;--size:4px}` must emit
+    // both variables, not just the first. Community contributor @pierreoa
+    // surfaced this class of bug via PR #17 against the older pre-refactor
+    // code path; the regex here is the equivalent fix in the refactored
+    // parser. Value capture uses `[^;}]` so a stray `}` inside a value
+    // (pathological but possible) doesn't slip through, and is non-greedy so
+    // the lookahead terminator binds correctly.
+    private val variableDeclarationRegex = Regex("""(--[A-Za-z0-9\-_]+)\s*:\s*([^;}]+?)\s*(?:;|(?=\}))""")
     private val variableDeclarationStartRegex = Regex("""(--[A-Za-z0-9\-_]+)\s*:\s*(.*)$""")
 
     // Single-line `/* ... */` comments embedded inside an otherwise normal

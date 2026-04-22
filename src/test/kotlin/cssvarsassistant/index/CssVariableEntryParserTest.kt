@@ -123,6 +123,36 @@ class CssVariableEntryParserTest {
         )
     }
 
+    // Regression: minified CSS files often have everything on one line and
+    // begin with a copyright/license comment. The old CssVariableIndex.kt
+    // loop used to `continue` after consuming the single-line comment, so
+    // the `:root{...}` block on the rest of the same line was never indexed.
+    // Community contributor @pierreoa reported and independently fixed this
+    // in the pre-refactor code path (PR #17). The parser-extraction refactor
+    // in commit b07ff26 moved the logic out of CssVariableIndex.kt and into
+    // CssVariableEntryParser.kt; this test locks in that the same minified
+    // case works through the new code path.
+    @Test
+    fun `minified css starting with a comment still indexes the declaration after it`() {
+        val entries = CssVariableEntryParser.parse(
+            "/* Copyright 2026 Example Corp */:root{--primary:#ff0000;--size:4px}"
+        )
+
+        // The leading comment is associated with the FIRST declaration only
+        // (matching how multi-declaration lines have always been handled):
+        // `index == 0` gets lastComment, subsequent declarations on the same
+        // line get an empty comment. Pierreoa's original bug was that the
+        // SECOND declaration was never emitted at all — this test locks in
+        // that both now appear, with the comment on the first only.
+        assertEquals(
+            listOf(
+                ParsedCssVariableEntry("--primary", "default", "#ff0000", "Copyright 2026 Example Corp"),
+                ParsedCssVariableEntry("--size", "default", "4px", "")
+            ),
+            entries
+        )
+    }
+
     // Regression: an inline /* ... */ segment inside a value must not leak
     // into the stored value text. Without the fix the indexed value was
     // `/* inline */ 1` which then showed up in completion/documentation.
