@@ -10,6 +10,7 @@ import com.intellij.util.indexing.FileBasedIndex
 import cssvarsassistant.completion.CssVariableCompletion
 import cssvarsassistant.index.CSS_VARIABLE_INDEXER_NAME
 import cssvarsassistant.index.CssVariableIndexValueCodec
+import cssvarsassistant.index.IndexedCssVariableValue
 import cssvarsassistant.model.DocParser
 import cssvarsassistant.settings.CssVarsAssistantSettings
 import cssvarsassistant.util.CssTextUtil
@@ -30,15 +31,39 @@ object CssVariableDocumentationService {
             val settings = CssVarsAssistantSettings.getInstance()
             val cssScope = ScopeUtil.effectiveCssIndexingScope(project, settings)
 
-            val rawEntries = CssVariableIndexValueCodec.decode(
-                FileBasedIndex.getInstance().getValues(CSS_VARIABLE_INDEXER_NAME, varName, cssScope)
+            // Phase 8b / issue #19: `processValues` yields `(VirtualFile, packed)`
+            // per indexed file, so we can attribute each decoded entry back to
+            // the file it came from. `getValues` would have dropped that
+            // mapping. The plan explicitly rejects `getContainingFiles` + a
+            // follow-up re-query; that's O(files × keys) and duplicates work
+            // the index has already done.
+            val rawEntries = mutableListOf<RawEntryWithFile>()
+            FileBasedIndex.getInstance().processValues(
+                CSS_VARIABLE_INDEXER_NAME,
+                varName,
+                null,
+                { file, packed ->
+                    CssVariableIndexValueCodec.decodePacked(packed).forEach { decoded ->
+                        rawEntries += RawEntryWithFile(decoded, file.name)
+                    }
+                    true
+                },
+                cssScope
             )
 
             if (rawEntries.isEmpty()) return null
 
-            val parsed = rawEntries.map { entry ->
+            val parsed = rawEntries.map { withFile ->
+                val entry = withFile.value
                 val resInfo = resolveVarValue(project, entry.value)
-                ParsedEntry(entry.context, entry.value, resInfo, entry.comment)
+                ParsedEntry(
+                    context = entry.context,
+                    rawValue = entry.value,
+                    resInfo = resInfo,
+                    comment = entry.comment,
+                    sourceFile = withFile.sourceFile,
+                    sourceLine = entry.line
+                )
             }
 
             // Get local file text and find local values
@@ -52,6 +77,8 @@ object CssVariableDocumentationService {
                     rawValue = entry.rawValue,
                     resInfo = entry.resInfo,
                     comment = entry.comment,
+                    sourceFile = entry.sourceFile,
+                    sourceLine = entry.sourceLine,
                     isLocal = isLocalDeclaration(entry.rawValue, localValues)
                 )
             }
@@ -86,10 +113,17 @@ object CssVariableDocumentationService {
                 unit != "px" || pxVal.roundToInt() != numericRaw.roundToInt()
             }
 
-            // Convert back to original format
-            val sortedTriples = sorted.map { Triple(it.context, it.resInfo, it.comment) }
+            val hoverRows = sorted.map {
+                HoverRow(
+                    context = it.context,
+                    resInfo = it.resInfo,
+                    comment = it.comment,
+                    sourceFile = it.sourceFile,
+                    sourceLine = it.sourceLine
+                )
+            }
 
-            return buildHtmlDocument(varName, doc, sortedTriples, showPixelCol, winnerIndex)
+            return buildHtmlDocument(varName, doc, hoverRows, showPixelCol, winnerIndex)
 
 
         } catch (e: ProcessCanceledException) {
@@ -106,6 +140,8 @@ object CssVariableDocumentationService {
         val rawValue: String,
         val resInfo: ResolutionInfo,
         val comment: String,
+        val sourceFile: String?,
+        val sourceLine: Int?,
         val isLocal: Boolean
     )
 
@@ -113,7 +149,14 @@ object CssVariableDocumentationService {
         val context: String,
         val rawValue: String,
         val resInfo: ResolutionInfo,
-        val comment: String
+        val comment: String,
+        val sourceFile: String?,
+        val sourceLine: Int?
+    )
+
+    private data class RawEntryWithFile(
+        val value: IndexedCssVariableValue,
+        val sourceFile: String
     )
 
     private fun extractLocalValues(fileText: String, varName: String): Set<String> {

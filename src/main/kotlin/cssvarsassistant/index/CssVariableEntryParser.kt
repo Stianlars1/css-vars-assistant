@@ -4,7 +4,12 @@ internal data class ParsedCssVariableEntry(
     val name: String,
     val context: String,
     val value: String,
-    val comment: String
+    val comment: String,
+    // 1-based line number of the source where the declaration opens (for a
+    // multi-line value, this is the line containing `--name:`, not where the
+    // closing `;` lives). `-1` means "unknown" — used only as a fallback when
+    // decoding a legacy 3-part record from an older index cache.
+    val line: Int
 )
 
 internal object CssVariableEntryParser {
@@ -63,9 +68,11 @@ internal object CssVariableEntryParser {
         var pendingVariableName: String? = null
         var pendingVariableContext: String? = null
         var pendingVariableComment: String? = null
+        var pendingVariableLine: Int = -1
         val pendingVariableValue = StringBuilder()
 
-        for (rawLine in text.lines()) {
+        for ((lineIndex, rawLine) in text.lines().withIndex()) {
+            val currentLineNumber = lineIndex + 1  // 1-based
             var line = rawLine.trim()
 
             // 1) Multi-line block comment continuation (opened on an earlier line)
@@ -152,11 +159,15 @@ internal object CssVariableEntryParser {
                         name = requireNotNull(pendingVariableName),
                         context = requireNotNull(pendingVariableContext),
                         value = normalizeValue(pendingVariableValue.toString()),
-                        comment = pendingVariableComment.orEmpty()
+                        comment = pendingVariableComment.orEmpty(),
+                        // Multi-line value: the line number is the one where
+                        // `--name:` opened, not where `;` closed the value.
+                        line = pendingVariableLine
                     )
                     pendingVariableName = null
                     pendingVariableContext = null
                     pendingVariableComment = null
+                    pendingVariableLine = -1
                     pendingVariableValue.clear()
                     lastComment = null
                 } else {
@@ -173,7 +184,8 @@ internal object CssVariableEntryParser {
                         name = match.groupValues[1],
                         context = currentContext,
                         value = match.groupValues[2].trim(),
-                        comment = if (index == 0) lastComment ?: "" else ""
+                        comment = if (index == 0) lastComment ?: "" else "",
+                        line = currentLineNumber
                     )
                 }
 
@@ -185,6 +197,7 @@ internal object CssVariableEntryParser {
                         pendingVariableName = multilineMatch.groupValues[1]
                         pendingVariableContext = currentContext
                         pendingVariableComment = lastComment
+                        pendingVariableLine = currentLineNumber
                         pendingVariableValue.clear()
                         pendingVariableValue.append(multilineMatch.groupValues[2].trim())
                     }

@@ -123,7 +123,8 @@ class CssVariableIndex : FileBasedIndexExtension<String, String>() {
             val entry = CssVariableIndexValueCodec.encode(
                 parsedEntry.context,
                 parsedEntry.value,
-                parsedEntry.comment
+                parsedEntry.comment,
+                parsedEntry.line
             )
 
             // PRIORITY LOGIC: Direct values (non-preprocessor) win

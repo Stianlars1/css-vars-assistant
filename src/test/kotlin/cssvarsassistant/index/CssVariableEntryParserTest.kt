@@ -22,7 +22,7 @@ class CssVariableEntryParserTest {
         )
 
         assertEquals(
-            listOf(ParsedCssVariableEntry("--layout-gap", "(min-width: 768px)", "24px", "")),
+            listOf(ParsedCssVariableEntry("--layout-gap", "(min-width: 768px)", "24px", "", line = 7)),
             entries
         )
     }
@@ -45,7 +45,8 @@ class CssVariableEntryParserTest {
                     "--surface-accent",
                     "screen and (min-width: 768px) and (prefers-color-scheme: dark)",
                     "#111111",
-                    ""
+                    "",
+                    line = 3
                 )
             ),
             entries
@@ -71,7 +72,8 @@ class CssVariableEntryParserTest {
                     "--content-width",
                     "screen and (min-width: 768px)",
                     "72rem",
-                    ""
+                    "",
+                    line = 4
                 )
             ),
             entries
@@ -96,7 +98,8 @@ class CssVariableEntryParserTest {
                     "--hero-shadow",
                     "default",
                     "0 8px 24px rgba(0, 0, 0, 0.12), 0 2px 6px rgba(0, 0, 0, 0.08)",
-                    ""
+                    "",
+                    line = 2
                 )
             ),
             entries
@@ -118,7 +121,7 @@ class CssVariableEntryParserTest {
         )
 
         assertEquals(
-            listOf(ParsedCssVariableEntry("--primary", "default", "#0000ff", "blue")),
+            listOf(ParsedCssVariableEntry("--primary", "default", "#0000ff", "blue", line = 2)),
             entries
         )
     }
@@ -146,8 +149,8 @@ class CssVariableEntryParserTest {
         // that both now appear, with the comment on the first only.
         assertEquals(
             listOf(
-                ParsedCssVariableEntry("--primary", "default", "#ff0000", "Copyright 2026 Example Corp"),
-                ParsedCssVariableEntry("--size", "default", "4px", "")
+                ParsedCssVariableEntry("--primary", "default", "#ff0000", "Copyright 2026 Example Corp", line = 1),
+                ParsedCssVariableEntry("--size", "default", "4px", "", line = 1)
             ),
             entries
         )
@@ -167,7 +170,7 @@ class CssVariableEntryParserTest {
         )
 
         assertEquals(
-            listOf(ParsedCssVariableEntry("--size", "default", "1px", "")),
+            listOf(ParsedCssVariableEntry("--size", "default", "1px", "", line = 2)),
             entries
         )
     }
@@ -185,7 +188,7 @@ class CssVariableEntryParserTest {
         )
 
         assertEquals(
-            listOf(ParsedCssVariableEntry("--size", "default", "1px", "")),
+            listOf(ParsedCssVariableEntry("--size", "default", "1px", "", line = 2)),
             entries
         )
     }
@@ -209,8 +212,8 @@ class CssVariableEntryParserTest {
 
         assertEquals(
             listOf(
-                ParsedCssVariableEntry("--bg", "default", "white", ""),
-                ParsedCssVariableEntry("--bg", "[data-theme=\"dark\"]", "black", "")
+                ParsedCssVariableEntry("--bg", "default", "white", "", line = 2),
+                ParsedCssVariableEntry("--bg", "[data-theme=\"dark\"]", "black", "", line = 5)
             ),
             entries
         )
@@ -229,7 +232,7 @@ class CssVariableEntryParserTest {
         )
 
         assertEquals(
-            listOf(ParsedCssVariableEntry("--bg", ".dark", "black", "")),
+            listOf(ParsedCssVariableEntry("--bg", ".dark", "black", "", line = 2)),
             entries
         )
     }
@@ -251,7 +254,7 @@ class CssVariableEntryParserTest {
             )
 
             assertEquals(
-                listOf(ParsedCssVariableEntry("--bg", "default", "white", "")),
+                listOf(ParsedCssVariableEntry("--bg", "default", "white", "", line = 2)),
                 entries,
                 "selector `$selector` should resolve to default context"
             )
@@ -279,7 +282,8 @@ class CssVariableEntryParserTest {
                     "--bg",
                     "(prefers-color-scheme: dark) .hc",
                     "#000",
-                    ""
+                    "",
+                    line = 3
                 )
             ),
             entries
@@ -305,7 +309,8 @@ class CssVariableEntryParserTest {
                     "--bg",
                     ".dark, [data-theme=\"dark\"]",
                     "black",
-                    ""
+                    "",
+                    line = 2
                 )
             ),
             entries
@@ -343,10 +348,47 @@ class CssVariableEntryParserTest {
 
         assertEquals(
             listOf(
-                ParsedCssVariableEntry("--bg", "[data-theme=\"dark\"]", "black", ""),
-                ParsedCssVariableEntry("--fg", "[data-theme=\"dark\"]", "white", "")
+                ParsedCssVariableEntry("--bg", "[data-theme=\"dark\"]", "black", "", line = 1),
+                ParsedCssVariableEntry("--fg", "[data-theme=\"dark\"]", "white", "", line = 1)
             ),
             entries
         )
+    }
+
+    // Phase 8b — line-number emission. The hover popup's Source column shows
+    // `file.css:N` so the user can jump from "which declaration applies?" to
+    // the exact location. Line numbers are 1-based matching every editor UI.
+    @Test
+    fun `emits 1-based line number for each declaration`() {
+        val entries = CssVariableEntryParser.parse(
+            """
+            :root {
+              --a: 1;
+              --b: 2;
+              --c: 3;
+            }
+            """.trimIndent()
+        )
+
+        assertEquals(listOf(2, 3, 4), entries.map { it.line })
+    }
+
+    // Phase 8b — multi-line values. When a value wraps over several lines,
+    // the reported line is the one where `--name:` opens, not where the `;`
+    // closes it. That's the line the user cares about when navigating.
+    @Test
+    fun `multi-line value records line where declaration opens`() {
+        val entries = CssVariableEntryParser.parse(
+            """
+            :root {
+              --hero-shadow:
+                0 8px 24px rgba(0, 0, 0, 0.12),
+                0 2px 6px rgba(0, 0, 0, 0.08);
+            }
+            """.trimIndent()
+        )
+
+        assertEquals(1, entries.size)
+        assertEquals(2, entries.single().line)
     }
 }

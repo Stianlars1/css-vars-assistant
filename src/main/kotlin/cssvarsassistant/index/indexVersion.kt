@@ -1,8 +1,8 @@
 package cssvarsassistant.index
 
-// Bumped for 1.8.0: the CSS variable parser now strips inline `/* ... */`
-// comments from values and handles leading block comments on the same line
-// as a declaration, so indexed values and `lastComment` attribution differ
-// from 1.7.2. Forcing a re-index prevents stale entries from leaking into
-// completion/hover.
-const val INDEX_VERSION = 1044
+// Bumped for 1.8.1: the packed index record now carries a 4th field (1-based
+// source line) and blocks opened by non-root selectors (`[data-theme=dark]`,
+// `.dark`, …) push their own context label instead of collapsing into
+// `default`. Existing caches are 3-part and their selector blocks were
+// silently merged, so forcing a re-index surfaces the new data immediately.
+const val INDEX_VERSION = 1045

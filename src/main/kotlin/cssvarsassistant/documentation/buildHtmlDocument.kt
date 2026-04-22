@@ -11,10 +11,22 @@ import kotlin.math.pow
 import kotlin.math.roundToInt
 
 
+// Phase 8b — one row of the hover popup's value table. `sourceFile` + `sourceLine`
+// populate the Source column with `file.css:N`; both default to null when the
+// index cache is a legacy 3-part record and the first resolution step is used
+// as a fallback label instead.
+data class HoverRow(
+    val context: String,
+    val resInfo: ResolutionInfo,
+    val comment: String,
+    val sourceFile: String?,
+    val sourceLine: Int?
+)
+
 fun buildHtmlDocument(
     varName: String,
     doc: CssVarDoc,
-    sorted: List<Triple<String, ResolutionInfo, String>>,
+    sorted: List<HoverRow>,
     showPixelCol: Boolean,
     winnerIndex: Int = -1  // Default for backward compatibility
 ): String {
@@ -22,9 +34,9 @@ fun buildHtmlDocument(
     val columnVisibility = settings.columnVisibility
 
     /* ── dynamic column decisions ─────────────────────────────────────────── */
-    val hasColorValues = sorted.any { (_, r, _) -> ColorParser.parseCssColor(r.resolved) != null }
-    val hasNonHexColors = sorted.any { (_, r, _) ->
-        ColorParser.parseCssColor(r.resolved)?.let { !r.resolved.trim().startsWith("#") } ?: false
+    val hasColorValues = sorted.any { ColorParser.parseCssColor(it.resInfo.resolved) != null }
+    val hasNonHexColors = sorted.any { row ->
+        ColorParser.parseCssColor(row.resInfo.resolved)?.let { !row.resInfo.resolved.trim().startsWith("#") } ?: false
     }
     val hasName = doc.name.isNotBlank()
 
@@ -66,8 +78,8 @@ fun buildHtmlDocument(
             .append(DocumentationMarkup.DEFINITION_END)
             .append(DocumentationMarkup.CONTENT_START)
 
-    val hasResolvedValues = winnerFirstSorted.any { (_, resInfo, _) ->
-        resInfo.steps.isNotEmpty() && resInfo.original != resInfo.resolved
+    val hasResolvedValues = winnerFirstSorted.any { row ->
+        row.resInfo.steps.isNotEmpty() && row.resInfo.original != row.resInfo.resolved
     }
 
     if (hasResolvedValues) {
@@ -89,8 +101,11 @@ fun buildHtmlDocument(
     sb.append("</tr>")
 
     /* ── table rows ───────────────────────────────────────────────────────── */
-    winnerFirstSorted.forEachIndexed { displayIndex, (ctx, resInfo, _) ->
+    winnerFirstSorted.forEachIndexed { displayIndex, row ->
         ProgressManager.checkCanceled()
+
+        val ctx = row.context
+        val resInfo = row.resInfo
 
         val isWinner = displayIndex == 0 && winnerIndex >= 0
         val isOverridden = !isWinner && ctx == "default" && displayIndex > 0
@@ -102,7 +117,10 @@ fun buildHtmlDocument(
         val pixelEq = if (ValueUtil.isSizeValue(rawValue))
             "${ValueUtil.convertToPixels(rawValue).roundToInt()}px" else "—"
         val typeStr = ValueUtil.getValueType(rawValue).name
-        val sourceStr = resInfo.steps.firstOrNull() ?: "—"
+        // Phase 8b — `file.css:N` when the index knows where the declaration
+        // lives, falling back to the legacy "first resolution step" label
+        // (e.g. "calc(...)") when line info is unavailable.
+        val sourceStr = formatSourceCell(row.sourceFile, row.sourceLine, resInfo.steps.firstOrNull())
         val contrast = colorObj?.let {
             // WCAG contrast vs black
             val l = listOf(it.red, it.green, it.blue).map { ch ->
@@ -160,6 +178,18 @@ fun buildHtmlDocument(
     }
     sb.append("</table>")
 
+    // Phase 8b — CSS cascade is load-order + specificity-dependent; showing
+    // multiple rows without this note has caused confusion ("so which value
+    // wins at runtime?"). We can't simulate the full cascade here, but we
+    // can make the ambiguity explicit.
+    if (sorted.size > 1) {
+        sb.append(
+            "<p style='margin-top:6px;color:#8A8A8A;'><i><small>" +
+                "Shown in index order — runtime applied value depends on stylesheet load order and specificity." +
+                "</small></i></p>"
+        )
+    }
+
     /* ── description / examples ──────────────────────────────────────────── */
     if (doc.description.isNotBlank()) {
         sb.append("<p><b>Description:</b><br/>")
@@ -173,7 +203,7 @@ fun buildHtmlDocument(
     }
 
     /* ── WebAIM helper link for first colour found ───────────────────────── */
-    sorted.firstNotNullOfOrNull { ColorParser.parseCssColor(it.second.resolved) }?.let { c ->
+    sorted.firstNotNullOfOrNull { ColorParser.parseCssColor(it.resInfo.resolved) }?.let { c ->
         sb.append(
             """<p style='margin-top:10px'>
                        <a target="_blank"
@@ -248,6 +278,16 @@ fun contextLabel(ctx: String, isColor: Boolean): String {
                 .takeIf { it.isNotEmpty() } ?: "Media query"
         }
     }
+}
+
+// Phase 8b — Source-column formatter. Prefers `file.css:line` when the index
+// has real location metadata, falls back to the legacy "first resolution
+// step" label for legacy cache records (pre-1.8.1) or synthesized entries
+// that never touched a source file.
+private fun formatSourceCell(file: String?, line: Int?, firstStep: String?): String = when {
+    file != null && line != null && line > 0 -> "$file:$line"
+    !firstStep.isNullOrBlank() -> firstStep
+    else -> "—"
 }
 
 // Heuristic: context starts with a character that marks a CSS selector rather
