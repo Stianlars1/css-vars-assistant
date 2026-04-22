@@ -157,7 +157,13 @@ fun buildHtmlDocument(
 
 
         if (showContextCol) {
-            sb.append("<td $rowStyle><nobr>${StringUtil.escapeXmlEntities(contextLabel(ctx, isColour))}</nobr></td>")
+            // 1.8.3 — when the displayed label differs from the raw selector
+            // (e.g. `[data-theme="catppuccin"]` → "Catppuccin"), attach a
+            // tooltip so nothing is hidden: hover shows the original selector.
+            val ctxDisplay = contextLabel(ctx, isColour)
+            val ctxNeedsTooltip = looksLikeSelector(ctx) && ctxDisplay != ctx
+            val ctxTitleAttr = if (ctxNeedsTooltip) " title='${StringUtil.escapeXmlEntities(ctx)}'" else ""
+            sb.append("<td $rowStyle$ctxTitleAttr><nobr>${StringUtil.escapeXmlEntities(ctxDisplay)}</nobr></td>")
         }
 
         if (showColorSwatchCol) {
@@ -262,7 +268,12 @@ fun contextLabel(ctx: String, isColor: Boolean): String {
     // Combined labels like "(prefers-color-scheme: dark) .hc" start with
     // "(", so they still go down the media-query pretty-print path and the
     // selector suffix is preserved as-is.
-    if (looksLikeSelector(ctx)) return ctx
+    //
+    // 1.8.3 — before returning verbatim, try to humanise the most common
+    // theming patterns: `[data-theme="catppuccin"]` → "Catppuccin",
+    // `.theme-high-contrast` → "Theme high contrast". Full selector is
+    // preserved in the Context cell's `title` tooltip so nothing is hidden.
+    if (looksLikeSelector(ctx)) return prettifySelector(ctx) ?: ctx
 
     if ("prefers-color-scheme" in ctx.lowercase()) {
         return when {
@@ -334,10 +345,43 @@ internal fun formatSourceCell(
 // than a media-query chunk. `.dark`, `#id`, `[data-*]`, `:hover`, `:not(.x)`,
 // or a bare element selector like `main` all qualify. Media queries always
 // begin with `(` once `@media` has been stripped by the parser.
-private fun looksLikeSelector(ctx: String): Boolean {
+internal fun looksLikeSelector(ctx: String): Boolean {
     val first = ctx.firstOrNull() ?: return false
     return first == '.' || first == '#' || first == '[' || first == ':' ||
         first == '&' || first.isLetter()
+}
+
+// 1.8.3 — prettify single-token theming selectors. Design systems with many
+// themes (shadcn, Radix, Tailwind's dark mode, Catppuccin flavour switchers,
+// WCAG high-contrast toggles, etc.) rely on `[data-theme="name"]` /
+// `.name` patterns, and reading six of those in a row with the raw quoting
+// is visual noise. The humaniser is intentionally conservative: only a
+// single class OR a single attribute-equals selector prettifies; compound
+// selectors (`.dark .nested`, `[x] .y`), pseudo-classes, id selectors, and
+// everything with a space stay verbatim so we never misrepresent complex
+// CSS. `null` from this function means "no pretty form — render as-is".
+private val attrValueSelectorRegex = Regex("""^\[[\w-]+(?:\|[\w-]+)?\s*[~|^$*]?=\s*['"]?([\w-]+)['"]?]$""")
+private val singleClassSelectorRegex = Regex("""^\.([\w][\w-]*)$""")
+
+internal fun prettifySelector(ctx: String): String? {
+    attrValueSelectorRegex.matchEntire(ctx)?.let { match ->
+        return humanise(match.groupValues[1])
+    }
+    singleClassSelectorRegex.matchEntire(ctx)?.let { match ->
+        return humanise(match.groupValues[1])
+    }
+    return null
+}
+
+// Convert a kebab / snake-cased token into a sentence-cased human label.
+// Preserves existing uppercase characters (so `RTL`, `WCAG`, `BYOK` survive
+// intact), which matters for acronyms developers commonly use in theme keys.
+private fun humanise(raw: String): String {
+    if (raw.isEmpty()) return raw
+    val spaced = raw.replace('-', ' ').replace('_', ' ')
+    return spaced.replaceFirstChar { c ->
+        if (c.isLowerCase()) c.titlecase() else c.toString()
+    }
 }
 
 fun colorSwatchHtml(css: String): String =
