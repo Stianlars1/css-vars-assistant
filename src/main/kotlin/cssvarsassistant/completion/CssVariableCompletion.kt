@@ -227,6 +227,16 @@ class CssVariableCompletion : CompletionContributor() {
                             }.let { if (e.derived) "$it ↗" else it }
 
 
+                            // Phase 7j: pre-compute the user's value-based sort
+                                // rank once per element. The weigher reads this
+                                // on each keystroke to reorder matchingDegree
+                                // ties (same tier + same length) per the user's
+                                // ASC / DESC / ALPHABETICAL preference. Rank is
+                                // null for non-orderable values (e.g. keyword
+                                // shorthand) — the weigher treats those as
+                                // "no opinion".
+                                val sortRank = CssVarSortOrderWeigher.computeSortRank(e.mainValue)
+
                             val element = LookupElementBuilder
                                 .create(e.rawName)
                                 .withPresentableText(e.display)
@@ -281,6 +291,16 @@ class CssVariableCompletion : CompletionContributor() {
                             val finalElement =
                                 if (activeQuery.normalizedPrefix.isBlank()) element
                                 else PrioritizedLookupElement.withPriority(element, priority)
+
+                            // Phase 7j: attach the pre-computed sort rank so
+                            // CssVarSortOrderWeigher can break matchingDegree
+                            // ties (e.g. `--padding-sm/md/lg`) per the user's
+                            // preference. Must go on the outer element (after
+                            // optional PrioritizedLookupElement wrapping) so
+                            // the weigher's getUserData call hits it.
+                            if (sortRank != null) {
+                                finalElement.putUserData(CssVarSortOrderWeigher.SORT_RANK_KEY, sortRank)
+                            }
                             completionResult.addElement(finalElement)
                         }
 
@@ -320,12 +340,30 @@ class CssVariableCompletion : CompletionContributor() {
         order: CssVarsAssistantSettings.SortingOrder,
         query: String
     ): Comparator<Entry> {
-        val baseComparator = Comparator<Entry> { a, b ->
+        // ALPHABETICAL is the simple case — name-sort always wins.
+        if (order == CssVarsAssistantSettings.SortingOrder.ALPHABETICAL) {
+            return Comparator { a, b -> a.display.compareTo(b.display, ignoreCase = true) }
+        }
+
+        // Direction of the VALUE-level sort only (compareSizes / compareColors
+        // / compareNumbers). Earlier versions of this file used
+        // `baseComparator.reversed()` which flipped EVERY step — tier ordering,
+        // specificity, numeric-family, type grouping, the lot. That was a
+        // latent bug: a user with DESC preference got PREFIX items ranked
+        // BELOW TOKEN_PREFIX items because tier ordering was reversed too.
+        // Phase 7j fixes that by confining the direction flip to the last
+        // step where it belongs.
+        val valueDirection = if (order == CssVarsAssistantSettings.SortingOrder.DESC) -1 else 1
+
+        return Comparator<Entry> { a, b ->
             // Issue #18 follow-up: when the user hasn't typed any substantive
             // prefix (`var(--`), the value-type grouping below shoved every
             // SIZE variable to the top, regardless of name. That was
             // surprising — users expect neutral alphabetical order when they
-            // haven't given a hint yet.
+            // haven't given a hint yet. (In Phase 7j, live value-based
+            // ordering for blank-autopopup popups is handled by
+            // CssVarSortOrderWeigher on each keystroke — the comparator only
+            // controls the INITIAL add order in this path.)
             if (query.isBlank()) {
                 return@Comparator a.display.compareTo(b.display, ignoreCase = true)
             }
@@ -354,19 +392,14 @@ class CssVariableCompletion : CompletionContributor() {
                 return@Comparator aType.ordinal - bType.ordinal
             }
 
-            // 2. Sort within same type
-            when (aType) {
+            // 2. Sort within same type — valueDirection controls asc/desc.
+            val valueOrder = when (aType) {
                 ValueUtil.ValueType.SIZE -> ValueUtil.compareSizes(a.mainValue, b.mainValue)
                 ValueUtil.ValueType.COLOR -> ValueUtil.compareColors(a.mainValue, b.mainValue)
                 ValueUtil.ValueType.NUMBER -> ValueUtil.compareNumbers(a.mainValue, b.mainValue)
                 ValueUtil.ValueType.OTHER -> a.display.compareTo(b.display, true)
             }
-        }
-
-        return if (order == CssVarsAssistantSettings.SortingOrder.DESC) {
-            baseComparator.reversed()
-        } else {
-            baseComparator
+            valueOrder * valueDirection
         }
     }
 

@@ -111,16 +111,19 @@ intellijPlatform {
 """.trimIndent()
 
         changeNotes = """
-<h2>1.8.0 – 2026-04-21</h2>
+<h2>1.8.0 – 2026-04-22</h2>
 <h3>Fixed</h3>
 <ul>
+  <li><b>Completion popup no longer loses suggestions during progressive typing (issue #18 follow-up):</b> Several regressions that only surfaced in real IDE sessions — <code>hsl(var(--err))</code> showing every variable, a sticky popup that ignored subsequent keystrokes, <code>--foreground</code> / <code>--error</code> hidden behind their <code>*-foreground</code> siblings, and <code>var(-&lt;caret&gt;)</code> filtering out every variable without an internal dash. All fixed.</li>
   <li><b>Value column no longer shows a comment (issue #18):</b> When a CSS custom property has a JSDoc/block comment above it, the completion popup now always shows the resolved value — it no longer scrapes a <code>--name: ...;</code> sample out of an unrelated comment block. Both completion <i>and</i> hover documentation respect the real cascade winner.</li>
   <li><b>Autocompletion no longer fires outside <code>var()</code> (issue #18):</b> The gate now tracks parenthesis depth from each <code>var(</code> to the caret, so typing after a closed <code>var(--x)</code> on the same line stops surfacing every indexed variable. Identifiers ending in <code>var</code> (e.g. <code>myvar(</code>) also no longer trigger completions.</li>
   <li><b>Inline <code>/* ... */</code> in values and declarations:</b> The indexer now strips inline CSS comments from captured values and still indexes variables even when a leading <code>/* comment */</code> and the declaration share one line.</li>
   <li><b>Scope leaks <code>node_modules</code> fewer places:</b> <code>PROJECT_ONLY</code> and <code>PROJECT_WITH_IMPORTS</code> scopes now consistently exclude <code>node_modules</code> at the CSS query layer, matching the settings panel's wording.</li>
+  <li><b><code>DESC</code> completion sort no longer reverses the tier hierarchy:</b> A latent bug had <code>.reversed()</code> flipping every step including PREFIX / TOKEN_PREFIX / SUBSTRING tier ordering. Only the value-level comparison reverses now; tier ordering is always PREFIX first.</li>
 </ul>
 <h3>Added</h3>
 <ul>
+  <li><b>Three-option completion sort order:</b> <i>Completion sort order</i> now offers <b>By value ascending</b> (default), <b>By value descending</b>, and <b>Alphabetical by name</b>. The preference applies consistently in both the blank-query autopopup path and fresh invocations, so <code>--padding-sm</code> / <code>--padding-md</code> / <code>--padding-lg</code> always appear in the chosen order regardless of how the popup was opened.</li>
   <li><b>Completion description toggle + length:</b> New settings under <i>Display Options</i> let you hide the description that appears next to each completion item, or clamp it to a custom length (0 = hide, up to 120 chars).</li>
   <li><b>Optional feedback prompt:</b> After ~14 days and 20 uses of CSS variable completion, a single non-intrusive balloon asks if you'd like to rate the plugin on Marketplace. "Remind me later" and "Don't show again" actions included. Prompt conditions are conservative — it will never re-appear once dismissed.</li>
   <li><b>Pairs well with <a href="https://plugins.jetbrains.com/plugin/31286-pxpeek--css-pixel-hints">PxPeek</a>:</b> sibling plugin by the same author adding inline px-equivalents for <code>rem</code> / <code>em</code> / <code>vh</code> / <code>%</code> and all modern viewport units. Linked from the Marketplace description and the README.</li>

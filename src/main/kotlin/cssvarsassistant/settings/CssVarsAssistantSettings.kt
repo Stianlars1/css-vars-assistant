@@ -19,7 +19,20 @@ class CssVarsAssistantSettings : PersistentStateComponent<CssVarsAssistantSettin
     }
 
     enum class SortingOrder {
-        ASC, DESC
+        /** Small → large (size), low → high (number), hue asc (color). */
+        ASC,
+
+        /** Large → small, high → low, hue desc. */
+        DESC,
+
+        /**
+         * Name-based a-z ordering, ignoring the value entirely. Matches the
+         * emergent tiebreaker behaviour that existed before the weigher was
+         * introduced — promoted to an explicit option so users who prefer
+         * name-sorting get it consistently across both the blank-query
+         * autopopup path and fresh invocations.
+         */
+        ALPHABETICAL
     }
 
     data class ColumnVisibility(

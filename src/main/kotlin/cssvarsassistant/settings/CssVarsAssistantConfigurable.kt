@@ -91,12 +91,16 @@ class CssVarsAssistantConfigurable : Configurable, Disposable {
 
     // Sorting order
     private val ascRadio = JRadioButton(
-        "Ascending (8px, 16px, 24px)",
+        "By value ascending (8px, 16px, 24px)",
         settings.sortingOrder == CssVarsAssistantSettings.SortingOrder.ASC
     )
     private val descRadio = JRadioButton(
-        "Descending (24px, 16px, 8px)",
+        "By value descending (24px, 16px, 8px)",
         settings.sortingOrder == CssVarsAssistantSettings.SortingOrder.DESC
+    )
+    private val alphabeticalRadio = JRadioButton(
+        "Alphabetical by name (ignore value)",
+        settings.sortingOrder == CssVarsAssistantSettings.SortingOrder.ALPHABETICAL
     )
 
     // Import-depth
@@ -181,6 +185,7 @@ class CssVarsAssistantConfigurable : Configurable, Disposable {
         ButtonGroup().apply {
             add(ascRadio)
             add(descRadio)
+            add(alphabeticalRadio)
         }
 
         // Enable/disable depth-spinner
@@ -244,6 +249,7 @@ class CssVarsAssistantConfigurable : Configurable, Disposable {
         when (settings.sortingOrder) {
             CssVarsAssistantSettings.SortingOrder.ASC -> ascRadio.isSelected = true
             CssVarsAssistantSettings.SortingOrder.DESC -> descRadio.isSelected = true
+            CssVarsAssistantSettings.SortingOrder.ALPHABETICAL -> alphabeticalRadio.isSelected = true
         }
         maxImportDepthSpinner.value = settings.maxImportDepth
 
@@ -353,9 +359,13 @@ class CssVarsAssistantConfigurable : Configurable, Disposable {
             add(JLabel("(prevents infinite recursion)"))
         })
 
-        section("Value-Based Sorting:")
-        item(ascRadio)
-        item(descRadio)
+        section("Completion sort order:")
+        item(ascRadio, descr = "Smallest → largest for sizes, darkest → lightest for colours.")
+        item(descRadio, descr = "Reverse of ascending.")
+        item(
+            alphabeticalRadio,
+            descr = "Ignore the resolved value; order popup entries by name a → z only."
+        )
 
         section("Performance Note:")
         item(createDescriptionLabel("Global scope indexing may impact IDE performance with large projects."))
@@ -390,7 +400,8 @@ class CssVarsAssistantConfigurable : Configurable, Disposable {
 
     private fun getSelectedSortingOrder(): CssVarsAssistantSettings.SortingOrder = when {
         ascRadio.isSelected -> CssVarsAssistantSettings.SortingOrder.ASC
-        else -> CssVarsAssistantSettings.SortingOrder.DESC
+        descRadio.isSelected -> CssVarsAssistantSettings.SortingOrder.DESC
+        else -> CssVarsAssistantSettings.SortingOrder.ALPHABETICAL
     }
 
     private fun isColumnVisibilityModified(): Boolean {

@@ -3,15 +3,24 @@
 All notable changes to this project will be documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/) and semantic-versioning.
 
-## [1.8.0] – 2026-04-21
+## [1.8.0] – 2026-04-22
 
 ### Fixed
+- **Completion popup no longer loses suggestions during progressive typing (issue [#18](https://github.com/Stianlars1/css-vars-assistant/issues/18) follow-up):** Multiple regressions that only surfaced in real IDE use rather than in the harness were fixed:
+  - IntelliJ's `DUMMY_IDENTIFIER` is now stripped from the captured query so `hsl(var(--err))` doesn't collapse to "show every variable".
+  - The popup is no longer sticky — `cloneWithPrefix` now returns a fresh matcher on every keystroke, and `prefixMatches` consults our ranking logic instead of unconditionally passing every item.
+  - Blank-query autopopups sort alphabetically, so `var(--)` no longer shoves every size variable to the top.
+  - Tier ordering now ranks explicitly via `matchingDegree` and `isStartMatch`, so `--error` is no longer hidden behind `--error-foreground` when you type `--err`.
+  - Alphabetical ordering from the blank-query auto-popup no longer freezes priorities when you keep typing.
+  - Elements no longer carry a second stripped lookup string, which was causing IntelliJ's arranger to suppress the shorter of two sibling items (e.g. hiding `--foreground` when `--foreground-subtle` was also present).
+  - Pure-dash prefixes (`-`, `--`, `---`) are treated as "no real query yet", so the autopopup firing at `var(-<caret>)` no longer filters out every variable without an internal dash.
 - **Autocomplete value column no longer shows the description (issue [#18](https://github.com/Stianlars1/css-vars-assistant/issues/18)):** When a CSS custom property had a JSDoc/block comment above it, completion and hover documentation could display a commented-out `--name: sample;` snippet as if it were the real value. The local-value scan now strips `/* ... */` and `// ...` comments before it runs, so both the popup's value column and the cascade winner reflect the real declaration.
 - **Autocompletion no longer fires outside `var()` (issue [#18](https://github.com/Stianlars1/css-vars-assistant/issues/18)):** The "caret is inside `var(…)`" gate now tracks parenthesis depth from each `var(` to the caret, so typing after a closed `var(--x)` on the same line (or between two sibling `var()` calls) stops surfacing every indexed variable. Identifiers ending in `var` (e.g. `myvar(`) also no longer trigger completions.
 - **Inline `/* … */` in values and declarations:** The parser now strips inline CSS comments from captured values and still indexes variables even when a leading `/* comment */` and the declaration share one line (`/* blue */ --primary: #0000ff;`).
 - **`PROJECT_ONLY` / `PROJECT_WITH_IMPORTS` now consistently exclude `node_modules`** at the CSS query layer, matching the settings panel's own description.
 
 ### Added
+- **Three-option completion sort order:** *Completion sort order* now offers **By value ascending** (default — smallest → largest for sizes, hue ascending for colours), **By value descending**, and **Alphabetical by name**. The preference is now applied consistently in both the blank-query autopopup path and fresh invocations via a new `CompletionWeigher` that breaks `matchingDegree` ties per user preference, so `--padding-sm / --padding-md / --padding-lg` always appear in the order you asked for regardless of how the popup was opened.
 - **Completion description toggle + length setting:** Two new options under *Display Options* — a checkbox to hide the description that appears next to each completion item, and a spinner to clamp its length (0 hides, up to 120 characters).
 - **Optional feedback prompt:** After ~14 days and 20 uses of CSS variable completion, a single non-intrusive balloon asks if you'd like to rate the plugin on Marketplace. Includes **Rate on Marketplace**, **Try PxPeek**, **Remind me later** (14-day snooze) and **Don't show again** actions. Prompt conditions are conservative and it will never re-appear once dismissed.
 - **Cross-promotion with [PxPeek](https://plugins.jetbrains.com/plugin/31286-pxpeek--css-pixel-hints):** sibling plugin by the same author that adds inline pixel-equivalent hints for `rem`, `em`, `vh`, `%` and modern viewport units. Linked from the Marketplace description and the README.

@@ -28,6 +28,15 @@
                                 implementationClass="cssvarsassistant.completion.CssVariableCompletion"
                                 order="first"/>
 
+        <!-- Phase 7j: weigher that reorders tied lookup items by the user's
+             value-based sorting preference (ASC / DESC / ALPHABETICAL). Runs
+             after matchingDegree so tier ordering (PREFIX beats TOKEN_PREFIX
+             beats SUBSTRING) is preserved; only reorders matchingDegree ties
+             like padding-sm / padding-md / padding-lg. -->
+        <weigher key="completion"
+                 implementationClass="cssvarsassistant.completion.CssVarSortOrderWeigher"
+                 id="cssvarsassistantSortOrder"/>
+
 
         <!-- New API (2023.1+) -->
         <platform.backend.documentation.psiTargetProvider
