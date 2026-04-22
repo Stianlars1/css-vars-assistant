@@ -22,15 +22,21 @@ Supercharge your CSS custom properties and preprocessor variables in JetBrains I
 
 ## ✨ What's new in 1.8.0
 
+Biggest quality release to date — closes issue [#18](https://github.com/Stianlars1/css-vars-assistant/issues/18) plus ~15 related completion-popup regressions that only surfaced during real IDE use. All fixes are locked in with regression tests.
+
 | Category                                   | Highlights                                                                                                                                                                                                                                                                               |
 |--------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| **🐛 Value column no longer shows a description** | Fixes issue [#18](https://github.com/Stianlars1/css-vars-assistant/issues/18). When a CSS property had a JSDoc/block comment above it, the popup could scrape a commented-out `--name: sample;` from elsewhere in the file and display it as the value. Comments are now stripped before the local-value scan runs.|
-| **🎯 Completion doesn't fire outside `var()`** | Also from #18. The "am I inside `var(…)`?" check now tracks parenthesis depth from each `var(` to the caret, so typing after a closed `var(--x)` or between two sibling `var()` calls no longer surfaces every indexed variable. `myvar(` and other word-boundary false matches are out too. |
-| **🧹 Parser tidies up inline comments**        | `--x: /* legacy */ 1px;` and `--x: 1px /* px */;` are parsed as `1px`. A leading `/* comment */ --y: 2;` on one line still indexes `--y` (it used to drop the declaration entirely).                                                                                                  |
-| **⚙️ Two new completion-popup settings**       | Toggle the description next to each completion item on/off, or clamp it to a custom length (0 hides, up to 120 chars). Under *Settings → Tools → CSS Variables Assistant → Display Options*.                                                                                        |
-| **📦 Broader verifier coverage**                | Plugin verification now also runs against PyCharm Professional and RubyMine, in addition to IntelliJ IDEA Ultimate, WebStorm, GoLand, and PhpStorm.                                                                                                                                     |
+| **🐛 Completion popup is reliable again**   | No more sticky lookup after typing a few chars. `--error` no longer hides behind `--error-foreground`. `var(--)` doesn't shove SIZE variables above everything. `hsl(var(--err))` surfaces the actual `--error` variable. `var(-` autopopup returns the full token list instead of filtering out every variable without an internal dash. |
+| **🔢 Three-option completion sort order**   | *Completion sort order* now offers **By value ascending** (default), **By value descending**, and **Alphabetical by name**. The preference applies consistently in both the `var(--|)` autopopup flow and direct invocations, so `--padding-sm / --md / --lg` always appear in the chosen order.                                |
+| **🐛 Value column shows the real value, not a comment** | Also issue #18. When a CSS property had a JSDoc/block comment above it, the popup could scrape a commented-out `--name: sample;` from elsewhere in the file and display it as the value. Comments are now stripped before the local-value scan runs.                                 |
+| **🎯 Completion doesn't fire outside `var()`** | Parenthesis-depth tracking from each `var(` to the caret — typing after a closed `var(--x)` or between two sibling `var()` calls no longer surfaces every indexed variable. `myvar(` and other word-boundary false matches are out too.                                                    |
+| **🧹 Parser tidies up inline comments**     | `--x: /* legacy */ 1px;` and `--x: 1px /* px */;` are parsed as `1px`. A leading `/* comment */ --y: 2;` on one line still indexes `--y`. Minified CSS that begins with a copyright comment is now fully indexed (thanks to [@pierreoa](https://github.com/pierreoa) via [PR #17](https://github.com/Stianlars1/css-vars-assistant/pull/17)).                         |
+| **⚙️ Two new completion-popup settings**    | Toggle the description next to each completion item on/off, or clamp it to a custom length (0 hides, up to 120 chars). Under *Settings → Tools → CSS Variables Assistant → Display Options*.                                                                                        |
+| **📦 Broader verifier coverage**            | Plugin verification now also runs against PyCharm Professional and RubyMine, in addition to IntelliJ IDEA Ultimate, WebStorm, GoLand, and PhpStorm.                                                                                                                                     |
 
 > Upgrading from an earlier 1.7.x? The CSS variable index will rebuild once on first launch after install — the parser's value capture changed, and a rebuild ensures no stale values survive.
+
+**Thanks to @pierreoa for [PR #17](https://github.com/Stianlars1/css-vars-assistant/pull/17) surfacing the minified-CSS indexing bug, and to @Blinks44 for the detailed bug report in issue #18 that drove the completion-popup hardening.**
 
 [Full Changelog →](https://github.com/Stianlars1/css-vars-assistant/blob/main/CHANGELOG.md)
 
@@ -83,7 +89,9 @@ Open **Settings → Tools → CSS Variables Assistant**
 | **Allow IDE built-in completions** | Fall back to IntelliJ suggestions for misses                                  |
 | **Indexing scope** | *Project only* • *Project + imports* (default) • *Full global* |
 | **Max @import depth** | 1 – 20 (default 20)                                                           |
-| **Completion sorting** | Ascending or descending value order                                           |
+| **Completion sort order** | *By value ascending* (default) • *By value descending* • *Alphabetical by name* |
+| **Show description in completion popup** | Toggle the description next to each completion item                       |
+| **Description max length in completion popup** | 0 – 120 chars (0 hides)                                              |
 | **🔄 Re-index Now** | Flush caches and rebuild the variable index immediately                       |
 
 ---

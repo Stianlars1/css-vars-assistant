@@ -76,37 +76,60 @@ intellijPlatform {
         }
 
         description = """
-<h2>CSS Variables Assistant</h2>
+<h2>The fastest way to work with CSS custom properties &amp; design tokens in JetBrains IDEs</h2>
+
 <p>
-  Supercharge your CSS custom properties and pre-processor variables in JetBrains IDEs with advanced autocomplete, rich documentation, and powerful debugging tools.
+  <b>CSS Variables Assistant</b> turns <code>var(--my-token)</code> into a first-class citizen in WebStorm, IntelliJ IDEA Ultimate, PhpStorm, PyCharm Professional, GoLand and RubyMine. Get instant autocomplete, rich inline documentation with colour swatches and pixel equivalents, and full resolution of design-token <code>@import</code> chains across your project and <code>node_modules</code>.
+</p>
+
+<p>
+  <b>Built for modern CSS workflows:</b> Tailwind layers, shadcn/ui tokens, Radix colours, Material tokens, CSS-in-JS bridge files, design-system packages, multi-theme setups (light / dark / high-contrast via media queries), SCSS &amp; LESS &amp; SASS.
+</p>
+
+<h3>Why developers install it</h3>
+<ul>
+  <li><b>Smart autocomplete inside <code>var(--…)</code></b> – your entire token catalog surfaces the moment you open a <code>var()</code> call. Works in CSS, SCSS, SASS and LESS files.</li>
+  <li><b>Instant in-place documentation</b> – hover any <code>--token</code> for a rich popup showing the resolved value, colour swatch, HSB / hex, pixel equivalent for <code>rem</code> / <code>em</code> / <code>%</code> / <code>vh</code> / <code>vw</code>, WCAG AA / AAA contrast ratio, and the full <code>@import</code> resolution chain.</li>
+  <li><b>Follows <code>@import</code> chains automatically</b> – indexes variables defined in design-token packages inside <code>node_modules</code>, with configurable depth and scope controls so you only pay for the resolution you need.</li>
+  <li><b>Understands media-query context</b> – tokens redefined under <code>@media (prefers-color-scheme: dark)</code>, <code>min-width</code> breakpoints or any other context are shown side-by-side so you can compare values at a glance.</li>
+  <li><b>Three-option sort order (new in 1.8.0)</b> – sort completions <i>by value ascending</i>, <i>by value descending</i>, or <i>alphabetically</i>. Applies consistently whether the popup opens at <code>var(--|)</code> or mid-prefix.</li>
+  <li><b>JSDoc-style comments</b> – parse <code>@name</code>, <code>@description</code>, <code>@example</code> from block comments above your tokens and render them in the popup.</li>
+  <li><b>Derived-variable marker</b> – alias / recursive completions get a <code>↗</code> badge so you know at a glance which values were resolved through references.</li>
+  <li><b>Debug import chain</b> – a dedicated context-menu action prints the full import resolution tree for any CSS file. Answers "where does this token actually come from?" in one click.</li>
+  <li><b>Customizable documentation columns</b> – show or hide <i>Context</i>, <i>Color Swatch</i>, <i>Value</i>, <i>Type</i>, <i>Source</i>, <i>Pixel Equivalent</i>, <i>Hex</i>, <i>WCAG Contrast</i> independently.</li>
+  <li><b>Fast in large projects</b> – dedicated file-based index, weak-keyed caches, and scope-aware resolution keep completion under 100 ms even on monorepos with thousands of variables.</li>
+</ul>
+
+<h3>Keywords</h3>
+<p>
+  CSS variables, CSS custom properties, design tokens, <code>var(--token)</code>, Tailwind CSS, shadcn/ui, Radix, Material, CSS cascade, <code>:root</code>, WebStorm CSS plugin, IntelliJ CSS autocomplete, SCSS variables, LESS variables, SASS variables, @import resolution, WCAG contrast, px equivalent, rem to px, hex to HSL, colour swatch.
+</p>
+
+<h3>✨ New in 1.8.0</h3>
+<p>
+  Biggest quality release to date. Closes issue
+  <a href="https://github.com/Stianlars1/css-vars-assistant/issues/18">#18</a>
+  and ~15 related completion-popup regressions that only surfaced during real IDE use. Highlights:
 </p>
 <ul>
-  <li><b>Customizable Documentation Columns</b> – choose what you see (Context, Value, Source, etc.).</li>
-  <li><b>Resolution Chain Tooltip</b> – hover to see the full resolution path of a variable.</li>
-  <li><b>Instant variable lookup</b> – blazing-fast completions for <code>CSS</code>, <code>SCSS</code>, <code>SASS</code> and <code>LESS</code> variables.</li>
-  <li><b>Smart autocomplete</b> – context-aware suggestions inside <code>var(--…)</code>, <code>@less</code> and <code>${'$'}scss</code>, sorted by value or context.</li>
-  <li><b>Rich documentation pop-ups</b> – value tables (px equivalents), context labels, color swatches with contrast info, plus <i>dynamic</i> <code>px Eq.</code>, <code>Hex</code> and <code>WCAG</code> columns that appear only when relevant.</li>
-  <li><b>IntelliJ 2025.1+ platform support</b> – targets the current 251 platform line with the modern documentation and completion APIs used by the plugin.</li>
-  <li><b>Derived-variable indicator</b> – alias / recursive completions are marked with <code>↗</code> so you instantly know the value is inherited.</li>
-  <li><b>JSDoc-style comments</b> – auto-parsing and display of <code>@name</code>, <code>@description</code>, and <code>@example</code>.</li>
-  <li><b>Advanced <code>@import</code> resolution</b> – follows and indexes nested imports with depth and scope controls.</li>
-  <li><b>Debugging tools</b> – visual tracing of variable origins and import chains via the "Debug CSS Import Resolution" action.</li>
-  <li><b>Configurable sorting &amp; ranking</b> – numeric value order (asc/desc) and logical context ranking (Default → Dark / media queries).</li>
-  <li><b>Performance &amp; robustness</b> – centralized index versioning, smarter caching and race-condition fixes keep everything fast in large projects.</li>
-  <li><b>CSS cascade compliance</b> – documentation and completions now correctly follow CSS cascade rules where local declarations beat imports.</li>
-  <li><b>Works everywhere</b> – <code>CSS</code>, <code>SCSS</code>, <code>SASS</code>, <code>LESS</code>.</li>
+  <li>Completion popup no longer hides <code>--error</code> behind <code>--error-foreground</code>, no longer shows a JSDoc comment where the resolved value should be, and no longer gets sticky while you type.</li>
+  <li>New <b>Alphabetical</b> sort option and fixed inconsistency where the ASC / DESC preference was only honoured in some popup flows.</li>
+  <li>Two new <i>Display Options</i> settings let you hide or clamp the description next to each completion item.</li>
+  <li>Minified CSS files that start with a copyright comment are now indexed correctly (thanks to community contributor <a href="https://github.com/pierreoa">@pierreoa</a>).</li>
+  <li>14+ new regression tests lock in every fix.</li>
 </ul>
+
+<h3>Pairs well with</h3>
 <p>
-  <b>✨ New in 1.8.0:</b> Fixes the completion regressions reported in issue
-  #18. The popup no longer shows a comment's description in place of the
-  real value, and CSS variables are no longer offered after a closed
-  <code>var(...)</code> call on the same line. Plus two new settings so you
-  can tune how descriptions appear next to each completion item.
+  <a href="https://plugins.jetbrains.com/plugin/31286-pxpeek--css-pixel-hints"><b>PxPeek — CSS Pixel Hints</b></a>:
+  sibling plugin by the same author that shows inline pixel-equivalent hints next to every <code>rem</code>, <code>em</code>, <code>vh</code>, <code>%</code> and modern viewport unit in your editor. Zero-config, faster than flipping to DevTools.
 </p>
+
+<h3>Feedback &amp; issues</h3>
 <p>
-  <b>Pairs well with:</b>
-  <a href="https://plugins.jetbrains.com/plugin/31286-pxpeek--css-pixel-hints">PxPeek</a>
-  — inline pixel-equivalent hints for every relative CSS unit.
+  Found a bug? Please open it at
+  <a href="https://github.com/Stianlars1/css-vars-assistant/issues">github.com/Stianlars1/css-vars-assistant/issues</a>
+  — reported bugs are usually fixed within a day. Every bit of feedback helps shape the plugin.
 </p>
 """.trimIndent()
 
