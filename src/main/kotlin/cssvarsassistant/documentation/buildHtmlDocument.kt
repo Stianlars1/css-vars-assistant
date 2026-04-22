@@ -92,6 +92,19 @@ fun buildHtmlDocument(
     }
 
     /* ── table header ─────────────────────────────────────────────────────── */
+    // 1.8.2 — nudge the popup wider so multi-column rows (Context, Value,
+    // Type, Source, Hex, WCAG) don't wrap at the platform's default width.
+    // IntelliJ's `DocumentationComponent` computes preferred size from the
+    // laid-out content and clamps at MAX_DEFAULT ≈ 950 px; we hint at
+    // 700 px with two belts-and-suspenders tricks:
+    //   1. `min-width` on the outer wrapper (works in JBHtmlEditorKit when
+    //      the CSS parser honours it),
+    //   2. a zero-height spacer div (works even when min-width is ignored,
+    //      because the spacer is a real laid-out block).
+    // If both get stripped by the renderer on some future platform build,
+    // the popup falls back to today's behaviour — no worse than 1.8.1.
+    sb.append("<div style='min-width:700px;'>")
+    sb.append("<div style='width:700px;height:0;overflow:hidden;'></div>")
     sb.append("""<table><tr $headerWrapperStyle>""")
 
     if (showContextCol) sb.append("<th><nobr>Context</nobr></th>")
@@ -186,6 +199,7 @@ fun buildHtmlDocument(
         sb.append("</tr>")
     }
     sb.append("</table>")
+    sb.append("</div>") // close min-width wrapper opened before the table
 
     // Phase 8b — CSS cascade is load-order + specificity-dependent; showing
     // multiple rows without this note has caused confusion ("so which value
