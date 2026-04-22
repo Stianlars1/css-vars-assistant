@@ -1,5 +1,8 @@
 package cssvarsassistant.completion
 
+import com.intellij.codeInsight.completion.PrefixMatcher
+import com.intellij.openapi.diagnostic.Logger
+
 internal object CssVarQueryMatcher {
 
     enum class MatchKind(val priority: Int) {
@@ -20,13 +23,38 @@ internal object CssVarQueryMatcher {
 
     private val varQueryRegex = Regex("""var\s*\(\s*([^) ,]*)$""", RegexOption.IGNORE_CASE)
 
+    // IntelliJ's completion framework injects a DUMMY identifier at the caret
+    // before running contributors (see `CompletionUtilCore.DUMMY_IDENTIFIER`).
+    // In the copy-file text we read via `params.originalFile.text`, that dummy
+    // sits past the user's typed prefix. When the caret offset we're passed
+    // points AFTER the dummy (as it does in some IDE configurations), the
+    // regex capture group swallows the dummy — turning `--err` into
+    // `--errIntellijIdeaRulezzz`. Every real variable then fails to match
+    // the junk prefix and the popup collapses to "show every variable",
+    // which is exactly the bug reported for `hsl(var(--err…))`.
+    //
+    // Strip any IntelliJ dummy-identifier tail from the captured prefix
+    // before we treat it as "what the user typed".
+    private const val INTELLIJ_DUMMY = "IntellijIdeaRulezzz"
+
     fun extractQuery(text: String, offset: Int, windowSize: Int = 200): Query? {
         if (offset < 0 || offset > text.length) return null
 
         val searchStart = maxOf(0, offset - windowSize)
-        val beforeCaret = text.substring(searchStart, offset)
+        // Strip the dummy BEFORE regex matching. The dummy trails with a space
+        // (`IntellijIdeaRulezzz `) and the regex capture class `[^) ,]*`
+        // excludes spaces, so without this the regex simply fails and we
+        // lose the prefix entirely — producing a blank query that makes the
+        // lookup popup fall back to "show every variable".
+        val beforeCaret = stripCompletionDummy(text.substring(searchStart, offset))
         val match = varQueryRegex.findAll(beforeCaret).lastOrNull() ?: return null
-        val rawPrefix = match.groupValues.getOrElse(1) { "" }.trim()
+        val rawPrefix = match.groupValues
+            .getOrElse(1) { "" }
+            // Defense-in-depth in case the dummy happened to be embedded
+            // inside the capture group without a preceding non-identifier
+            // character.
+            .let(::stripCompletionDummy)
+            .trim()
 
         if (rawPrefix.isNotEmpty() && !rawPrefix.startsWith("--")) {
             return null
@@ -38,19 +66,48 @@ internal object CssVarQueryMatcher {
         )
     }
 
+    private fun stripCompletionDummy(raw: String): String {
+        val idx = raw.indexOf(INTELLIJ_DUMMY, ignoreCase = true)
+        return if (idx >= 0) raw.substring(0, idx) else raw
+    }
+
     fun withFallback(primary: Query?, prefixMatcherPrefix: String?): Query? {
         if (primary?.normalizedPrefix?.isNotBlank() == true) {
             return primary
         }
 
-        val normalizedPrefix = prefixMatcherPrefix
+        val trimmed = prefixMatcherPrefix
             ?.trim()
-            ?.removePrefix("--")
             ?.takeIf { it.isNotBlank() }
             ?: return primary
 
+        val normalizedPrefix = trimmed.removePrefix("--")
+
+        // Phase 7i: Treat any pure-dash prefix as "no actual query yet". Covers
+        //   - trimmed="--" (normalizedPrefix becomes "")
+        //   - trimmed="-"  (user just typed the first dash of `--var`; IntelliJ
+        //                  autopopup fires here with prefixMatcherPrefix="-")
+        //   - trimmed="---" (stray extra dash)
+        //
+        // Without this, bestMatch("-") treats `-` as a literal search string
+        // and drops every variable whose display name has no internal dash —
+        // which is exactly how `--error` disappeared from the popup while
+        // `--error-foreground` stayed (idea.log line for `raw='-' norm='-'`
+        // returned 92 items, all with an internal dash; `--error` absent).
+        //
+        // rawPrefix MUST reflect what the user actually typed in the document,
+        // because IntelliJ uses `PrefixMatcher.prefix.length` to compute the
+        // replacement range at insert time. If the user typed `var(error)`
+        // without dashes and we synthesise `--error` here, the matcher thinks
+        // the typed text is 7 characters long and eats `r(` along with
+        // `error` — turning the insert into `hsl(va--error))` (issue #18
+        // follow-up "no-dash auto-insert corruption").
+        if (normalizedPrefix.isBlank() || normalizedPrefix.all { it == '-' }) {
+            return Query(rawPrefix = trimmed, normalizedPrefix = "")
+        }
+
         return Query(
-            rawPrefix = "--$normalizedPrefix",
+            rawPrefix = trimmed,
             normalizedPrefix = normalizedPrefix
         )
     }
@@ -114,5 +171,91 @@ internal object CssVarQueryMatcher {
         }.map { size ->
             parts.take(size).joinToString("-")
         }.toList()
+    }
+}
+
+/**
+ * PrefixMatcher that plugs the completion contributor's own [CssVarQueryMatcher.bestMatch]
+ * logic into IntelliJ's live lookup filtering.
+ *
+ * Why this is a named class and not an anonymous object (Issue #18 Phase 7d):
+ *   1. `cloneWithPrefix` MUST return a new instance bound to the updated prefix.
+ *      Previous versions returned `this`, which froze the matcher's `.prefix`
+ *      at whatever the user had typed when the popup first opened — the popup
+ *      stopped filtering as the user typed more characters.
+ *   2. `prefixMatches` MUST consult `bestMatch`, not just return `true`.
+ *      Without this, items like `--ls-normal` keep passing the filter on
+ *      any prefix, which is why users saw `ls-normal` in the popup while
+ *      typing `--err`.
+ *   3. `matchingDegree` and `isStartMatch` MUST be overridden (Phase 7f). The
+ *      default [PrefixMatcher.matchingDegree] returns 0 for every item and
+ *      the default [PrefixMatcher.isStartMatch] falls back to prefixMatches,
+ *      which does not distinguish a prefix match from a token-prefix match
+ *      or a substring match. That leaves IntelliJ's lookup arranger with no
+ *      signal to rank `--error` ahead of — or even visibly alongside —
+ *      `--error-foreground` once the user has typed `--er`. Without an
+ *      explicit matchingDegree, the arranger falls back to its own name-
+ *      ordering heuristics, which in the real IDE hid `--error` entirely
+ *      for some users while the harness (which reads lookupElements directly)
+ *      still saw both.
+ */
+internal class CssVarPrefixMatcher(prefix: String) : PrefixMatcher(prefix) {
+
+    override fun prefixMatches(name: String): Boolean {
+        val match = computeMatch(name)
+        val result = match != null
+        if (LOG.isDebugEnabled) {
+            LOG.debug("prefixMatches name='$name' prefix='$prefix' -> $result (${match?.kind})")
+        }
+        return result
+    }
+
+    override fun isStartMatch(name: String): Boolean {
+        val match = computeMatch(name) ?: return false
+        // Treat PREFIX *and* TOKEN_PREFIX as start matches: both are "the user
+        // is clearly building this name from the left". Without this the
+        // arranger can demote `--error` below `--error-foreground` for prefix
+        // `--er` because IntelliJ falls back to alphabetical name order when
+        // no match tier is declared.
+        return match.kind == CssVarQueryMatcher.MatchKind.PREFIX ||
+            match.kind == CssVarQueryMatcher.MatchKind.TOKEN_PREFIX
+    }
+
+    override fun matchingDegree(string: String): Int {
+        val match = computeMatch(string) ?: return 0
+        // Higher = better; IntelliJ's arranger sorts descending.
+        //
+        // Two jobs here: (1) keep tiers strictly ordered (PREFIX > TOKEN_PREFIX
+        // > SUBSTRING) with enough headroom that name length never flips tiers,
+        // and (2) inside a tier, let shorter matched names beat their longer
+        // dash-extended siblings. Without (2), `--error` and `--error-foreground`
+        // both scored identically for prefix `--er`, and IntelliJ's arranger
+        // picked a visual order we don't control — which is how `--error`
+        // disappeared from the popup in the real IDE for some users even
+        // though the harness saw it just fine.
+        val base = when (match.kind) {
+            CssVarQueryMatcher.MatchKind.PREFIX -> 10_000
+            CssVarQueryMatcher.MatchKind.TOKEN_PREFIX -> 5_000
+            CssVarQueryMatcher.MatchKind.SUBSTRING -> 1_000
+        }
+        return base - string.length
+    }
+
+    override fun cloneWithPrefix(prefix: String): PrefixMatcher = CssVarPrefixMatcher(prefix)
+
+    private fun computeMatch(name: String): CssVarQueryMatcher.Match? {
+        val normalized = prefix.removePrefix("--").trim()
+        // Phase 7i: any pure-dash prefix (including "-" and "--" alone) is
+        // CSS syntax, not a query. Must pass everything so `--error` isn't
+        // dropped when IntelliJ filters live with prefix="-".
+        if (normalized.isBlank() || normalized.all { it == '-' }) {
+            return CssVarQueryMatcher.Match(CssVarQueryMatcher.MatchKind.PREFIX, "")
+        }
+        val pseudoQuery = CssVarQueryMatcher.Query(prefix, normalized)
+        return CssVarQueryMatcher.bestMatch(name.removePrefix("--"), pseudoQuery)
+    }
+
+    private companion object {
+        private val LOG = Logger.getInstance(CssVarPrefixMatcher::class.java)
     }
 }

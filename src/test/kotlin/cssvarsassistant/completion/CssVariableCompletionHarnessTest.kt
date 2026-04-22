@@ -314,6 +314,10 @@ class CssVariableCompletionHarnessTest : CssVarsAssistantPlatformTestCase() {
               --background: #111111;
               --bg: 0 0% 0%;
               --size: 16px;
+              --error: hsl(353, 82%, 96%);
+              --error-foreground: hsl(354, 69%, 54%);
+              --ls-normal: 0em;
+              --ls-wide: 0.025em;
             }
 
             .card {
@@ -337,6 +341,10 @@ class CssVariableCompletionHarnessTest : CssVarsAssistantPlatformTestCase() {
               --background: #111111;
               --bg: 0 0% 0%;
               --size: 16px;
+              --error: hsl(353, 82%, 96%);
+              --error-foreground: hsl(354, 69%, 54%);
+              --ls-normal: 0em;
+              --ls-wide: 0.025em;
             }
 
             .card {
@@ -652,6 +660,205 @@ class CssVariableCompletionHarnessTest : CssVarsAssistantPlatformTestCase() {
 
     // As above but between two var() calls, where the cursor is between them
     // and therefore outside both parenthesised regions.
+    // ---------------------------------------------------------------------
+    // Issue #18 follow-up (screenshots): typing `hsl(var(--err))` must
+    // filter completions to prefix matches, not dump every variable
+    // sorted by value type.
+    // ---------------------------------------------------------------------
+    fun testCompletionInsideHslWithDashedPrefixFiltersByPrefix() {
+        addProjectStylesheet(
+            "tokens.css",
+            """
+            :root {
+              --ls-normal: 0em;
+              --ls-wide: 0.025em;
+              --ls-wider: 0.05em;
+              --padding-sm: 16px;
+              --padding-md: 24px;
+              --error: hsl(353, 82%, 96%);
+              --error-foreground: hsl(354, 69%, 54%);
+            }
+            """
+        )
+        val lookups = completeCssVariables(
+            "app.css",
+            """
+            .card {
+              color: hsl(var(--err<caret>));
+            }
+            """
+        )
+        val displayedNames = lookups.mapNotNull { it.itemText }
+
+        assertContainsElements(displayedNames, "error", "error-foreground")
+        assertDoesntContain(displayedNames, "ls-normal")
+        assertDoesntContain(displayedNames, "ls-wide")
+        assertDoesntContain(displayedNames, "ls-wider")
+        assertDoesntContain(displayedNames, "padding-sm")
+        assertDoesntContain(displayedNames, "padding-md")
+    }
+
+    fun testCompletionInsideHslWithDashedBackPrefixDoesNotShowBlue() {
+        // Use two "back*" variables so single-match auto-insert doesn't
+        // collapse the popup before we can read it.
+        addProjectStylesheet(
+            "tokens.css",
+            """
+            :root {
+              --blue: hsl(221, 83%, 53%);
+              --black: hsl(240, 10%, 4%);
+              --border: hsl(220, 3%, 80%);
+              --background: hsl(0, 9%, 98%);
+              --background-muted: hsl(0, 9%, 94%);
+              --blue-foreground: hsl(210, 40%, 98%);
+              --button-padding-md: 8px;
+              --button-padding-sm: 4px;
+            }
+            """
+        )
+        val lookups = completeCssVariables(
+            "app.css",
+            """
+            .card {
+              color: hsl(var(--back<caret>));
+            }
+            """
+        )
+        val displayedNames = lookups.mapNotNull { it.itemText }
+
+        assertContainsElements(displayedNames, "background", "background-muted")
+        // Everything else must be filtered out — "back" doesn't match any
+        // of these as PREFIX / TOKEN_PREFIX / SUBSTRING.
+        assertDoesntContain(displayedNames, "blue")
+        assertDoesntContain(displayedNames, "black")
+        assertDoesntContain(displayedNames, "border")
+        assertDoesntContain(displayedNames, "blue-foreground")
+        assertDoesntContain(displayedNames, "button-padding-md")
+        assertDoesntContain(displayedNames, "button-padding-sm")
+    }
+
+    fun testBlankQueryInsideVarDoesNotPreferSizeOverName() {
+        addProjectStylesheet(
+            "tokens.css",
+            """
+            :root {
+              --alpha-color: hsl(0, 0%, 0%);
+              --beta-size: 0em;
+              --gamma-number: 1.5;
+            }
+            """
+        )
+        val lookups = completeCssVariables(
+            "app.css",
+            """
+            .card {
+              color: var(--<caret>);
+            }
+            """
+        )
+        val displayedNames = lookups.mapNotNull { it.itemText }
+
+        // With a blank query (`var(--`), users expect a neutral order,
+        // typically alphabetical. The previous behaviour grouped by value
+        // type (SIZE < COLOR < NUMBER < OTHER) and shoved every letter-
+        // spacing-like variable to the top, which felt random to users.
+        val pluginEntries = listOf("alpha-color", "beta-size", "gamma-number")
+            .filter { it in displayedNames }
+        assertEquals(listOf("alpha-color", "beta-size", "gamma-number"), pluginEntries)
+    }
+
+    // ---------------------------------------------------------------------
+    // Issue #18 follow-up 2: "no-dash auto-insert" used to work — user types
+    // `hsl(var(error))` without `--`, picks the suggestion, gets the clean
+    // `hsl(var(--error))` because we auto-prepend the dashes. A previous
+    // regression broke this by synthesising the prefix as `--error` and
+    // making IntelliJ's replacement range swallow the surrounding `r(`
+    // from `var(`. The fix: matcher's prefix length MUST equal the number
+    // of characters actually typed in the document.
+    // ---------------------------------------------------------------------
+    // Regression: typing `var(--er)` used to surface both `--error` and
+    // `--error-foreground`, not just one of them. Report after Phase 7e
+    // showed only `--error-foreground` in the popup when the prefix had
+    // the `--` dashes; dropping the dashes made `--error` reappear. Locks
+    // in both-show behaviour for the dashed prefix.
+    fun testCompletionInsideHslWithDashedErPrefixShowsBothErrorVariants() {
+        addProjectStylesheet(
+            "tokens.css",
+            """
+            :root {
+              --error: hsl(353, 82%, 96%);
+              --error-foreground: hsl(354, 69%, 54%);
+              --ls-normal: 0em;
+              --ls-wide: 0.025em;
+              --background: hsl(0, 9%, 98%);
+              --background-muted: hsl(0, 9%, 94%);
+              --blue: hsl(221, 83%, 53%);
+              --border: hsl(220, 3%, 80%);
+            }
+            """
+        )
+        val lookups = completeCssVariables(
+            "app.css",
+            """
+            .card {
+              color: hsl(var(--er<caret>));
+            }
+            """
+        )
+        val names = lookups.mapNotNull { it.itemText }
+        assertContainsElements(names, "error", "error-foreground")
+        assertDoesntContain(names, "ls-normal")
+        assertDoesntContain(names, "background")
+    }
+
+    fun testInsertionOfDashedVarWhenUserTypedWithoutDashesInsideHsl() {
+        assertCleanInsertion(
+            beforeBody = "color: hsl(var(error<caret>));",
+            expectedBody = "color: hsl(var(--error));",
+            pickLookupString = "--error"
+        )
+    }
+
+    fun testInsertionOfDashedVarWhenUserTypedShortPrefixWithoutDashesInsideHsl() {
+        assertCleanInsertion(
+            beforeBody = "color: hsl(var(er<caret>));",
+            expectedBody = "color: hsl(var(--error));",
+            pickLookupString = "--error"
+        )
+    }
+
+    fun testInsertionOfDashedVarWhenUserTypedNothingAfterVarOpenInsideHsl() {
+        assertCleanInsertion(
+            beforeBody = "color: hsl(var(<caret>));",
+            expectedBody = "color: hsl(var(--error));",
+            pickLookupString = "--error"
+        )
+    }
+
+    fun testInsertionInsideHslWithFiveCharDashedPrefixProducesCleanVar() {
+        assertCleanInsertion(
+            beforeBody = "color: hsl(var(--err<caret>));",
+            expectedBody = "color: hsl(var(--error));",
+            pickLookupString = "--error"
+        )
+    }
+
+    fun testInsertionInsideHslWithTrailingDashProducesCleanVar() {
+        assertCleanInsertion(
+            beforeBody = "color: hsl(var(--ls-<caret>));",
+            expectedBody = "color: hsl(var(--ls-normal));",
+            pickLookupString = "--ls-normal"
+        )
+    }
+
+    fun testInsertionInsideHslWithSixCharDashedPrefixProducesCleanVar() {
+        assertCleanInsertion(
+            beforeBody = "color: hsl(var(--error<caret>));",
+            expectedBody = "color: hsl(var(--error-foreground));",
+            pickLookupString = "--error-foreground"
+        )
+    }
+
     fun testDoesNotFireBetweenTwoVarsOnSameLine() {
         addProjectStylesheet(
             "tokens.css",

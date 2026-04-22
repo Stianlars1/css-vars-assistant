@@ -22,6 +22,7 @@ import cssvarsassistant.index.CSS_VARIABLE_INDEXER_NAME
 import cssvarsassistant.index.CssVariableIndexValueCodec
 import cssvarsassistant.model.DocParser
 import cssvarsassistant.settings.CssVarsAssistantSettings
+import cssvarsassistant.util.CssTextUtil
 import cssvarsassistant.util.ScopeUtil
 import cssvarsassistant.util.ValueUtil
 import java.awt.Component
@@ -89,18 +90,16 @@ class CssVariableCompletion : CompletionContributor() {
                         )
                         val activeQuery = query ?: CssVarQueryMatcher.Query("", "")
 
-                        // Permissive prefix matcher that keeps the correct prefix LENGTH
-                        // (so IntelliJ replaces the typed `--foo` when inserting the lookup
-                        // string) but accepts every element we add — our own
-                        // CssVarQueryMatcher already decides what to surface. This also
-                        // works for `var()` nested inside other CSS functions
-                        // (hsl/rgb/calc/color-mix/etc.) because `activeQuery.rawPrefix`
-                        // is always the text typed inside the innermost `var(`.
+                        // Prefix matcher that (a) keeps the correct prefix LENGTH so
+                        // IntelliJ replaces the typed `--foo` when inserting the
+                        // lookup string, and (b) routes live-filter decisions through
+                        // our own CssVarQueryMatcher.bestMatch. Without (b) the popup
+                        // went sticky as the user typed (issue #18 follow-up): items
+                        // like `--ls-normal` stayed visible on any prefix because the
+                        // old anonymous matcher returned `true` unconditionally AND
+                        // returned `this` from `cloneWithPrefix`.
                         val completionResult = result.withPrefixMatcher(
-                            object : PrefixMatcher(activeQuery.rawPrefix) {
-                                override fun prefixMatches(name: String): Boolean = true
-                                override fun cloneWithPrefix(prefix: String): PrefixMatcher = this
-                            }
+                            CssVarPrefixMatcher(activeQuery.rawPrefix)
                         )
 
                         val settings = CssVarsAssistantSettings.getInstance()
@@ -112,7 +111,11 @@ class CssVariableCompletion : CompletionContributor() {
                         /* ---------------------------------------------------- */
                         /*  for hver variabel-key                               */
                         /* ---------------------------------------------------- */
-                        val activeFileText = params.originalFile.text
+                        // `params.originalFile.text` is the completion copy file — which has
+                        // IntelliJ's DUMMY_IDENTIFIER (`IntellijIdeaRulezzz `) injected at the
+                        // caret. Strip it before it reaches the cascade regex so local-override
+                        // detection can't mis-read the dummy as part of a value.
+                        val activeFileText = CssTextUtil.stripCompletionDummy(params.originalFile.text)
 
                         keyCache.keys(cssScope).forEach { rawName ->
                             ProgressManager.checkCanceled()
@@ -227,15 +230,58 @@ class CssVariableCompletion : CompletionContributor() {
                             val element = LookupElementBuilder
                                 .create(e.rawName)
                                 .withPresentableText(e.display)
-                                .withLookupString(e.display)
+                                // Phase 7h: Previously we also called
+                                // `.withLookupString(e.display)` to make the
+                                // no-dash case (`var(fore)`) match against the
+                                // stripped name. That added a secondary lookup
+                                // string for every element — `foreground` for
+                                // `--foreground`, `error` for `--error`, and so
+                                // on — which meant IntelliJ's lookup arranger
+                                // saw pairs of elements where one element's
+                                // stripped lookup string was a proper prefix
+                                // of another's (`foreground` ⊂ `foreground-subtle`,
+                                // `error` ⊂ `error-foreground`). When that
+                                // happens the arranger silently suppresses the
+                                // shorter sibling from the visible popup —
+                                // exactly the user-visible bug: `--foreground`
+                                // and `--error` vanishing while `*-foreground`
+                                // siblings stayed on screen.
+                                //
+                                // The no-dash match still works without the
+                                // secondary lookup string because
+                                // CssVarPrefixMatcher.prefixMatches strips `--`
+                                // from the incoming name before calling
+                                // bestMatch, so `var(fore)` still reaches
+                                // `--foreground` through the primary `--foreground`
+                                // lookup string.
                                 .withIcon(icon)
                                 .withTypeText(valueText, true)
                                 .withTailText(if (shortDoc.isNotBlank()) " — $shortDoc" else "", true)
 
-                            completionResult.addElement(
-                                PrioritizedLookupElement
-                                    .withPriority(element, priority)
-                            )
+                            // Phase 7g: only freeze a priority when the contributor
+                            // saw a real prefix. When auto-popup fires at `var(--|)`
+                            // and our query is blank, attaching the idx-based
+                            // priority locks in whatever alphabetical order we
+                            // picked in the blank-query branch of the comparator —
+                            // and that order then survives every subsequent
+                            // keystroke because IntelliJ's arranger treats
+                            // withPriority as a primary sort over matchingDegree.
+                            // That's why `var(--)` → type `fore` kept
+                            // `accent-foreground` pinned above `--foreground`.
+                            //
+                            // With no priority on blank-query items,
+                            // CssVarPrefixMatcher.matchingDegree takes over on
+                            // live filtering: PREFIX tier (10_000) beats
+                            // TOKEN_PREFIX (5_000), beats SUBSTRING (1_000), with
+                            // name length as the intra-tier tiebreaker. So
+                            // `--foreground` (PREFIX, 9988) ranks above
+                            // `--accent-foreground` (TOKEN_PREFIX, 4981) the
+                            // moment the user types an actual query, regardless
+                            // of which alphabetical order we initially imposed.
+                            val finalElement =
+                                if (activeQuery.normalizedPrefix.isBlank()) element
+                                else PrioritizedLookupElement.withPriority(element, priority)
+                            completionResult.addElement(finalElement)
                         }
 
                         if (shouldStopAfterCssVarCompletion(strongestEntries.size, settings.allowIdeCompletions)) {
@@ -246,9 +292,17 @@ class CssVariableCompletion : CompletionContributor() {
                             RatePromptService.getInstance().recordUsage()
                         }
 
+                        // Phase 7f: log activeQuery + returned names so that a
+                        // future "why didn't --foo show up?" report can be
+                        // answered from idea.log without another rebuild cycle.
+                        // If the name is in this list but not in the popup, the
+                        // arranger/UI filtered it; if it's missing here, our
+                        // contributor never offered it.
                         logger.info(
                             "CSS var completion: ${System.currentTimeMillis() - startTime}ms, " +
-                                    "${strongestEntries.size} entries."
+                                "query=raw='${activeQuery.rawPrefix}' norm='${activeQuery.normalizedPrefix}', " +
+                                "returned ${strongestEntries.size}: " +
+                                strongestEntries.joinToString(",") { it.rawName }
                         )
 
                     } catch (e: ProcessCanceledException) {
@@ -267,6 +321,15 @@ class CssVariableCompletion : CompletionContributor() {
         query: String
     ): Comparator<Entry> {
         val baseComparator = Comparator<Entry> { a, b ->
+            // Issue #18 follow-up: when the user hasn't typed any substantive
+            // prefix (`var(--`), the value-type grouping below shoved every
+            // SIZE variable to the top, regardless of name. That was
+            // surprising — users expect neutral alphabetical order when they
+            // haven't given a hint yet.
+            if (query.isBlank()) {
+                return@Comparator a.display.compareTo(b.display, ignoreCase = true)
+            }
+
             if (a.matchPriority != b.matchPriority) {
                 return@Comparator a.matchPriority - b.matchPriority
             }
