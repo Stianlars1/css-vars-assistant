@@ -189,4 +189,164 @@ class CssVariableEntryParserTest {
             entries
         )
     }
+
+    // Phase 8a — issue #19. Attribute selectors like [data-theme="dark"] are a
+    // common theming pattern (shadcn, Radix, Tailwind's data-theme mode). Before
+    // 1.8.1 every non-root block collapsed into "default" and the last
+    // declaration silently won, hiding the dark-mode value from the popup.
+    @Test
+    fun `attribute selector block is tagged as its own context`() {
+        val entries = CssVariableEntryParser.parse(
+            """
+            :root {
+              --bg: white;
+            }
+            [data-theme="dark"] {
+              --bg: black;
+            }
+            """.trimIndent()
+        )
+
+        assertEquals(
+            listOf(
+                ParsedCssVariableEntry("--bg", "default", "white", ""),
+                ParsedCssVariableEntry("--bg", "[data-theme=\"dark\"]", "black", "")
+            ),
+            entries
+        )
+    }
+
+    // Phase 8a — class selector. Common in Tailwind v4 `.dark` mode and many
+    // hand-rolled theme systems.
+    @Test
+    fun `class selector block is tagged as its own context`() {
+        val entries = CssVariableEntryParser.parse(
+            """
+            .dark {
+              --bg: black;
+            }
+            """.trimIndent()
+        )
+
+        assertEquals(
+            listOf(ParsedCssVariableEntry("--bg", ".dark", "black", "")),
+            entries
+        )
+    }
+
+    // Phase 8a — selectors that are functionally the document root keep the
+    // existing "default" context. :root, :host (web components), html, body,
+    // and universal * are all documented ways to declare design tokens at the
+    // top of the cascade.
+    @Test
+    fun `root-like selectors are treated as default context`() {
+        val rootSelectors = listOf(":root", ":host", "html", "body", "*")
+        rootSelectors.forEach { selector ->
+            val entries = CssVariableEntryParser.parse(
+                """
+                $selector {
+                  --bg: white;
+                }
+                """.trimIndent()
+            )
+
+            assertEquals(
+                listOf(ParsedCssVariableEntry("--bg", "default", "white", "")),
+                entries,
+                "selector `$selector` should resolve to default context"
+            )
+        }
+    }
+
+    // Phase 8a — nesting a themed selector inside a media query combines both
+    // labels so the popup can show "(prefers-color-scheme: dark) .hc" and the
+    // user can tell which declaration wins under which environment.
+    @Test
+    fun `non-root selector nested inside media combines labels`() {
+        val entries = CssVariableEntryParser.parse(
+            """
+            @media (prefers-color-scheme: dark) {
+              .hc {
+                --bg: #000;
+              }
+            }
+            """.trimIndent()
+        )
+
+        assertEquals(
+            listOf(
+                ParsedCssVariableEntry(
+                    "--bg",
+                    "(prefers-color-scheme: dark) .hc",
+                    "#000",
+                    ""
+                )
+            ),
+            entries
+        )
+    }
+
+    // Phase 8a — comma-separated selector lists are preserved verbatim so the
+    // user can see that "both .dark and [data-theme=dark] got this value" in
+    // one row rather than two duplicated rows.
+    @Test
+    fun `comma-separated selector list stays verbatim`() {
+        val entries = CssVariableEntryParser.parse(
+            """
+            .dark, [data-theme="dark"] {
+              --bg: black;
+            }
+            """.trimIndent()
+        )
+
+        assertEquals(
+            listOf(
+                ParsedCssVariableEntry(
+                    "--bg",
+                    ".dark, [data-theme=\"dark\"]",
+                    "black",
+                    ""
+                )
+            ),
+            entries
+        )
+    }
+
+    // Phase 8a — pathological giant selector lists (120+ chars) should be
+    // truncated with an ellipsis so the Context column doesn't blow up the
+    // popup width. Target limit is ~60 chars.
+    @Test
+    fun `long selector list is truncated with ellipsis`() {
+        val longSelector = List(12) { ".class-$it" }.joinToString(", ")
+        val entries = CssVariableEntryParser.parse(
+            """
+            $longSelector {
+              --bg: black;
+            }
+            """.trimIndent()
+        )
+
+        assertEquals(1, entries.size)
+        val context = entries.single().context
+        assert(context.endsWith("…")) { "expected truncated selector to end with ellipsis, was: $context" }
+        assert(context.length <= 61) { "expected truncated selector <= 61 chars, was ${context.length}: $context" }
+    }
+
+    // Phase 8a — single-line block with multiple declarations (a very common
+    // pattern in minified/compressed stylesheets) must attribute EVERY
+    // declaration inside the block to the same selector context.
+    @Test
+    fun `single-line selector block tags all declarations with selector`() {
+        val entries = CssVariableEntryParser.parse(
+            """[data-theme="dark"] { --bg: black; --fg: white; }"""
+        )
+
+        assertEquals(
+            listOf(
+                ParsedCssVariableEntry("--bg", "[data-theme=\"dark\"]", "black", ""),
+                ParsedCssVariableEntry("--fg", "[data-theme=\"dark\"]", "white", "")
+            ),
+            entries
+        )
+    }
 }

@@ -197,6 +197,14 @@ fun java.awt.Color.toHex(): String =
 fun contextLabel(ctx: String, isColor: Boolean): String {
     if (ctx == "default") return if (isColor) "Light mode" else "Default"
 
+    // Phase 8a / issue #19: if the context is (or begins with) a raw CSS
+    // selector — attribute, class, id, pseudo-class — render it verbatim.
+    // Media queries keep their existing pretty-print (Dark mode, ≥768px…).
+    // Combined labels like "(prefers-color-scheme: dark) .hc" start with
+    // "(", so they still go down the media-query pretty-print path and the
+    // selector suffix is preserved as-is.
+    if (looksLikeSelector(ctx)) return ctx
+
     if ("prefers-color-scheme" in ctx.lowercase()) {
         return when {
             "light" in ctx.lowercase() -> "Light mode"
@@ -240,6 +248,16 @@ fun contextLabel(ctx: String, isColor: Boolean): String {
                 .takeIf { it.isNotEmpty() } ?: "Media query"
         }
     }
+}
+
+// Heuristic: context starts with a character that marks a CSS selector rather
+// than a media-query chunk. `.dark`, `#id`, `[data-*]`, `:hover`, `:not(.x)`,
+// or a bare element selector like `main` all qualify. Media queries always
+// begin with `(` once `@media` has been stripped by the parser.
+private fun looksLikeSelector(ctx: String): Boolean {
+    val first = ctx.firstOrNull() ?: return false
+    return first == '.' || first == '#' || first == '[' || first == ':' ||
+        first == '&' || first.isLetter()
 }
 
 fun colorSwatchHtml(css: String): String =

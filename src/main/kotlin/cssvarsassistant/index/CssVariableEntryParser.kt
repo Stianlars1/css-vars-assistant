@@ -33,16 +33,29 @@ internal object CssVariableEntryParser {
     // SCSS/Less files, so we strip them here too.
     private val lineCommentRegex = Regex("""//[^\n]*$""")
 
-    private data class MediaContext(
+    // Selectors that effectively represent the document root in a design-token
+    // context. Declarations inside these do NOT push a new context — they fall
+    // through as "default" because they're the baseline every theme overrides.
+    private val ROOT_LIKE_SELECTORS = setOf(":root", ":host", "html", "body", "*")
+
+    // Max visible length of a selector label in the popup Context column.
+    // Long comma-separated selector lists get truncated with an ellipsis.
+    private const val MAX_SELECTOR_LABEL = 60
+
+    // Generalised from the 1.7.x `MediaContext`: any block that contributes a
+    // label to the current context stack. Media queries push `(min-width: ...)`,
+    // non-root selectors push `.dark`, `[data-theme="dark"]`, etc. Nested pushes
+    // combine labels by space.
+    private data class BlockContext(
         val label: String,
         val depthAfterOpen: Int
     )
 
     fun parse(text: CharSequence): List<ParsedCssVariableEntry> {
         val entries = mutableListOf<ParsedCssVariableEntry>()
-        val mediaContexts = ArrayDeque<MediaContext>()
+        val blockContexts = ArrayDeque<BlockContext>()
         var braceDepth = 0
-        var pendingMediaContext: String? = null
+        var pendingBlockContext: String? = null
 
         var lastComment: String? = null
         var inBlockComment = false
@@ -107,18 +120,27 @@ internal object CssVariableEntryParser {
 
             val mediaContext = extractMediaContext(line)
             if (mediaContext != null) {
-                pendingMediaContext = mediaContext
+                pendingBlockContext = mediaContext
+            } else {
+                val selectorContext = extractSelectorContext(line)
+                if (selectorContext != null) {
+                    pendingBlockContext = selectorContext
+                }
             }
 
             val openingBraces = line.count { it == '{' }
             val closingBraces = line.count { it == '}' }
 
-            if (pendingMediaContext != null && openingBraces > 0) {
-                mediaContexts.addLast(MediaContext(pendingMediaContext, braceDepth + 1))
-                pendingMediaContext = null
+            if (pendingBlockContext != null && openingBraces > 0) {
+                blockContexts.addLast(BlockContext(pendingBlockContext!!, braceDepth + 1))
+                pendingBlockContext = null
             }
 
-            val currentContext = mediaContexts.lastOrNull()?.label ?: DEFAULT_CONTEXT
+            val currentContext = if (blockContexts.isEmpty()) {
+                DEFAULT_CONTEXT
+            } else {
+                blockContexts.joinToString(" ") { it.label }
+            }
             if (pendingVariableName != null) {
                 val endIndex = line.indexOf(';')
                 if (endIndex >= 0) {
@@ -170,8 +192,8 @@ internal object CssVariableEntryParser {
             }
 
             braceDepth = (braceDepth + openingBraces - closingBraces).coerceAtLeast(0)
-            while (mediaContexts.isNotEmpty() && mediaContexts.last().depthAfterOpen > braceDepth) {
-                mediaContexts.removeLast()
+            while (blockContexts.isNotEmpty() && blockContexts.last().depthAfterOpen > braceDepth) {
+                blockContexts.removeLast()
             }
         }
 
@@ -189,6 +211,25 @@ internal object CssVariableEntryParser {
             .trim()
             .ifEmpty { "media" }
     }
+
+    // Phase 8a / issue #19: detect non-root selector blocks as contexts so
+    // `[data-theme="dark"] { --bg: black }` shows up as its own row in the
+    // hover popup instead of silently overwriting the default value.
+    internal fun extractSelectorContext(line: String): String? {
+        val openIdx = line.indexOf('{')
+        if (openIdx < 0) return null
+        val prefix = line.substring(0, openIdx).trim()
+        if (prefix.isEmpty()) return null
+        // `@media`, `@supports`, `@container`, etc. — at-rules are handled
+        // (or intentionally skipped) elsewhere, never as selector labels.
+        if (prefix.startsWith("@")) return null
+        if (prefix.lowercase() in ROOT_LIKE_SELECTORS) return null
+        return truncateSelectorLabel(prefix)
+    }
+
+    private fun truncateSelectorLabel(label: String): String =
+        if (label.length <= MAX_SELECTOR_LABEL) label
+        else label.take(MAX_SELECTOR_LABEL - 1).trimEnd().trimEnd(',') + "…"
 
     private fun normalizeValue(value: String): String =
         value
