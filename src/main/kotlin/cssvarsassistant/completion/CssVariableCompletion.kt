@@ -81,6 +81,22 @@ class CssVariableCompletion : CompletionContributor() {
                         val insideVarFunction = isInsideVarFunction(params)
                         if (!insideVarFunction) return
 
+                        // 1.8.4 / issue #20: force IntelliJ to re-invoke the
+                        // contributor on every prefix change. The contributor's
+                        // idx-based priority is a primary sort key that freezes
+                        // at element-add time — without this restart hint, the
+                        // initial popup ordering (from an early short query)
+                        // persists as the user types more characters, which
+                        // kept `--sidebar-accent-foreground` stuck at rank #3
+                        // while the user was typing `--sidebar-accent-`. The
+                        // `all()` pattern matches every prefix, so any change
+                        // triggers a restart; the contributor's own caching
+                        // (CssVarKeyCache, index lookups) keeps the cost
+                        // bounded even on live typing.
+                        result.restartCompletionOnPrefixChange(
+                            com.intellij.patterns.StandardPatterns.string()
+                        )
+
                         val caretOffset = params.editor.caretModel.offset
                         val query = CssVarQueryMatcher.withFallback(
                             primary = CssVarQueryMatcher.extractQuery(params.originalFile.text, caretOffset)
@@ -268,26 +284,21 @@ class CssVariableCompletion : CompletionContributor() {
                                 .withTypeText(valueText, true)
                                 .withTailText(if (shortDoc.isNotBlank()) " — $shortDoc" else "", true)
 
-                            // Phase 7g: only freeze a priority when the contributor
-                            // saw a real prefix. When auto-popup fires at `var(--|)`
-                            // and our query is blank, attaching the idx-based
-                            // priority locks in whatever alphabetical order we
-                            // picked in the blank-query branch of the comparator —
-                            // and that order then survives every subsequent
-                            // keystroke because IntelliJ's arranger treats
-                            // withPriority as a primary sort over matchingDegree.
-                            // That's why `var(--)` → type `fore` kept
-                            // `accent-foreground` pinned above `--foreground`.
+                            // 1.8.4 / issue #20 (third-pass): re-attach the idx-
+                            // based priority per the 1.8.0 behaviour — this is
+                            // what makes value-based sort work for families
+                            // like `--spacing-2xs/xs/s/m` (by resolved pixel)
+                            // and `--accent-1/2/10` (by numeric suffix). Those
+                            // orderings require the contributor's specialised
+                            // sort to dominate, which only works via priority.
                             //
-                            // With no priority on blank-query items,
-                            // CssVarPrefixMatcher.matchingDegree takes over on
-                            // live filtering: PREFIX tier (10_000) beats
-                            // TOKEN_PREFIX (5_000), beats SUBSTRING (1_000), with
-                            // name length as the intra-tier tiebreaker. So
-                            // `--foreground` (PREFIX, 9988) ranks above
-                            // `--accent-foreground` (TOKEN_PREFIX, 4981) the
-                            // moment the user types an actual query, regardless
-                            // of which alphabetical order we initially imposed.
+                            // The live-filtering problem from the second-pass
+                            // comment is now solved at a different layer:
+                            // `restartCompletionOnPrefixChange` below forces
+                            // IntelliJ to re-invoke the contributor on every
+                            // keystroke, so the frozen priority always
+                            // reflects the CURRENT query's sort, not an
+                            // earlier one.
                             val finalElement =
                                 if (activeQuery.normalizedPrefix.isBlank()) element
                                 else PrioritizedLookupElement.withPriority(element, priority)
