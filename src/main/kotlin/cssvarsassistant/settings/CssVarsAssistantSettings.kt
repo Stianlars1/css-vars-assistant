@@ -59,7 +59,14 @@ class CssVarsAssistantSettings : PersistentStateComponent<CssVarsAssistantSettin
         var showCompletionDescription: Boolean = true,
         // Maximum characters of the description to render in the popup.
         // 0 = suppress entirely (equivalent to showCompletionDescription=false).
-        var completionDescriptionMaxLength: Int = DEFAULT_DESC_MAX_LENGTH
+        var completionDescriptionMaxLength: Int = DEFAULT_DESC_MAX_LENGTH,
+        // 1.8.2 — when true, the Source column in the hover popup renders
+        // as `:220` instead of `variables.css:220`, with the full path shown
+        // on hover. IntelliJ's quick-doc popup clamps max-width and wraps
+        // long cells; defaulting to compact keeps the popup narrow and
+        // non-wrapping in the common case, while power users can turn it
+        // off to keep the old verbose display.
+        var compactSourceColumn: Boolean = true
     )
 
     private var state = State()
@@ -121,6 +128,12 @@ class CssVarsAssistantSettings : PersistentStateComponent<CssVarsAssistantSettin
         get() = state.completionDescriptionMaxLength
         set(value) {
             state.completionDescriptionMaxLength = value.coerceIn(0, MAX_DESC_MAX_LENGTH)
+        }
+
+    var compactSourceColumn: Boolean
+        get() = state.compactSourceColumn
+        set(value) {
+            state.compactSourceColumn = value
         }
 
     // Computed properties for backward compatibility and clarity

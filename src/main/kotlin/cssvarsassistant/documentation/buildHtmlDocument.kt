@@ -50,6 +50,11 @@ fun buildHtmlDocument(
     val showHexCol = columnVisibility.showHexValue && hasColorValues && hasNonHexColors
     val showWcagCol = columnVisibility.showWcagContrast && hasColorValues
 
+    // 1.8.2 — compact source display keeps the popup narrow enough that the
+    // Source cell doesn't wrap at the IDE's hard max-width clamp. Full path
+    // is always attached as a `title` tooltip regardless of compact state.
+    val compactSource = settings.compactSourceColumn
+
 
     val winnerFirstSorted = if (winnerIndex >= 0) {
         val winner = sorted[winnerIndex]
@@ -120,7 +125,11 @@ fun buildHtmlDocument(
         // Phase 8b — `file.css:N` when the index knows where the declaration
         // lives, falling back to the legacy "first resolution step" label
         // (e.g. "calc(...)") when line info is unavailable.
-        val sourceStr = formatSourceCell(row.sourceFile, row.sourceLine, resInfo.steps.firstOrNull())
+        // 1.8.2 — `compactSource` renders `:N` in the cell but keeps the
+        // full `file.css:N` in the tooltip (`sourceTooltip`) so nothing is
+        // hidden, just compressed visually.
+        val sourceStr = formatSourceCell(row.sourceFile, row.sourceLine, resInfo.steps.firstOrNull(), compactSource)
+        val sourceTooltip = formatSourceCell(row.sourceFile, row.sourceLine, resInfo.steps.firstOrNull(), compact = false)
         val contrast = colorObj?.let {
             // WCAG contrast vs black
             val l = listOf(it.red, it.green, it.blue).map { ch ->
@@ -167,7 +176,7 @@ fun buildHtmlDocument(
         }
 
         if (showSourceCol) {
-            sb.append("<td $rowStyle><nobr>${StringUtil.escapeXmlEntities(sourceStr)}</nobr></td>")
+            sb.append("<td $rowStyle title='${StringUtil.escapeXmlEntities(sourceTooltip)}'><nobr>${StringUtil.escapeXmlEntities(sourceStr)}</nobr></td>")
         }
 
         if (showPixelEqCol) sb.append("<td $rowStyle><nobr>$pixelEq</nobr></td>")
@@ -284,8 +293,19 @@ fun contextLabel(ctx: String, isColor: Boolean): String {
 // has real location metadata, falls back to the legacy "first resolution
 // step" label for legacy cache records (pre-1.8.1) or synthesized entries
 // that never touched a source file.
-private fun formatSourceCell(file: String?, line: Int?, firstStep: String?): String = when {
-    file != null && line != null && line > 0 -> "$file:$line"
+//
+// 1.8.2 — `compact = true` renders only `:220` so the Source cell doesn't
+// wrap at IntelliJ's max-width clamp; the caller pairs this with a `title`
+// tooltip carrying the full `file.css:220` string so no info is lost.
+// The fallback (first resolution step) and the em-dash sentinel are
+// identical across modes — only the full file-path form is compressed.
+internal fun formatSourceCell(
+    file: String?,
+    line: Int?,
+    firstStep: String?,
+    compact: Boolean
+): String = when {
+    file != null && line != null && line > 0 -> if (compact) ":$line" else "$file:$line"
     !firstStep.isNullOrBlank() -> firstStep
     else -> "—"
 }

@@ -74,6 +74,14 @@ class CssVarsAssistantConfigurable : Configurable, Disposable {
     private val showHexValueCheck = JCheckBox("Hex Value", settings.columnVisibility.showHexValue)
     private val showWcagContrastCheck = JCheckBox("WCAG Contrast", settings.columnVisibility.showWcagContrast)
 
+    // 1.8.2 — compact source column. On by default so the popup fits without
+    // wrapping `variables.css:220` into two lines; full path lives in the
+    // cell tooltip for anyone who needs it.
+    private val compactSourceColumnCheck = JCheckBox(
+        "Compact source column (show `:220`, hover for full path)",
+        settings.compactSourceColumn
+    )
+
 
     // Index-scope
     private val projectOnlyRadio = JRadioButton(
@@ -213,7 +221,8 @@ class CssVarsAssistantConfigurable : Configurable, Disposable {
                 getSelectedScope() != settings.indexingScope ||
                 (maxImportDepthSpinner.value as Int) != settings.maxImportDepth ||
                 getSelectedSortingOrder() != settings.sortingOrder ||
-                isColumnVisibilityModified()
+                isColumnVisibilityModified() ||
+                compactSourceColumnCheck.isSelected != settings.compactSourceColumn
 
     override fun apply() {
         settings.showContextValues = showContextValuesCheck.isSelected
@@ -223,6 +232,7 @@ class CssVarsAssistantConfigurable : Configurable, Disposable {
         settings.indexingScope = getSelectedScope()
         settings.maxImportDepth = maxImportDepthSpinner.value as Int
         settings.sortingOrder = getSelectedSortingOrder()
+        settings.compactSourceColumn = compactSourceColumnCheck.isSelected
 
         settings.columnVisibility = CssVarsAssistantSettings.ColumnVisibility(
             showContext = showContextColumnCheck.isSelected,
@@ -262,6 +272,7 @@ class CssVarsAssistantConfigurable : Configurable, Disposable {
         showPixelEquivalentCheck.isSelected = settings.columnVisibility.showPixelEquivalent
         showHexValueCheck.isSelected = settings.columnVisibility.showHexValue
         showWcagContrastCheck.isSelected = settings.columnVisibility.showWcagContrast
+        compactSourceColumnCheck.isSelected = settings.compactSourceColumn
 
         updateImportDepthState()
     }
@@ -341,6 +352,13 @@ class CssVarsAssistantConfigurable : Configurable, Disposable {
         }
         item(columnsPanel, 25)
         item(createDescriptionLabel("Note: Some columns only appear when relevant (e.g., Hex column for color values)"), 25)
+        item(compactSourceColumnCheck, 25)
+        item(
+            createDescriptionLabel(
+                "Keeps the popup narrow by showing just `:220` in the Source cell; the full `variables.css:220` still appears on hover."
+            ),
+            35
+        )
 
 
         section("Variable Indexing Scope:")
