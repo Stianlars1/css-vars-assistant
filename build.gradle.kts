@@ -14,7 +14,7 @@ plugins {
 }
 
 group = "com.stianlarsen"
-version = "1.8.3"
+version = "1.8.4"
 
 repositories {
     mavenCentral()
@@ -105,7 +105,16 @@ intellijPlatform {
   CSS variables, CSS custom properties, design tokens, <code>var(--token)</code>, Tailwind CSS, shadcn/ui, Radix, Material, CSS cascade, <code>:root</code>, WebStorm CSS plugin, IntelliJ CSS autocomplete, SCSS variables, LESS variables, SASS variables, @import resolution, WCAG contrast, px equivalent, rem to px, hex to HSL, colour swatch.
 </p>
 
-<h3>✨ New in 1.8.3</h3>
+<h3>✨ New in 1.8.4</h3>
+<p>
+  Bug-fix release closing <a href="https://github.com/Stianlars1/css-vars-assistant/issues/20">issue #20</a> reported by <a href="https://github.com/Blinks44">@Blinks44</a>. Typing the complete variable name now promotes the exact match to the top of the popup.
+</p>
+<ul>
+  <li><b>Exact-match ranking fix:</b> typing <code>var(--sidebar-accent-foreground)</code> in full no longer leaves <code>--sidebar</code> selected at the top. The popup now correctly puts the exact match first, so pressing Enter/Tab doesn't overwrite what you already typed.</li>
+  <li>Regression tests at three levels (matcher unit, comparator unit, full platform-fixture integration) lock the fix in so this class of bug stays fixed.</li>
+</ul>
+
+<h3>Previously in 1.8.3</h3>
 <p>
   Follow-up to 1.8.1 issue <a href="https://github.com/Stianlars1/css-vars-assistant/issues/19">#19</a> — polish for design systems with many themes.
 </p>
@@ -167,6 +176,16 @@ intellijPlatform {
 """.trimIndent()
 
         changeNotes = """
+<h2>1.8.4 – 2026-04-22</h2>
+<h3>Fixed</h3>
+<ul>
+  <li><b>Exact-match ranking in the completion popup (issue <a href="https://github.com/Stianlars1/css-vars-assistant/issues/20">#20</a>, reported by @Blinks44):</b> typing the complete variable name <code>var(--sidebar-accent-foreground)</code> left <code>--sidebar</code> selected at the top of the popup in 1.8.0-1.8.3, so pressing Enter/Tab overwrote the full name the user had already typed. Two independent paths in the ranking stack both compared each entry against its own truncated matched-prefix instead of the user's actual query; both now compare against the full query so the exact match wins.</li>
+</ul>
+<h3>Notes</h3>
+<ul>
+  <li>Three layers of regression tests lock the fix in: matcher unit (<code>matchingDegree</code> score ordering), comparator unit (<code>compareQuerySpecificity</code> over a standalone Entry list), and full platform-fixture integration (completing <code>var(--sidebar-accent-foreground)</code> against a shadcn-style token file).</li>
+  <li>No index rebuild or settings change required.</li>
+</ul>
 <h2>1.8.3 – 2026-04-22</h2>
 <h3>Added</h3>
 <ul>

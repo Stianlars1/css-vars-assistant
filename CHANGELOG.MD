@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/) and semantic-versioning.
 
+## [1.8.4] – 2026-04-22
+
+Bug-fix release closing issue [#20](https://github.com/Stianlars1/css-vars-assistant/issues/20) reported by [@Blinks44](https://github.com/Blinks44).
+
+### Fixed
+- **Exact-match ranking in the completion popup:** typing the complete variable name `var(--sidebar-accent-foreground)` no longer leaves `--sidebar` selected at the top of the popup. In 1.8.0–1.8.3 the default-selected first item was a shorter prefix sibling, so pressing Enter/Tab on autocomplete overwrote the full name the user had already typed. Two independent paths in the ranking stack (`CssVarPrefixMatcher.matchingDegree` and `CssVariableCompletion.compareQuerySpecificity`) both compared each entry against its own per-entry truncated `matchedPrefix` instead of the user's actual query; both now compare against the full query string. Exact name matches rank first, items consuming more of the user's query rank above items consuming less, and the 1.8.0 "shorter name wins among full-prefix matches" behaviour is preserved for prefix queries like `--er` → `--error` before `--error-foreground`.
+
+### Notes
+- Regression coverage at three layers: matcher unit (`matchingDegree` score ordering), comparator unit (new `CssVariableCompletionSortTest`), and full platform-fixture integration (new `testExactFullNameMatchRanksFirstForCompleteTypedQuery`).
+- No index rebuild or settings change required.
+
 ## [1.8.3] – 2026-04-22
 
 Follow-up to issue [#19](https://github.com/Stianlars1/css-vars-assistant/issues/19) polish pass — inspired by [@LordMaddhi](https://github.com/LordMaddhi)'s follow-up question about larger design systems with many theme variants.

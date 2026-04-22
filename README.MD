@@ -6,7 +6,7 @@
 
 If you find CSS Variables Assistant helpful, please consider rating it on [JetBrains Marketplace](https://plugins.jetbrains.com/plugin/27392-css-variables-assistant/reviews) ★★★★★ 🙏.
 
-**Version:** 1.8.3<br/>
+**Version:** 1.8.4<br/>
 **Compatible IDEs:** JetBrains IDEs with bundled JavaScript + CSS support — IntelliJ IDEA Ultimate, WebStorm, GoLand, PhpStorm, PyCharm Professional, and RubyMine.  
 **Author:** Stian Larsen  
 **Repo:** [github.com/Stianlars1/css-vars-assistant](https://github.com/Stianlars1/css-vars-assistant)
@@ -18,6 +18,18 @@ If you find CSS Variables Assistant helpful, please consider rating it on [JetBr
 
 
 Supercharge your CSS custom properties and preprocessor variables in JetBrains IDEs with advanced autocomplete, documentation, and debugging tools.
+---
+
+## ✨ What's new in 1.8.4
+
+Bug-fix release closing issue [#20](https://github.com/Stianlars1/css-vars-assistant/issues/20) reported by [@Blinks44](https://github.com/Blinks44).
+
+| Category                                   | Highlights                                                                                                                                                                                                                                                                               |
+|--------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **🎯 Exact-match ranking fix**              | Typing the full variable name (`var(--sidebar-accent-foreground)`) now promotes the exact match to the top of the popup. In 1.8.0–1.8.3 the default-selected item was a shorter prefix sibling like `--sidebar`, and pressing Enter/Tab overwrote the full name you had already typed. |
+
+[Full Changelog →](https://github.com/Stianlars1/css-vars-assistant/blob/main/CHANGELOG.MD)
+
 ---
 
 ## ✨ What's new in 1.8.3
