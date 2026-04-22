@@ -6,7 +6,7 @@
 
 If you find CSS Variables Assistant helpful, please consider rating it on [JetBrains Marketplace](https://plugins.jetbrains.com/plugin/27392-css-variables-assistant/reviews) ★★★★★ 🙏.
 
-**Version:** 1.8.1<br/>
+**Version:** 1.8.2<br/>
 **Compatible IDEs:** JetBrains IDEs with bundled JavaScript + CSS support — IntelliJ IDEA Ultimate, WebStorm, GoLand, PhpStorm, PyCharm Professional, and RubyMine.  
 **Author:** Stian Larsen  
 **Repo:** [github.com/Stianlars1/css-vars-assistant](https://github.com/Stianlars1/css-vars-assistant)
@@ -18,6 +18,19 @@ If you find CSS Variables Assistant helpful, please consider rating it on [JetBr
 
 
 Supercharge your CSS custom properties and preprocessor variables in JetBrains IDEs with advanced autocomplete, documentation, and debugging tools.
+---
+
+## ✨ What's new in 1.8.2
+
+Small polish release for the hover popup. IntelliJ's documentation popup clamps its max width, so the 1.8.1 Source column (`variables.css:220`) wrapped into two lines on busy tables. 1.8.2 both nudges the popup wider and adds a compact-source preference.
+
+| Category                                 | Highlights                                                                                                                                                                                                                                                  |
+|------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **🔎 Compact Source column** (new, default on) | *Source* cell renders just `:220`; the full `variables.css:220` is on hover. Toggle under *Settings → Tools → CSS Variables Assistant → Documentation Popup Columns → "Compact source column"* if you prefer the verbose 1.8.1 look. |
+| **↔ Wider popup by default**             | The value table hints at ~700 px minimum width so multi-column rows (Context, Value, Type, Source, Hex, WCAG) don't wrap. Platform still caps around 950 px; users can resize manually and IntelliJ remembers the new size.                                        |
+
+[Full Changelog →](https://github.com/Stianlars1/css-vars-assistant/blob/main/CHANGELOG.MD)
+
 ---
 
 ## ✨ What's new in 1.8.1

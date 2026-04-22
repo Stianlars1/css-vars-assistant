@@ -3,6 +3,16 @@
 All notable changes to this project will be documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/) and semantic-versioning.
 
+## [1.8.2] – 2026-04-22
+
+### Added
+- **Compact Source column (on by default):** the hover popup's *Source* cell renders just `:220` instead of `variables.css:220`; the full path shows on hover via a `title` tooltip. Keeps the popup narrow enough to avoid wrapping at IntelliJ's max-width clamp. New setting under *Settings → Tools → CSS Variables Assistant → Documentation Popup Columns → "Compact source column"*. Existing 1.8.0/1.8.1 users get the new default on first launch; turn it off for the classic verbose display.
+- **Wider popup by default:** the value table now hints at ~700 px minimum width via a `min-width` wrapper and an invisible spacer element, so multi-column rows (Context, Value, Type, Source, Hex, WCAG) don't wrap in the common case. Platform still caps around 950 px and users can resize manually — IntelliJ remembers the new size.
+
+### Notes
+- No index rebuild needed. Purely a rendering / UI polish release.
+- Research spike on the v2 `DocumentationTarget` API confirmed there is no plugin-side API for programmatic popup sizing; the content-side width hints above are the platform-sanctioned workaround.
+
 ## [1.8.1] – 2026-04-22
 
 ### Added

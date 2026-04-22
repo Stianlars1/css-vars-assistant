@@ -14,7 +14,7 @@ plugins {
 }
 
 group = "com.stianlarsen"
-version = "1.8.1"
+version = "1.8.2"
 
 repositories {
     mavenCentral()
@@ -105,7 +105,17 @@ intellijPlatform {
   CSS variables, CSS custom properties, design tokens, <code>var(--token)</code>, Tailwind CSS, shadcn/ui, Radix, Material, CSS cascade, <code>:root</code>, WebStorm CSS plugin, IntelliJ CSS autocomplete, SCSS variables, LESS variables, SASS variables, @import resolution, WCAG contrast, px equivalent, rem to px, hex to HSL, colour swatch.
 </p>
 
-<h3>✨ New in 1.8.1</h3>
+<h3>✨ New in 1.8.2</h3>
+<p>
+  Quality-of-life polish on the hover popup. Long Source cells like <code>variables.css:230</code> used to wrap onto two lines because IntelliJ's documentation popup clamps its max width; 1.8.2 both nudges the popup wider and adds a compact-source-column preference so you can pick the look you prefer.
+</p>
+<ul>
+  <li><b>Compact Source column (on by default):</b> renders just <code>:220</code> in the cell; the full <code>variables.css:220</code> shows on hover. Toggle under <i>Settings → Tools → CSS Variables Assistant → Documentation Popup Columns</i>.</li>
+  <li><b>Wider popup by default:</b> the value table now asks the popup for at least ~700 px, so multi-column rows (Context, Value, Type, Source, Hex, WCAG) no longer wrap in the common case.</li>
+  <li>Zero behaviour change to completion, indexing, or the v1.8.1 theming-selector rows.</li>
+</ul>
+
+<h3>Previously in 1.8.1</h3>
 <p>
   Theming-focused follow-up. Closes issue
   <a href="https://github.com/Stianlars1/css-vars-assistant/issues/19">#19</a>
@@ -147,6 +157,16 @@ intellijPlatform {
 """.trimIndent()
 
         changeNotes = """
+<h2>1.8.2 – 2026-04-22</h2>
+<h3>Added</h3>
+<ul>
+  <li><b>Compact Source column (on by default):</b> the hover popup's <i>Source</i> cell now renders just <code>:220</code>; the full <code>variables.css:220</code> appears on hover. Keeps the popup narrow enough to avoid wrapping at IntelliJ's max-width clamp. Toggle under <i>Settings → Tools → CSS Variables Assistant → Documentation Popup Columns</i>.</li>
+  <li><b>Wider popup by default:</b> the value table now hints at ~700 px minimum width via a `min-width` wrapper + invisible spacer, so multi-column rows (Context, Value, Type, Source, Hex, WCAG) don't wrap in the common case. Platform still caps around 950 px; users can manually resize the popup and the IDE remembers.</li>
+</ul>
+<h3>Notes</h3>
+<ul>
+  <li>No index rebuild required. Purely a rendering / UI polish release.</li>
+</ul>
 <h2>1.8.1 – 2026-04-22</h2>
 <h3>Added</h3>
 <ul>
