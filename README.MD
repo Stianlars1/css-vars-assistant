@@ -6,7 +6,7 @@
 
 If you find CSS Variables Assistant helpful, please consider rating it on [JetBrains Marketplace](https://plugins.jetbrains.com/plugin/27392-css-variables-assistant/reviews) ★★★★★ 🙏.
 
-**Version:** 1.8.0<br/>
+**Version:** 1.8.1<br/>
 **Compatible IDEs:** JetBrains IDEs with bundled JavaScript + CSS support — IntelliJ IDEA Ultimate, WebStorm, GoLand, PhpStorm, PyCharm Professional, and RubyMine.  
 **Author:** Stian Larsen  
 **Repo:** [github.com/Stianlars1/css-vars-assistant](https://github.com/Stianlars1/css-vars-assistant)
@@ -18,6 +18,24 @@ If you find CSS Variables Assistant helpful, please consider rating it on [JetBr
 
 
 Supercharge your CSS custom properties and preprocessor variables in JetBrains IDEs with advanced autocomplete, documentation, and debugging tools.
+---
+
+## ✨ What's new in 1.8.1
+
+Small follow-up release targeted at theming workflows — closes issue [#19](https://github.com/Stianlars1/css-vars-assistant/issues/19) reported by [@LordMaddhi](https://github.com/LordMaddhi) and ships a related cascade-visibility improvement.
+
+| Category                                   | Highlights                                                                                                                                                                                                                                                                               |
+|--------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **🎨 Attribute & class themes become their own contexts** | `[data-theme="dark"] { --bg: black }`, `.dark { --bg: black }`, `.theme-high-contrast`, `:hover`, `[dir="rtl"]` and other non-root selectors are now indexed as distinct contexts and show up as their own rows in the hover popup. Before 1.8.1 they collapsed into `default` and were silently overwritten by the last declaration. Nested `@media (prefers-color-scheme: dark) { .hc { … } }` combines labels as `(prefers-color-scheme: dark) .hc`. |
+| **📍 Source file:line per declaration**    | The *Source* column in the hover popup now shows `tokens.css:42` for every row, so when `--bg` is redefined across shadcn/Radix/Tailwind/Material theme files you can see exactly where each value lives. Legacy index records fall back to the prior "first resolution step" label automatically. |
+| **ℹ️ Cascade-ambiguity disclaimer**        | A small note under the value table reminds you that rows are shown in index order and the runtime-applied value still depends on stylesheet load order and specificity — we don't simulate the full CSS cascade engine.                                                                          |
+
+> Upgrading from 1.8.0? The CSS variable index rebuilds once on first launch after install — the packed index record gained a 4th field (source line), and the rebuild surfaces the new theming contexts and line info for existing files.
+
+**Thanks to [@LordMaddhi](https://github.com/LordMaddhi) for reporting [issue #19](https://github.com/Stianlars1/css-vars-assistant/issues/19) and testing the fix.**
+
+[Full Changelog →](https://github.com/Stianlars1/css-vars-assistant/blob/main/CHANGELOG.MD)
+
 ---
 
 ## ✨ What's new in 1.8.0

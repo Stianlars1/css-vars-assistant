@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/) and semantic-versioning.
 
+## [1.8.1] – 2026-04-22
+
+### Added
+- **Theming selectors now appear as their own rows in the hover popup (issue [#19](https://github.com/Stianlars1/css-vars-assistant/issues/19), reported by [@LordMaddhi](https://github.com/LordMaddhi)):** Declarations inside `[data-theme="dark"]`, `.dark`, `.theme-high-contrast`, `:hover`, `[dir="rtl"]` and similar non-root selectors are now indexed as distinct contexts. Before 1.8.1 every non-`:root`/`:host`/`html`/`body`/`*` block collapsed into `default` and only the last declaration was shown, which hid dark-mode values from any theming setup that didn't use `@media (prefers-color-scheme: dark)`. Nested blocks combine labels, so `@media (prefers-color-scheme: dark) { .hc { … } }` now renders as `(prefers-color-scheme: dark) .hc`.
+- **Source file and line per declaration in the hover popup:** the *Source* column now shows `tokens.css:42` for every indexed declaration, making it obvious which file and which line a value is coming from when the same variable is defined across multiple theme files (shadcn, Radix, Tailwind, Material). Legacy index records fall back to the previous "first resolution step" label automatically.
+- **Cascade-ambiguity disclaimer:** a small note under the value table reminds that rows are shown in index order and the runtime-applied value still depends on stylesheet load order and specificity — we don't (and can't) simulate the full cascade engine in a hover popup.
+
+### Changed
+- **Bumped `INDEX_VERSION` to 1045** so existing installs re-index once on first launch after upgrade. The packed index record now carries a 4th field (source line); a legacy 3-part record decodes safely with `line = -1` so stale caches never crash the popup.
+- **`CssVariableDocumentationService` now pulls values via `FileBasedIndex.processValues`** instead of `getValues` + `getContainingFiles`, so the `(VirtualFile, packed)` pair is available in one pass rather than an O(files × keys) re-query.
+
 ## [1.8.0] – 2026-04-22
 
 ### Fixed

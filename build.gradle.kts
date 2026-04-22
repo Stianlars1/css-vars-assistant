@@ -14,7 +14,7 @@ plugins {
 }
 
 group = "com.stianlarsen"
-version = "1.8.0"
+version = "1.8.1"
 
 repositories {
     mavenCentral()
@@ -105,9 +105,23 @@ intellijPlatform {
   CSS variables, CSS custom properties, design tokens, <code>var(--token)</code>, Tailwind CSS, shadcn/ui, Radix, Material, CSS cascade, <code>:root</code>, WebStorm CSS plugin, IntelliJ CSS autocomplete, SCSS variables, LESS variables, SASS variables, @import resolution, WCAG contrast, px equivalent, rem to px, hex to HSL, colour swatch.
 </p>
 
-<h3>✨ New in 1.8.0</h3>
+<h3>✨ New in 1.8.1</h3>
 <p>
-  Biggest quality release to date. Closes issue
+  Theming-focused follow-up. Closes issue
+  <a href="https://github.com/Stianlars1/css-vars-assistant/issues/19">#19</a>
+  reported by <a href="https://github.com/LordMaddhi">@LordMaddhi</a> and ships a related cascade-visibility improvement.
+</p>
+<ul>
+  <li><b>Attribute and class theme selectors become their own rows:</b> <code>[data-theme="dark"]</code>, <code>.dark</code>, <code>.theme-high-contrast</code>, <code>:hover</code>, <code>[dir="rtl"]</code> and similar non-root selectors are now indexed as distinct contexts in the hover popup instead of collapsing into <code>default</code>. Perfect for shadcn/ui, Radix, Tailwind's <code>.dark</code> mode, and hand-rolled theme systems.</li>
+  <li><b>Nested <code>@media</code> + selector blocks combine labels:</b> <code>@media (prefers-color-scheme: dark) { .hc { ... } }</code> shows up as <code>(prefers-color-scheme: dark) .hc</code>.</li>
+  <li><b>Source column now shows <code>file.css:line</code></b> for every declaration, so when <code>--bg</code> is redefined across multiple theme files you can see exactly which file and line each value comes from.</li>
+  <li><b>Cascade-ambiguity disclaimer</b> under multi-row value tables makes it explicit that runtime behaviour still depends on stylesheet load order and specificity.</li>
+  <li>Index rebuilds once on first launch — the packed index record gained a 4th field (source line).</li>
+</ul>
+
+<h3>Previously in 1.8.0</h3>
+<p>
+  Closed issue
   <a href="https://github.com/Stianlars1/css-vars-assistant/issues/18">#18</a>
   and ~15 related completion-popup regressions that only surfaced during real IDE use. Highlights:
 </p>
@@ -116,7 +130,6 @@ intellijPlatform {
   <li>New <b>Alphabetical</b> sort option and fixed inconsistency where the ASC / DESC preference was only honoured in some popup flows.</li>
   <li>Two new <i>Display Options</i> settings let you hide or clamp the description next to each completion item.</li>
   <li>Minified CSS files that start with a copyright comment are now indexed correctly (thanks to community contributor <a href="https://github.com/pierreoa">@pierreoa</a>).</li>
-  <li>14+ new regression tests lock in every fix.</li>
 </ul>
 
 <h3>Pairs well with</h3>
@@ -134,6 +147,18 @@ intellijPlatform {
 """.trimIndent()
 
         changeNotes = """
+<h2>1.8.1 – 2026-04-22</h2>
+<h3>Added</h3>
+<ul>
+  <li><b>Theming selectors become their own rows in the hover popup (issue #19, reported by @LordMaddhi):</b> Declarations inside <code>[data-theme="dark"]</code>, <code>.dark</code>, <code>.theme-high-contrast</code>, <code>:hover</code>, <code>[dir="rtl"]</code> and other non-root selectors are now indexed as distinct contexts. Before 1.8.1 every non-<code>:root</code>/<code>:host</code>/<code>html</code>/<code>body</code>/<code>*</code> block collapsed into <code>default</code> and only the last declaration was visible, which hid dark-mode values from any theme system that didn't use <code>@media (prefers-color-scheme: dark)</code>. Nested blocks combine labels, so <code>@media (prefers-color-scheme: dark) { .hc { … } }</code> renders as <code>(prefers-color-scheme: dark) .hc</code>.</li>
+  <li><b>Source file and line per declaration in the hover popup:</b> the <i>Source</i> column now shows <code>tokens.css:42</code> for every indexed row, so when the same variable is defined across multiple theme files (shadcn, Radix, Tailwind, Material) you can see which file and line each value lives on. Legacy index records fall back to the previous "first resolution step" label automatically.</li>
+  <li><b>Cascade-ambiguity disclaimer:</b> a small note under multi-row value tables reminds that rows are shown in index order and the runtime-applied value still depends on stylesheet load order and specificity — the popup doesn't simulate the full CSS cascade engine.</li>
+</ul>
+<h3>Changed</h3>
+<ul>
+  <li><code>INDEX_VERSION</code> bumped to force a one-time re-index on first launch after upgrade. The packed record now carries a 4th field (1-based source line); legacy 3-part records decode safely with <code>line = -1</code> so stale caches never crash the popup.</li>
+  <li>The documentation service uses <code>FileBasedIndex.processValues</code> instead of <code>getValues</code> so the <code>(VirtualFile, packed)</code> pair is available in one pass rather than an O(files × keys) re-query via <code>getContainingFiles</code>.</li>
+</ul>
 <h2>1.8.0 – 2026-04-22</h2>
 <h3>Fixed</h3>
 <ul>
