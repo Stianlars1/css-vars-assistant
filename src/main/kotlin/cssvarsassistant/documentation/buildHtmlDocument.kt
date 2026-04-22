@@ -189,7 +189,13 @@ fun buildHtmlDocument(
         }
 
         if (showSourceCol) {
-            sb.append("<td $rowStyle title='${StringUtil.escapeXmlEntities(sourceTooltip)}'><nobr>${StringUtil.escapeXmlEntities(sourceStr)}</nobr></td>")
+            // 1.8.2 — only attach a tooltip when the compact form would
+            // actually hide information. In verbose mode (`compactSource`
+            // off) the cell already shows `variables.css:220`; a tooltip
+            // that repeats the same string is redundant.
+            val needsTooltip = compactSource && sourceTooltip != sourceStr
+            val titleAttr = if (needsTooltip) " title='${StringUtil.escapeXmlEntities(sourceTooltip)}'" else ""
+            sb.append("<td $rowStyle$titleAttr><nobr>${StringUtil.escapeXmlEntities(sourceStr)}</nobr></td>")
         }
 
         if (showPixelEqCol) sb.append("<td $rowStyle><nobr>$pixelEq</nobr></td>")
