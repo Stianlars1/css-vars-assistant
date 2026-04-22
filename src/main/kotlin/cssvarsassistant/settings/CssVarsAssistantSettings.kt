@@ -66,7 +66,15 @@ class CssVarsAssistantSettings : PersistentStateComponent<CssVarsAssistantSettin
         // long cells; defaulting to compact keeps the popup narrow and
         // non-wrapping in the common case, while power users can turn it
         // off to keep the old verbose display.
-        var compactSourceColumn: Boolean = true
+        var compactSourceColumn: Boolean = true,
+        // 1.8.3 — when true, rows in the hover popup that resolve to the
+        // exact same value are merged into a single row whose Context column
+        // concatenates every contributing label. Especially useful in design
+        // systems with many theme variants (catppuccin, sepia, high-contrast,
+        // …) where several themes share the same underlying token value.
+        // Defaults on: users who want to audit every declaration can still
+        // turn it off to see one row per selector as in 1.8.2.
+        var collapseIdenticalValues: Boolean = true
     )
 
     private var state = State()
@@ -134,6 +142,12 @@ class CssVarsAssistantSettings : PersistentStateComponent<CssVarsAssistantSettin
         get() = state.compactSourceColumn
         set(value) {
             state.compactSourceColumn = value
+        }
+
+    var collapseIdenticalValues: Boolean
+        get() = state.collapseIdenticalValues
+        set(value) {
+            state.collapseIdenticalValues = value
         }
 
     // Computed properties for backward compatibility and clarity

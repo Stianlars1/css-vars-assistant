@@ -97,8 +97,13 @@ object CssVariableDocumentationService {
                 )
             )
 
-            // Find cascade winner using CSS rules
-            val winnerIndex = findCascadeWinner(sorted)
+            // 1.8.3 — winner is found BEFORE collapsing so we can later
+            // identify which merged row corresponds to the runtime winner
+            // and still bold/promote it. Once rows are merged their
+            // `context` string is a comma-joined prettified label, not
+            // `default`, so findCascadeWinner won't recognise them.
+            val preCollapseWinnerIndex = findCascadeWinner(sorted)
+            val preCollapseWinner = sorted.getOrNull(preCollapseWinnerIndex)
 
             val docEntry = collapsed.firstOrNull { it.comment.isNotBlank() }
                 ?: collapsed.find { it.context == "default" }
@@ -113,7 +118,33 @@ object CssVariableDocumentationService {
                 unit != "px" || pxVal.roundToInt() != numericRaw.roundToInt()
             }
 
-            val hoverRows = sorted.map {
+            // 1.8.3 — collapse rows with identical resolved values so large
+            // theme systems don't render N near-duplicate rows. Each merged
+            // row's Context column lists every contributing theme, prettified
+            // ("Light mode, Catppuccin, Sepia"). Disabled keeps the 1.8.2
+            // one-row-per-selector behaviour for users auditing each
+            // declaration individually.
+            val finalRows = if (settings.collapseIdenticalValues) {
+                collapseRowsByValue(
+                    rows = sorted,
+                    value = { it.resInfo.resolved },
+                    label = {
+                        val isColor = ColorParser.parseCssColor(it.resInfo.resolved) != null
+                        contextLabel(it.context, isColor)
+                    },
+                    merge = { first, mergedLabel -> first.copy(context = mergedLabel) }
+                )
+            } else {
+                sorted
+            }
+
+            val winnerIndex = if (preCollapseWinner != null) {
+                finalRows.indexOfFirst { it.resInfo.resolved == preCollapseWinner.resInfo.resolved }
+            } else {
+                -1
+            }
+
+            val hoverRows = finalRows.map {
                 HoverRow(
                     context = it.context,
                     resInfo = it.resInfo,

@@ -82,6 +82,15 @@ class CssVarsAssistantConfigurable : Configurable, Disposable {
         settings.compactSourceColumn
     )
 
+    // 1.8.3 — collapse hover-popup rows with identical resolved values.
+    // Design systems with many themes (Catppuccin flavours, shadcn variants,
+    // high-contrast toggles) often share token values; merging them into
+    // one row labelled with every theme keeps the popup scannable.
+    private val collapseIdenticalValuesCheck = JCheckBox(
+        "Collapse rows with identical values (merge duplicate-value themes into one row)",
+        settings.collapseIdenticalValues
+    )
+
 
     // Index-scope
     private val projectOnlyRadio = JRadioButton(
@@ -222,7 +231,8 @@ class CssVarsAssistantConfigurable : Configurable, Disposable {
                 (maxImportDepthSpinner.value as Int) != settings.maxImportDepth ||
                 getSelectedSortingOrder() != settings.sortingOrder ||
                 isColumnVisibilityModified() ||
-                compactSourceColumnCheck.isSelected != settings.compactSourceColumn
+                compactSourceColumnCheck.isSelected != settings.compactSourceColumn ||
+                collapseIdenticalValuesCheck.isSelected != settings.collapseIdenticalValues
 
     override fun apply() {
         settings.showContextValues = showContextValuesCheck.isSelected
@@ -233,6 +243,7 @@ class CssVarsAssistantConfigurable : Configurable, Disposable {
         settings.maxImportDepth = maxImportDepthSpinner.value as Int
         settings.sortingOrder = getSelectedSortingOrder()
         settings.compactSourceColumn = compactSourceColumnCheck.isSelected
+        settings.collapseIdenticalValues = collapseIdenticalValuesCheck.isSelected
 
         settings.columnVisibility = CssVarsAssistantSettings.ColumnVisibility(
             showContext = showContextColumnCheck.isSelected,
@@ -273,6 +284,7 @@ class CssVarsAssistantConfigurable : Configurable, Disposable {
         showHexValueCheck.isSelected = settings.columnVisibility.showHexValue
         showWcagContrastCheck.isSelected = settings.columnVisibility.showWcagContrast
         compactSourceColumnCheck.isSelected = settings.compactSourceColumn
+        collapseIdenticalValuesCheck.isSelected = settings.collapseIdenticalValues
 
         updateImportDepthState()
     }
@@ -356,6 +368,13 @@ class CssVarsAssistantConfigurable : Configurable, Disposable {
         item(
             createDescriptionLabel(
                 "Keeps the popup narrow by showing just `:220` in the Source cell; the full `variables.css:220` still appears on hover."
+            ),
+            35
+        )
+        item(collapseIdenticalValuesCheck, 25)
+        item(
+            createDescriptionLabel(
+                "Merges rows that resolve to the same value — useful when many themes (catppuccin, sepia, high-contrast…) share token values. Turn off to see one row per selector."
             ),
             35
         )
