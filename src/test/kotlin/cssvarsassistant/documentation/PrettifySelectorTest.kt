@@ -111,4 +111,22 @@ class PrettifySelectorTest {
         assertEquals("Dark", contextLabel(".dark", isColor = false))
         assertEquals(".parent > .child", contextLabel(".parent > .child", isColor = false))
     }
+
+    // 1.8.3 setting: `prettifyTheme = false` keeps the raw selector so
+    // developers who prefer paste-back-to-CSS fidelity (or clearer
+    // class-vs-attribute distinction at a glance) can opt out of humanisation.
+    @Test
+    fun `contextLabel keeps raw selectors when prettifyTheme is disabled`() {
+        assertEquals(
+            """[data-theme="catppuccin"]""",
+            contextLabel("""[data-theme="catppuccin"]""", isColor = false, prettifyTheme = false)
+        )
+        assertEquals(".dark", contextLabel(".dark", isColor = false, prettifyTheme = false))
+        // Media-query rendering still pretty-prints, regardless of the flag —
+        // the flag only governs theme-shaped SELECTORS, not media queries.
+        assertEquals(
+            "Dark mode",
+            contextLabel("(prefers-color-scheme: dark)", isColor = false, prettifyTheme = false)
+        )
+    }
 }

@@ -110,7 +110,7 @@ intellijPlatform {
   Follow-up to 1.8.1 issue <a href="https://github.com/Stianlars1/css-vars-assistant/issues/19">#19</a> — polish for design systems with many themes.
 </p>
 <ul>
-  <li><b>Readable theme labels:</b> <code>[data-theme="catppuccin"]</code> now renders as "Catppuccin", <code>[data-theme="high-contrast"]</code> as "High contrast", <code>.dark</code> as "Dark" — same applies to any single attribute-equals or single-class selector. Full raw selector available on hover. Zero configuration.</li>
+  <li><b>Readable theme labels</b> (new setting, default on): <code>[data-theme="catppuccin"]</code> now renders as "Catppuccin", <code>[data-theme="high-contrast"]</code> as "High contrast", <code>.dark</code> as "Dark" — same applies to any single attribute-equals or single-class selector. Full raw selector available on hover. Turn off for paste-back-to-CSS fidelity.</li>
   <li><b>Merge duplicate-value rows (new setting, default on):</b> when several themes (catppuccin, sepia, matcha, …) resolve the same token to the same value, they're collapsed into one row whose Context column lists every contributing theme. Turn off to see one row per selector.</li>
   <li>Compound selectors, pseudo-classes, and IDs stay verbatim — prettifying them would misrepresent CSS semantics.</li>
 </ul>
@@ -170,7 +170,7 @@ intellijPlatform {
 <h2>1.8.3 – 2026-04-22</h2>
 <h3>Added</h3>
 <ul>
-  <li><b>Readable theme labels in the hover popup:</b> <code>[data-theme="catppuccin"]</code> now renders as "Catppuccin" in the Context column, <code>[data-theme="high-contrast"]</code> as "High contrast", <code>.dark</code> as "Dark", and so on. Any single attribute-equals or single-class selector is humanised — kebab-case and snake_case values get spaces and sentence-cased; user-authored uppercase (RTL, WCAG, acronyms) is preserved. Full raw selector lives on hover via a tooltip. Zero configuration.</li>
+  <li><b>Readable theme labels in the hover popup</b> (new setting, default on): <code>[data-theme="catppuccin"]</code> now renders as "Catppuccin" in the Context column, <code>[data-theme="high-contrast"]</code> as "High contrast", <code>.dark</code> as "Dark", and so on. Any single attribute-equals or single-class selector is humanised — kebab-case and snake_case values get spaces and sentence-cased; user-authored uppercase (RTL, WCAG, acronyms) is preserved. Full raw selector lives on hover via a tooltip. Toggle under <i>Settings → Tools → CSS Variables Assistant → Documentation Popup Columns → "Prettify theme selector labels"</i> — turn off for paste-back-to-CSS fidelity.</li>
   <li><b>Collapse rows with identical values</b> (new setting, default on): when several themes resolve a token to the same value (e.g. catppuccin, sepia, and matcha all leaving <code>--bg: white</code>), they're merged into one row whose Context column lists every contributing theme ("Light mode, Catppuccin, Sepia"). Keeps the popup scannable in design systems with many theme variants. Turn off under <i>Settings → Tools → CSS Variables Assistant → Documentation Popup Columns → "Collapse rows with identical values"</i> to see one row per selector as in 1.8.2.</li>
 </ul>
 <h3>Notes</h3>

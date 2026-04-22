@@ -130,7 +130,7 @@ object CssVariableDocumentationService {
                     value = { it.resInfo.resolved },
                     label = {
                         val isColor = ColorParser.parseCssColor(it.resInfo.resolved) != null
-                        contextLabel(it.context, isColor)
+                        contextLabel(it.context, isColor, settings.prettifyThemeLabels)
                     },
                     merge = { first, mergedLabel -> first.copy(context = mergedLabel) }
                 )

@@ -55,6 +55,10 @@ fun buildHtmlDocument(
     // is always attached as a `title` tooltip regardless of compact state.
     val compactSource = settings.compactSourceColumn
 
+    // 1.8.3 — if the user prefers raw selectors (paste-back-to-CSS fidelity),
+    // skip the humaniser so `[data-theme="catppuccin"]` stays verbatim.
+    val prettifyTheme = settings.prettifyThemeLabels
+
 
     val winnerFirstSorted = if (winnerIndex >= 0) {
         val winner = sorted[winnerIndex]
@@ -160,7 +164,7 @@ fun buildHtmlDocument(
             // 1.8.3 — when the displayed label differs from the raw selector
             // (e.g. `[data-theme="catppuccin"]` → "Catppuccin"), attach a
             // tooltip so nothing is hidden: hover shows the original selector.
-            val ctxDisplay = contextLabel(ctx, isColour)
+            val ctxDisplay = contextLabel(ctx, isColour, prettifyTheme)
             val ctxNeedsTooltip = looksLikeSelector(ctx) && ctxDisplay != ctx
             val ctxTitleAttr = if (ctxNeedsTooltip) " title='${StringUtil.escapeXmlEntities(ctx)}'" else ""
             sb.append("<td $rowStyle$ctxTitleAttr><nobr>${StringUtil.escapeXmlEntities(ctxDisplay)}</nobr></td>")
@@ -259,7 +263,7 @@ fun buildHtmlDocument(
 fun java.awt.Color.toHex(): String =
     "#%02x%02x%02x".format(red, green, blue)
 
-fun contextLabel(ctx: String, isColor: Boolean): String {
+fun contextLabel(ctx: String, isColor: Boolean, prettifyTheme: Boolean = true): String {
     if (ctx == "default") return if (isColor) "Light mode" else "Default"
 
     // Phase 8a / issue #19: if the context is (or begins with) a raw CSS
@@ -269,11 +273,11 @@ fun contextLabel(ctx: String, isColor: Boolean): String {
     // "(", so they still go down the media-query pretty-print path and the
     // selector suffix is preserved as-is.
     //
-    // 1.8.3 — before returning verbatim, try to humanise the most common
+    // 1.8.3 — when `prettifyTheme` is true, humanise the most common
     // theming patterns: `[data-theme="catppuccin"]` → "Catppuccin",
-    // `.theme-high-contrast` → "Theme high contrast". Full selector is
-    // preserved in the Context cell's `title` tooltip so nothing is hidden.
-    if (looksLikeSelector(ctx)) return prettifySelector(ctx) ?: ctx
+    // `.theme-high-contrast` → "Theme high contrast". Off preserves the
+    // raw selector text for users who prefer paste-back-to-CSS fidelity.
+    if (looksLikeSelector(ctx)) return if (prettifyTheme) prettifySelector(ctx) ?: ctx else ctx
 
     if ("prefers-color-scheme" in ctx.lowercase()) {
         return when {

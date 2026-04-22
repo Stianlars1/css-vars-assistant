@@ -91,6 +91,14 @@ class CssVarsAssistantConfigurable : Configurable, Disposable {
         settings.collapseIdenticalValues
     )
 
+    // 1.8.3 — humanise theme-shaped selectors in the Context column. Some
+    // developers prefer raw selectors (paste-back-to-CSS fidelity, clearer
+    // class vs. attribute distinction at a glance).
+    private val prettifyThemeLabelsCheck = JCheckBox(
+        "Prettify theme selector labels (`[data-theme=\"dark\"]` → `Dark`)",
+        settings.prettifyThemeLabels
+    )
+
 
     // Index-scope
     private val projectOnlyRadio = JRadioButton(
@@ -232,7 +240,8 @@ class CssVarsAssistantConfigurable : Configurable, Disposable {
                 getSelectedSortingOrder() != settings.sortingOrder ||
                 isColumnVisibilityModified() ||
                 compactSourceColumnCheck.isSelected != settings.compactSourceColumn ||
-                collapseIdenticalValuesCheck.isSelected != settings.collapseIdenticalValues
+                collapseIdenticalValuesCheck.isSelected != settings.collapseIdenticalValues ||
+                prettifyThemeLabelsCheck.isSelected != settings.prettifyThemeLabels
 
     override fun apply() {
         settings.showContextValues = showContextValuesCheck.isSelected
@@ -244,6 +253,7 @@ class CssVarsAssistantConfigurable : Configurable, Disposable {
         settings.sortingOrder = getSelectedSortingOrder()
         settings.compactSourceColumn = compactSourceColumnCheck.isSelected
         settings.collapseIdenticalValues = collapseIdenticalValuesCheck.isSelected
+        settings.prettifyThemeLabels = prettifyThemeLabelsCheck.isSelected
 
         settings.columnVisibility = CssVarsAssistantSettings.ColumnVisibility(
             showContext = showContextColumnCheck.isSelected,
@@ -285,6 +295,7 @@ class CssVarsAssistantConfigurable : Configurable, Disposable {
         showWcagContrastCheck.isSelected = settings.columnVisibility.showWcagContrast
         compactSourceColumnCheck.isSelected = settings.compactSourceColumn
         collapseIdenticalValuesCheck.isSelected = settings.collapseIdenticalValues
+        prettifyThemeLabelsCheck.isSelected = settings.prettifyThemeLabels
 
         updateImportDepthState()
     }
@@ -375,6 +386,13 @@ class CssVarsAssistantConfigurable : Configurable, Disposable {
         item(
             createDescriptionLabel(
                 "Merges rows that resolve to the same value — useful when many themes (catppuccin, sepia, high-contrast…) share token values. Turn off to see one row per selector."
+            ),
+            35
+        )
+        item(prettifyThemeLabelsCheck, 25)
+        item(
+            createDescriptionLabel(
+                "Humanises theme-shaped selectors: `[data-theme=\"catppuccin\"]` renders as `Catppuccin`. Turn off to see the raw selector verbatim (paste-back-to-CSS fidelity)."
             ),
             35
         )

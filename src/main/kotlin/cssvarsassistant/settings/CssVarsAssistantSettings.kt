@@ -74,7 +74,15 @@ class CssVarsAssistantSettings : PersistentStateComponent<CssVarsAssistantSettin
         // …) where several themes share the same underlying token value.
         // Defaults on: users who want to audit every declaration can still
         // turn it off to see one row per selector as in 1.8.2.
-        var collapseIdenticalValues: Boolean = true
+        var collapseIdenticalValues: Boolean = true,
+        // 1.8.3 — when true, theme-shaped selectors are humanised for the
+        // Context column (`[data-theme="catppuccin"]` → "Catppuccin",
+        // `.dark` → "Dark"). Some developers prefer to see the raw
+        // selector because it's what they'll paste back into CSS or
+        // because the prefix tells them at a glance whether it's a class,
+        // attribute, or pseudo-class. Off keeps the raw 1.8.2 rendering;
+        // full raw selector is still shown via tooltip when prettified.
+        var prettifyThemeLabels: Boolean = true
     )
 
     private var state = State()
@@ -148,6 +156,12 @@ class CssVarsAssistantSettings : PersistentStateComponent<CssVarsAssistantSettin
         get() = state.collapseIdenticalValues
         set(value) {
             state.collapseIdenticalValues = value
+        }
+
+    var prettifyThemeLabels: Boolean
+        get() = state.prettifyThemeLabels
+        set(value) {
+            state.prettifyThemeLabels = value
         }
 
     // Computed properties for backward compatibility and clarity
