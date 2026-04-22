@@ -225,20 +225,30 @@ internal class CssVarPrefixMatcher(prefix: String) : PrefixMatcher(prefix) {
         val match = computeMatch(string) ?: return 0
         // Higher = better; IntelliJ's arranger sorts descending.
         //
-        // Two jobs here: (1) keep tiers strictly ordered (PREFIX > TOKEN_PREFIX
-        // > SUBSTRING) with enough headroom that name length never flips tiers,
-        // and (2) inside a tier, let shorter matched names beat their longer
-        // dash-extended siblings. Without (2), `--error` and `--error-foreground`
-        // both scored identically for prefix `--er`, and IntelliJ's arranger
-        // picked a visual order we don't control — which is how `--error`
-        // disappeared from the popup in the real IDE for some users even
-        // though the harness saw it just fine.
+        // Three jobs, ordered by weight:
+        //  (1) Tier strictly ordered (PREFIX > TOKEN_PREFIX > SUBSTRING) with
+        //      enough headroom that the other signals never flip tiers.
+        //  (2) Within a tier, items consuming MORE of the user's query
+        //      (longer matchedPrefix) rank higher. This is the 1.8.4 fix for
+        //      issue #20: when the user types `--sidebar-accent-foreground`
+        //      completely, `--sidebar-accent-foreground` matched with the
+        //      full 25-char candidate beats `--sidebar` which only matched
+        //      a 7-char truncated candidate — even though the latter has a
+        //      shorter name. Before, `base - string.length` alone handed
+        //      the win to `--sidebar` and pressing Enter overwrote what
+        //      the user had typed.
+        //  (3) Same-matchedPrefix ties fall back to the 1.8.0 behaviour —
+        //      shorter name wins so `--error` stays above `--error-foreground`
+        //      for prefix `--er`. Both items' matchedPrefix is `er` there.
         val base = when (match.kind) {
             CssVarQueryMatcher.MatchKind.PREFIX -> 10_000
             CssVarQueryMatcher.MatchKind.TOKEN_PREFIX -> 5_000
             CssVarQueryMatcher.MatchKind.SUBSTRING -> 1_000
         }
-        return base - string.length
+        // matchedPrefix.length * 100 dwarfs any realistic name-length delta
+        // (variable names don't exceed ~80 chars), so signal (2) dominates
+        // signal (3) without risking tier flips.
+        return base + match.matchedPrefix.length * 100 - string.length
     }
 
     override fun cloneWithPrefix(prefix: String): PrefixMatcher = CssVarPrefixMatcher(prefix)

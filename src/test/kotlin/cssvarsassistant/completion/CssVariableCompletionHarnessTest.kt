@@ -159,6 +159,42 @@ class CssVariableCompletionHarnessTest : CssVarsAssistantPlatformTestCase() {
         assertDoesntContain(displayedNames, "muted-foreground")
     }
 
+    // Issue #20 / Blinks44: the user types the complete variable name
+    // `var(--sidebar-accent-foreground)` and expects the exact match to be
+    // the first suggestion. Before the 1.8.4 fix the popup's top item was
+    // `--sidebar` (a shorter name that matched via a truncated candidate),
+    // so pressing Enter/Tab overwrote what the user had typed. This test
+    // locks in that the exact full-name match now ranks first.
+    fun testExactFullNameMatchRanksFirstForCompleteTypedQuery() {
+        addProjectStylesheet(
+            "sidebar-tokens.css",
+            """
+            :root {
+              --sidebar: #ffffff;
+              --sidebar-ring: #eeeeee;
+              --sidebar-accent: #dddddd;
+              --sidebar-border: #cccccc;
+              --sidebar-primary: #bbbbbb;
+              --sidebar-foreground: #aaaaaa;
+              --sidebar-accent-foreground: #999999;
+              --sidebar-primary-foreground: #888888;
+            }
+            """
+        )
+
+        val lookups = completeCssVariables(
+            "app.css",
+            """
+            .card {
+              background: var(--sidebar-accent-foreground<caret>);
+            }
+            """
+        )
+
+        val displayedNames = lookups.mapNotNull { it.itemText }
+        assertEquals("sidebar-accent-foreground", displayedNames.first())
+    }
+
     fun testForegroundColorQueryFallsBackToForegroundFamily() {
         addProjectStylesheet(
             "foreground-color-query.css",

@@ -212,6 +212,38 @@ class CssVarQueryMatcherTest {
         )
     }
 
+    // Issue #20 / Blinks44: the user types the FULL variable name (e.g.
+    // `var(--sidebar-accent-foreground)` typed completely) and expects the
+    // exact match to be the first suggestion. Before the fix, the popup's
+    // top item was `--sidebar` because `base - name.length` punished the
+    // longer (correct) item without considering that `--sidebar` only
+    // matched a truncated candidate prefix of the user's query.
+    //
+    // The lookup item consuming more of the user's query must rank higher,
+    // regardless of its own name length. Otherwise pressing Enter/Tab on
+    // the default-selected item overwrites what the user already typed.
+    @Test
+    fun `matchingDegree ranks full-typed name above shorter prefix-sibling`() {
+        val matcher = CssVarPrefixMatcher("--sidebar-accent-foreground")
+
+        val exact = matcher.matchingDegree("--sidebar-accent-foreground")
+        val midSibling = matcher.matchingDegree("--sidebar-accent")
+        val shortSibling = matcher.matchingDegree("--sidebar")
+
+        assertTrue(
+            exact > midSibling,
+            "exact full-name match must beat a mid-length sibling (was exact=$exact vs mid=$midSibling)"
+        )
+        assertTrue(
+            exact > shortSibling,
+            "exact full-name match must beat a short sibling (was exact=$exact vs short=$shortSibling)"
+        )
+        assertTrue(
+            midSibling > shortSibling,
+            "items consuming more of the user's query should outrank items consuming less (was mid=$midSibling vs short=$shortSibling)"
+        )
+    }
+
     @Test
     fun `matchingDegree returns 0 for a non-matching name`() {
         val matcher = CssVarPrefixMatcher("--err")

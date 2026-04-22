@@ -336,7 +336,7 @@ class CssVariableCompletion : CompletionContributor() {
     }
 
 
-    private fun createSmartComparator(
+    internal fun createSmartComparator(
         order: CssVarsAssistantSettings.SortingOrder,
         query: String
     ): Comparator<Entry> {
@@ -378,7 +378,7 @@ class CssVariableCompletion : CompletionContributor() {
                 }
             }
 
-            compareQuerySpecificity(a, b)?.let { specificityOrder ->
+            compareQuerySpecificity(a, b, query)?.let { specificityOrder ->
                 if (specificityOrder != 0) {
                     return@Comparator specificityOrder
                 }
@@ -417,13 +417,19 @@ class CssVariableCompletion : CompletionContributor() {
         }
     }
 
-    private fun compareQuerySpecificity(a: Entry, b: Entry): Int? {
-        if (a.matchedQuery.isBlank() || b.matchedQuery.isBlank()) {
-            return null
-        }
+    internal fun compareQuerySpecificity(a: Entry, b: Entry, userQuery: String): Int? {
+        if (userQuery.isBlank()) return null
 
-        val aExact = a.display.equals(a.matchedQuery, ignoreCase = true)
-        val bExact = b.display.equals(b.matchedQuery, ignoreCase = true)
+        // 1.8.4 / issue #20: the exact match must win. Before the fix this
+        // compared display against each entry's own `matchedQuery` (the
+        // truncated candidate the matcher fell back to), so `--sidebar`
+        // whose matchedQuery was `sidebar` evaluated as "exact against
+        // itself" — same as `--sidebar-accent-foreground`. Both tied as
+        // "exact" and the length tiebreaker below handed the wrong win to
+        // `--sidebar`. Comparing against the USER's actual query fixes it:
+        // only the item whose display equals the full typed text is exact.
+        val aExact = a.display.equals(userQuery, ignoreCase = true)
+        val bExact = b.display.equals(userQuery, ignoreCase = true)
         if (aExact != bExact) {
             return if (aExact) -1 else 1
         }
@@ -436,14 +442,37 @@ class CssVariableCompletion : CompletionContributor() {
             return null
         }
 
-        val aStartsWithMatch = a.display.startsWith(a.matchedQuery, ignoreCase = true)
-        val bStartsWithMatch = b.display.startsWith(b.matchedQuery, ignoreCase = true)
-        if (aStartsWithMatch && bStartsWithMatch) {
-            val lengthOrder = a.display.length.compareTo(b.display.length)
-            if (lengthOrder != 0) {
-                return lengthOrder
-            }
+        // 1.8.4 / issue #20: "starts with the FULL user query" beats "starts
+        // with a truncated candidate". When user types `sidebar-accent-
+        // foreground`, only `--sidebar-accent-foreground` itself begins with
+        // that whole string; `--sidebar` and `--sidebar-accent` don't — they
+        // only matched via token-truncation and should rank lower. Before,
+        // this branch compared against `matchedQuery` (per-entry candidate),
+        // which was always a prefix of the display by construction, so every
+        // item looked like it "starts with match" and the length tiebreaker
+        // let `--sidebar` beat `--sidebar-accent-foreground`.
+        val aStartsWithQuery = a.display.startsWith(userQuery, ignoreCase = true)
+        val bStartsWithQuery = b.display.startsWith(userQuery, ignoreCase = true)
+        if (aStartsWithQuery != bStartsWithQuery) {
+            return if (aStartsWithQuery) -1 else 1
         }
+
+        // Within the "starts-with-full-query" group, the 1.8.0 behaviour
+        // still holds: shorter name wins (so `--error` ranks above
+        // `--error-foreground` for prefix `--er`). Both items qualify as
+        // "starts with user query" in that scenario.
+        if (aStartsWithQuery && bStartsWithQuery) {
+            val lengthOrder = a.display.length.compareTo(b.display.length)
+            if (lengthOrder != 0) return lengthOrder
+        }
+
+        // For items that didn't start with the full query (TOKEN_PREFIX /
+        // SUBSTRING matches), ranking by how much of the query their
+        // matchedPrefix consumed still helps: `sidebar-accent` (consumed
+        // 14 chars) outranks `sidebar` (consumed 7 chars) when neither
+        // is an exact full-query prefix.
+        val matchedPrefixOrder = b.matchedQuery.length.compareTo(a.matchedQuery.length)
+        if (matchedPrefixOrder != 0) return matchedPrefixOrder
 
         return null
     }
