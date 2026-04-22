@@ -14,7 +14,7 @@ plugins {
 }
 
 group = "com.stianlarsen"
-version = "1.8.2"
+version = "1.8.3"
 
 repositories {
     mavenCentral()
@@ -105,7 +105,17 @@ intellijPlatform {
   CSS variables, CSS custom properties, design tokens, <code>var(--token)</code>, Tailwind CSS, shadcn/ui, Radix, Material, CSS cascade, <code>:root</code>, WebStorm CSS plugin, IntelliJ CSS autocomplete, SCSS variables, LESS variables, SASS variables, @import resolution, WCAG contrast, px equivalent, rem to px, hex to HSL, colour swatch.
 </p>
 
-<h3>✨ New in 1.8.2</h3>
+<h3>✨ New in 1.8.3</h3>
+<p>
+  Follow-up to 1.8.1 issue <a href="https://github.com/Stianlars1/css-vars-assistant/issues/19">#19</a> — polish for design systems with many themes.
+</p>
+<ul>
+  <li><b>Readable theme labels:</b> <code>[data-theme="catppuccin"]</code> now renders as "Catppuccin", <code>[data-theme="high-contrast"]</code> as "High contrast", <code>.dark</code> as "Dark" — same applies to any single attribute-equals or single-class selector. Full raw selector available on hover. Zero configuration.</li>
+  <li><b>Merge duplicate-value rows (new setting, default on):</b> when several themes (catppuccin, sepia, matcha, …) resolve the same token to the same value, they're collapsed into one row whose Context column lists every contributing theme. Turn off to see one row per selector.</li>
+  <li>Compound selectors, pseudo-classes, and IDs stay verbatim — prettifying them would misrepresent CSS semantics.</li>
+</ul>
+
+<h3>Previously in 1.8.2</h3>
 <p>
   Quality-of-life polish on the hover popup. Long Source cells like <code>variables.css:230</code> used to wrap onto two lines because IntelliJ's documentation popup clamps its max width; 1.8.2 both nudges the popup wider and adds a compact-source-column preference so you can pick the look you prefer.
 </p>
@@ -157,6 +167,17 @@ intellijPlatform {
 """.trimIndent()
 
         changeNotes = """
+<h2>1.8.3 – 2026-04-22</h2>
+<h3>Added</h3>
+<ul>
+  <li><b>Readable theme labels in the hover popup:</b> <code>[data-theme="catppuccin"]</code> now renders as "Catppuccin" in the Context column, <code>[data-theme="high-contrast"]</code> as "High contrast", <code>.dark</code> as "Dark", and so on. Any single attribute-equals or single-class selector is humanised — kebab-case and snake_case values get spaces and sentence-cased; user-authored uppercase (RTL, WCAG, acronyms) is preserved. Full raw selector lives on hover via a tooltip. Zero configuration.</li>
+  <li><b>Collapse rows with identical values</b> (new setting, default on): when several themes resolve a token to the same value (e.g. catppuccin, sepia, and matcha all leaving <code>--bg: white</code>), they're merged into one row whose Context column lists every contributing theme ("Light mode, Catppuccin, Sepia"). Keeps the popup scannable in design systems with many theme variants. Turn off under <i>Settings → Tools → CSS Variables Assistant → Documentation Popup Columns → "Collapse rows with identical values"</i> to see one row per selector as in 1.8.2.</li>
+</ul>
+<h3>Notes</h3>
+<ul>
+  <li>Compound selectors (<code>.dark .nested</code>, <code>[a] .b</code>), pseudo-classes (<code>:hover</code>, <code>:not(.foo)</code>) and IDs (<code>#app</code>) stay verbatim — prettifying them would misrepresent their CSS semantics.</li>
+  <li>No index rebuild required.</li>
+</ul>
 <h2>1.8.2 – 2026-04-22</h2>
 <h3>Added</h3>
 <ul>

@@ -6,7 +6,7 @@
 
 If you find CSS Variables Assistant helpful, please consider rating it on [JetBrains Marketplace](https://plugins.jetbrains.com/plugin/27392-css-variables-assistant/reviews) ★★★★★ 🙏.
 
-**Version:** 1.8.2<br/>
+**Version:** 1.8.3<br/>
 **Compatible IDEs:** JetBrains IDEs with bundled JavaScript + CSS support — IntelliJ IDEA Ultimate, WebStorm, GoLand, PhpStorm, PyCharm Professional, and RubyMine.  
 **Author:** Stian Larsen  
 **Repo:** [github.com/Stianlars1/css-vars-assistant](https://github.com/Stianlars1/css-vars-assistant)
@@ -18,6 +18,19 @@ If you find CSS Variables Assistant helpful, please consider rating it on [JetBr
 
 
 Supercharge your CSS custom properties and preprocessor variables in JetBrains IDEs with advanced autocomplete, documentation, and debugging tools.
+---
+
+## ✨ What's new in 1.8.3
+
+Follow-up to issue [#19](https://github.com/Stianlars1/css-vars-assistant/issues/19) — polish pass for design systems with many theme variants. Inspired by [@LordMaddhi](https://github.com/LordMaddhi)'s follow-up question about how the plugin scales when you have 6-8+ themes.
+
+| Category                                   | Highlights                                                                                                                                                                                                                                                  |
+|--------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **🏷 Readable theme labels**                | `[data-theme="catppuccin"]` → "Catppuccin", `[data-theme="high-contrast"]` → "High contrast", `.dark` → "Dark" in the Context column. Full raw selector lives on hover. Zero configuration — works for any theme name. Compound selectors and pseudo-classes stay verbatim so CSS semantics never get misrepresented. |
+| **🎯 Collapse duplicate-value rows** (new, default on) | When several themes resolve a token to the same value, they merge into one row like `Light mode, Catppuccin, Sepia` rather than three near-identical rows. Settings toggle: *Documentation Popup Columns → "Collapse rows with identical values"*.                                                     |
+
+[Full Changelog →](https://github.com/Stianlars1/css-vars-assistant/blob/main/CHANGELOG.MD)
+
 ---
 
 ## ✨ What's new in 1.8.2

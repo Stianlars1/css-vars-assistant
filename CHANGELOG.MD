@@ -3,6 +3,18 @@
 All notable changes to this project will be documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/) and semantic-versioning.
 
+## [1.8.3] – 2026-04-22
+
+Follow-up to issue [#19](https://github.com/Stianlars1/css-vars-assistant/issues/19) polish pass — inspired by [@LordMaddhi](https://github.com/LordMaddhi)'s follow-up question about larger design systems with many theme variants.
+
+### Added
+- **Readable theme labels in the hover popup:** `[data-theme="catppuccin"]` now renders as "Catppuccin" in the Context column, `[data-theme="high-contrast"]` as "High contrast", `.dark` as "Dark", `.theme-high-contrast` as "Theme high contrast". Any single attribute-equals or single-class selector is humanised — kebab-case and snake_case values get spaces and sentence-cased. User-authored uppercase (RTL, WCAG, acronyms developers write in theme keys) is preserved intact. Full raw selector stays on hover via a `title` tooltip. Zero configuration — works for any theme name you write.
+- **Collapse rows with identical values** (new setting, default on): when several themes resolve a token to the same value (`[data-theme="catppuccin"]`, `[data-theme="sepia"]`, `[data-theme="matcha"]` all leaving `--bg: white`), they're merged into one row whose Context column lists every contributing theme as `Light mode, Catppuccin, Sepia, Matcha`. Keeps the popup scannable in design systems with many theme variants. Turn off under *Settings → Tools → CSS Variables Assistant → Documentation Popup Columns → "Collapse rows with identical values"* if you prefer the 1.8.2 one-row-per-selector look.
+
+### Notes
+- Compound selectors (`.dark .nested`, `[a] .b`, `.a, .b`), pseudo-classes (`:hover`, `:not(.foo)`) and IDs (`#app`) stay verbatim — humanising them would misrepresent their CSS semantics.
+- No index rebuild required — purely a rendering / UI polish release.
+
 ## [1.8.2] – 2026-04-22
 
 ### Added
