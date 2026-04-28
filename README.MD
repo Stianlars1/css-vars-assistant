@@ -6,7 +6,7 @@
 
 If you find CSS Variables Assistant helpful, please consider rating it on [JetBrains Marketplace](https://plugins.jetbrains.com/plugin/27392-css-variables-assistant/reviews) ★★★★★ 🙏.
 
-**Version:** 1.8.4<br/>
+**Version:** 1.8.5<br/>
 **Compatible IDEs:** JetBrains IDEs with bundled JavaScript + CSS support — IntelliJ IDEA Ultimate, WebStorm, GoLand, PhpStorm, PyCharm Professional, and RubyMine.  
 **Author:** Stian Larsen  
 **Repo:** [github.com/Stianlars1/css-vars-assistant](https://github.com/Stianlars1/css-vars-assistant)
@@ -18,6 +18,20 @@ If you find CSS Variables Assistant helpful, please consider rating it on [JetBr
 
 
 Supercharge your CSS custom properties and preprocessor variables in JetBrains IDEs with advanced autocomplete, documentation, and debugging tools.
+---
+
+## ✨ What's new in 1.8.5
+
+Bug-fix release closing issue [#21](https://github.com/Stianlars1/css-vars-assistant/issues/21) reported by [@kolkinn](https://github.com/kolkinn).
+
+| Category                                           | Highlights                                                                                                                                                                                                                                                                                                                                                                                            |
+|----------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **🧮 Calculated values with multi-valued nested vars** | A Radix Themes token like `--space-2: calc(8px * var(--scaling))` no longer renders as bare `0.9` in the hover popup. When the nested variable has multiple non-uniform values across themed selectors and no `:root` anchor, the `var(--scaling)` reference is now left intact so the popup displays `calc(8px * var(--scaling))` verbatim. Deterministic single-default substitutions are unchanged. |
+
+A copy-paste reproducer fixture and step-by-step verification notes live at [`samples/issue-21/`](https://github.com/Stianlars1/css-vars-assistant/tree/main/samples/issue-21) in the repo.
+
+[Full Changelog →](https://github.com/Stianlars1/css-vars-assistant/blob/main/CHANGELOG.MD)
+
 ---
 
 ## ✨ What's new in 1.8.4

@@ -42,12 +42,33 @@ fun resolveVarValue(
                     FileBasedIndex.getInstance().getValues(CSS_VARIABLE_INDEXER_NAME, ref, cssScope)
                 )
 
-                val defVal = entries
-                    .let { list ->
-                        list.find { it.context == "default" }?.value ?: list.firstOrNull()?.value
-                    }
-                if (defVal != null)
-                    return resolveVarValue(project, defVal, visited + ref, depth + 1, newSteps)
+                // Issue #21: when the inner reference has multiple non-uniform
+                // values across selectors and there's no `default` to anchor to
+                // (e.g. Radix `--scaling` defined only under five themed
+                // `[data-scaling='…']` selectors), substituting any one of them
+                // would silently lie about the runtime value. Leave the
+                // `var(--ref)` token intact so the popup shows the expression
+                // verbatim (e.g. `calc(8px * var(--scaling))`).
+                //
+                // Single-pass note: if the same `raw` contains another
+                // unambiguous `var(...)` later, we also stop here. That
+                // partial-substitution case is rare in practice and worth
+                // handling only if reported.
+                val defaultEntry = entries.find { it.context == "default" }
+                val distinctValues = entries.map { it.value }.distinct()
+                val ambiguous = defaultEntry == null && distinctValues.size > 1
+                if (ambiguous) return ResolutionInfo(raw, raw, steps)
+
+                val defVal = defaultEntry?.value ?: entries.firstOrNull()?.value
+                if (defVal != null) {
+                    // Issue #21: substitute the matched `var(--ref)` token IN
+                    // PLACE so the surrounding text (e.g. `calc(8px * …)`) is
+                    // preserved. Previously we recursed with `defVal` as the
+                    // new raw, which dropped the wrapper entirely and caused
+                    // `calc(8px * var(--scaling))` to display as bare `0.9`.
+                    val substituted = raw.replaceRange(m.range, defVal)
+                    return resolveVarValue(project, substituted, visited + ref, depth + 1, newSteps)
+                }
             }
             return ResolutionInfo(raw, raw, steps)
         }

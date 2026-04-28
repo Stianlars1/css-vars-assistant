@@ -14,7 +14,7 @@ plugins {
 }
 
 group = "com.stianlarsen"
-version = "1.8.4"
+version = "1.8.5"
 
 repositories {
     mavenCentral()
@@ -102,16 +102,25 @@ intellijPlatform {
 
 <h3>Keywords</h3>
 <p>
-  CSS variables, CSS custom properties, design tokens, <code>var(--token)</code>, Tailwind CSS, shadcn/ui, Radix, Material, CSS cascade, <code>:root</code>, WebStorm CSS plugin, IntelliJ CSS autocomplete, SCSS variables, LESS variables, SASS variables, @import resolution, WCAG contrast, px equivalent, rem to px, hex to HSL, colour swatch.
+  CSS variables, CSS custom properties, design tokens, <code>var(--token)</code>, <code>var()</code> autocomplete, Tailwind CSS, shadcn/ui, Radix UI, Radix Themes, Material Design tokens, MUI, Open Props, CSS cascade, <code>:root</code>, <code>calc()</code>, nested CSS variables, recursive variable resolution, dark mode tokens, theme variables, WebStorm CSS plugin, IntelliJ IDEA CSS autocomplete, JetBrains plugin design tokens, SCSS variables, Sass variables, LESS variables, <code>@import</code> resolution, JSDoc CSS, WCAG contrast checker, px equivalent, rem to px converter, hex to HSL, colour swatch, CSS-in-JS bridge.
 </p>
 
-<h3>✨ New in 1.8.4</h3>
+<h3>✨ New in 1.8.5</h3>
 <p>
-  Bug-fix release closing <a href="https://github.com/Stianlars1/css-vars-assistant/issues/20">issue #20</a> reported by <a href="https://github.com/Blinks44">@Blinks44</a>. Typing the complete variable name now promotes the exact match to the top of the popup.
+  Bug-fix release closing <a href="https://github.com/Stianlars1/css-vars-assistant/issues/21">issue #21</a> reported by <a href="https://github.com/kolkinn">@kolkinn</a>. Calculated tokens that reference multi-valued nested variables — the Radix Themes pattern <code>--space-2: calc(8px * var(--scaling))</code> — are now displayed correctly in the hover popup.
 </p>
 <ul>
-  <li><b>Exact-match ranking fix:</b> typing <code>var(--sidebar-accent-foreground)</code> in full no longer leaves <code>--sidebar</code> selected at the top. The popup now correctly puts the exact match first, so pressing Enter/Tab doesn't overwrite what you already typed.</li>
-  <li>Regression tests at three levels (matcher unit, comparator unit, full platform-fixture integration) lock the fix in so this class of bug stays fixed.</li>
+  <li><b>Calc + ambiguous nested var fix:</b> hovering <code>var(--space-2)</code> in a Radix Themes project no longer shows bare <code>0.9</code> (type: number). When the inner variable has multiple non-uniform values across themed selectors and no <code>:root</code> anchor, the resolver now leaves the <code>var(--scaling)</code> reference intact so the popup displays <code>calc(8px * var(--scaling))</code> verbatim. Deterministic single-default substitutions are unchanged.</li>
+  <li><b>Calc wrapper preservation:</b> the recursive substitution path also stopped silently dropping surrounding text. <code>--gap: calc(var(--unit) * 2)</code> with <code>--unit: 4px</code> now correctly resolves to <code>calc(4px * 2)</code> rather than just <code>4px</code>.</li>
+  <li>Four regression tests in <code>DocHelpersResolveVarValueTest</code> + a copy-paste reproducer fixture under <code>samples/issue-21/</code> for manual side-loaded verification.</li>
+</ul>
+
+<h3>Previously in 1.8.4</h3>
+<p>
+  Closed <a href="https://github.com/Stianlars1/css-vars-assistant/issues/20">issue #20</a> reported by <a href="https://github.com/Blinks44">@Blinks44</a>.
+</p>
+<ul>
+  <li><b>Exact-match ranking:</b> typing <code>var(--sidebar-accent-foreground)</code> in full no longer left <code>--sidebar</code> selected at the top of the popup. The exact match is now always promoted, so pressing Enter/Tab doesn't overwrite what you already typed.</li>
 </ul>
 
 <h3>Previously in 1.8.3</h3>
@@ -176,6 +185,17 @@ intellijPlatform {
 """.trimIndent()
 
         changeNotes = """
+<h2>1.8.5 – 2026-04-28</h2>
+<h3>Fixed</h3>
+<ul>
+  <li><b>Calculated values with multi-valued nested vars (issue <a href="https://github.com/Stianlars1/css-vars-assistant/issues/21">#21</a>, reported by @kolkinn):</b> A Radix Themes token like <code>--space-2: calc(8px * var(--scaling))</code> was rendered in the hover popup as bare <code>0.9</code> (type: number) — the resolver was picking the first of five non-uniform <code>--scaling</code> definitions <i>and</i> dropping the surrounding <code>calc(...)</code> wrapper. Two intertwined bugs in <code>resolveVarValue</code>: (a) the recursive call passed only the inner value as the new raw, throwing away the calc context; (b) <code>firstOrNull()</code> blindly picked an arbitrary entry when no <code>:root</code>/<code>default</code> anchor existed and the candidates were non-uniform. The resolver now substitutes the matched <code>var(--ref)</code> token <i>in place</i> so <code>calc(...)</code> survives, and leaves the reference intact when the inner variable has multiple non-uniform values across selectors with no <code>default</code> to anchor to. Deterministic single-default lookups (e.g. <code>var(--unit)</code> with <code>:root { --unit: 4px }</code>) still substitute as before.</li>
+</ul>
+<h3>Notes</h3>
+<ul>
+  <li>Regression coverage in <code>DocHelpersResolveVarValueTest</code>: ambiguous Radix-style scenario, all-entries-uniform shortcut, <code>:root</code>-anchored cascade, and the explicit "calc wrapper preserved" case.</li>
+  <li>No index rebuild or settings change required.</li>
+  <li>A copy-paste reproducer fixture lives at <code>samples/issue-21/radix-scaling.css</code> in the repo for side-loaded manual verification.</li>
+</ul>
 <h2>1.8.4 – 2026-04-22</h2>
 <h3>Fixed</h3>
 <ul>

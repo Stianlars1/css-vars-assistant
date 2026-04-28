@@ -3,6 +3,22 @@
 All notable changes to this project will be documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/) and semantic-versioning.
 
+## [1.8.5] – 2026-04-28
+
+Bug-fix release closing issue [#21](https://github.com/Stianlars1/css-vars-assistant/issues/21) reported by [@kolkinn](https://github.com/kolkinn).
+
+### Fixed
+- **Calculated values with multi-valued nested vars (issue [#21](https://github.com/Stianlars1/css-vars-assistant/issues/21)):** A Radix Themes token like `--space-2: calc(8px * var(--scaling))` was rendered in the hover popup as bare `0.9` (type: `number`) instead of the calc expression. Two intertwined bugs in `resolveVarValue` were responsible:
+  - The recursive call passed only the inner value as the new `raw` argument, so `calc(8px * var(--scaling))` recursed into `0.9` and the `calc(8px * …)` wrapper was lost entirely. The resolver now substitutes the matched `var(--ref)` token *in place* via `raw.replaceRange(m.range, defVal)` so surrounding text survives.
+  - When the looked-up variable had no `:root` / `default` declaration but multiple non-uniform values across themed selectors (`--scaling: 0.9` / `0.95` / `1` / `1.05` / `1.1` under `[data-scaling='90%']` through `'110%'`), `firstOrNull()` silently picked the first one. The resolver now detects this case (`defaultEntry == null && distinctValues.size > 1`) and leaves the `var(--ref)` reference intact in the output, so the popup shows `calc(8px * var(--scaling))` verbatim. Deterministic substitution paths (`:root` anchor, or all entries holding the same value) are unchanged.
+
+### Notes
+- Regression coverage in a new `DocHelpersResolveVarValueTest`: ambiguous Radix-style scenario, all-entries-uniform shortcut, `:root`-anchored cascade with off-default overrides, and an explicit "calc wrapper preserved" case for the single-value substitution path.
+- A copy-paste reproducer fixture lives at `samples/issue-21/radix-scaling.css` plus side-loaded verification steps in `samples/issue-21/README.md` — open the file inside an IDE running 1.8.5 to confirm the hover popup behaviour against the original bug report.
+- Out of scope: evaluating `calc(...)` to a numeric result. Both reporter and maintainer agreed in the issue thread that arithmetic evaluation isn't what users want here; preserving the expression is the honest answer.
+- Single-pass substitution: if the same expression contains both an ambiguous and an unambiguous `var()` reference (e.g. `calc(var(--ambiguous) + var(--simple))`), neither is currently substituted. The common case is one `var()` per expression; revisit only if reported.
+- No index rebuild or settings change required.
+
 ## [1.8.4] – 2026-04-22
 
 Bug-fix release closing issue [#20](https://github.com/Stianlars1/css-vars-assistant/issues/20) reported by [@Blinks44](https://github.com/Blinks44).

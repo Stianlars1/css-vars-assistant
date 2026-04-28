@@ -1,0 +1,69 @@
+/*
+ * Issue #21 manual reproducer — Radix Themes "scaling" pattern.
+ *
+ * Open this file inside a JetBrains IDE that has CSS Variables Assistant
+ * installed. Hover any `var(--space-N)` or `var(--font-size-N)` reference
+ * in the demo block at the bottom.
+ *
+ * Before 1.8.5: hover popup shows bare `0.9` (type: number) for --space-2,
+ *               because the resolver picked the first --scaling entry and
+ *               also dropped the surrounding calc(...) wrapper.
+ * After  1.8.5: hover popup shows `calc(8px * var(--scaling))` (type: -),
+ *               because --scaling has 5 non-uniform values and no `default`
+ *               context to anchor to, so the var() reference is left intact.
+ */
+
+/* --- five themed --scaling definitions, no :root default --- */
+
+.radix-themes:where([data-scaling='90%'])  { --scaling: 0.9;  }
+.radix-themes:where([data-scaling='95%'])  { --scaling: 0.95; }
+.radix-themes:where([data-scaling='100%']) { --scaling: 1;    }
+.radix-themes:where([data-scaling='105%']) { --scaling: 1.05; }
+.radix-themes:where([data-scaling='110%']) { --scaling: 1.1;  }
+
+/* --- spacing tokens that multiply through --scaling --- */
+
+.radix-themes {
+    --space-1: calc(4px  * var(--scaling));
+    --space-2: calc(8px  * var(--scaling));
+    --space-3: calc(12px * var(--scaling));
+    --space-4: calc(16px * var(--scaling));
+    --space-5: calc(24px * var(--scaling));
+    --space-6: calc(32px * var(--scaling));
+    --space-7: calc(40px * var(--scaling));
+    --space-8: calc(48px * var(--scaling));
+    --space-9: calc(64px * var(--scaling));
+
+    --font-size-1: calc(12px * var(--scaling));
+    --font-size-2: calc(14px * var(--scaling));
+    --font-size-3: calc(16px * var(--scaling));
+    --font-size-4: calc(18px * var(--scaling));
+}
+
+/* --- control: a deterministic single-default token. Hover popup
+       must still substitute this one (resolved value 4px). --- */
+
+:root {
+    --unit: 4px;
+}
+
+.controls {
+    --gap: calc(var(--unit) * 2);   /* expected resolved: calc(4px * 2) */
+    --bg:  var(--unit);             /* expected resolved: 4px */
+}
+
+/* --- demo block — hover the var() refs below --- */
+
+.card {
+    /* Hover --space-2: should display calc(8px * var(--scaling)). */
+    padding: var(--space-2);
+
+    /* Hover --font-size-3: should display calc(16px * var(--scaling)). */
+    font-size: var(--font-size-3);
+
+    /* Hover --gap: should display calc(4px * 2). */
+    gap: var(--gap);
+
+    /* Hover --bg: should display 4px. */
+    background: var(--bg);
+}
