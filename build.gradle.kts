@@ -14,7 +14,7 @@ plugins {
 }
 
 group = "com.stianlarsen"
-version = "1.8.5"
+version = "1.8.6"
 
 repositories {
     mavenCentral()
@@ -105,7 +105,17 @@ intellijPlatform {
   CSS variables, CSS custom properties, design tokens, <code>var(--token)</code>, <code>var()</code> autocomplete, Tailwind CSS, shadcn/ui, Radix UI, Radix Themes, Material Design tokens, MUI, Open Props, CSS cascade, <code>:root</code>, <code>calc()</code>, nested CSS variables, recursive variable resolution, dark mode tokens, theme variables, WebStorm CSS plugin, IntelliJ IDEA CSS autocomplete, JetBrains plugin design tokens, SCSS variables, Sass variables, LESS variables, <code>@import</code> resolution, JSDoc CSS, WCAG contrast checker, px equivalent, rem to px converter, hex to HSL, colour swatch, CSS-in-JS bridge.
 </p>
 
-<h3>✨ New in 1.8.5</h3>
+<h3>✨ New in 1.8.6</h3>
+<p>
+  Bug-fix release closing <a href="https://github.com/Stianlars1/css-vars-assistant/issues/22">issue #22</a> reported by <a href="https://github.com/LordMaddhi">@LordMaddhi</a>. 8-digit hex colors with alpha — the modern CSS Color Level 4 <code>#RRGGBBAA</code> syntax — are now handled correctly.
+</p>
+<ul>
+  <li><b>8-digit hex colors with alpha:</b> a value like <code>--accent: #7F80FF1A</code> no longer renders as a truncated <code>#80FF1A</code> in the hover popup's Hex column. Two compounding bugs were fixed: the parser was reading alpha as the <i>first</i> byte (Java <code>#AARRGGBB</code> packed-int order) instead of the <i>last</i> byte per the CSS spec, and the formatter was unconditionally dropping alpha. The canonical hex output now preserves alpha when present, and 4-digit <code>#RGBA</code> shorthand is recognised. Color swatches use <code>rgba()</code> so semi-transparent colors preview accurately.</li>
+  <li>Fully-opaque colors still produce 6-digit hex (<code>#1E90FF</code>), so existing snapshots and the WebAIM contrast-checker URL are unaffected.</li>
+  <li>Regression coverage in <code>ColorParserTest</code>: primary <code>#7F80FF1A</code> round-trip, 4-digit shorthand, full-opacity collapse-to-6-digit, fully-transparent round-trip, and explicit channel-position assertions verifying alpha is read from the LAST byte.</li>
+</ul>
+
+<h3>Previously in 1.8.5</h3>
 <p>
   Bug-fix release closing <a href="https://github.com/Stianlars1/css-vars-assistant/issues/21">issue #21</a> reported by <a href="https://github.com/kolkinn">@kolkinn</a>. Calculated tokens that reference multi-valued nested variables — the Radix Themes pattern <code>--space-2: calc(8px * var(--scaling))</code> — are now displayed correctly in the hover popup.
 </p>
@@ -185,6 +195,18 @@ intellijPlatform {
 """.trimIndent()
 
         changeNotes = """
+<h2>1.8.6 – 2026-04-29</h2>
+<h3>Fixed</h3>
+<ul>
+  <li><b>8-digit hex colors with alpha (issue <a href="https://github.com/Stianlars1/css-vars-assistant/issues/22">#22</a>, reported by @LordMaddhi):</b> a value like <code>--accent: #7F80FF1A</code> (modern CSS Color Level 4 <code>#RRGGBBAA</code> syntax) was rendered in the hover popup's Hex column as <code>#80FF1A</code>, looking like the first two characters had been silently dropped. Two compounding bugs were responsible and have both been corrected: <code>ColorParser.parseHexColor</code> treated the 8-digit form as Java's <code>#AARRGGBB</code> packed-int order (alpha <i>first</i>) instead of the CSS spec's <code>#RRGGBBAA</code> (alpha <i>last</i>), and <code>colorToHex</code> always emitted six digits, unconditionally dropping any alpha that <i>had</i> been parsed. Combined, this produced the visible <code>#80FF1A</code> truncation. The parser now reads alpha from the last byte, the formatter preserves alpha when present (<code>#7F80FF1A</code> round-trips identically), and 4-digit <code>#RGBA</code> shorthand is recognised.</li>
+  <li><b>Color swatch uses rgb()/rgba() instead of hex,</b> so semi-transparent colors preview accurately. Locale is forced to <code>Locale.ROOT</code> so the alpha float always uses a "." decimal separator (CSS doesn't accept ","-separated numbers in non-US locales).</li>
+</ul>
+<h3>Notes</h3>
+<ul>
+  <li>Fully-opaque colors still produce 6-digit hex (<code>#1E90FF</code>), so existing snapshots and the WebAIM contrast-checker URL are unaffected. The new <code>ColorParser.colorToRgbHex(color)</code> helper is available for callers that strictly need 6-digit RGB output.</li>
+  <li>Regression coverage in <code>ColorParserTest</code>: primary <code>#7F80FF1A</code> round-trip, 4-digit shorthand <code>#RGBA</code> and <code>#RGBF</code>, full-opacity collapse-to-6-digit, fully-transparent round-trip, explicit channel-position assertions, plus the pre-existing rgba tests updated to assert the new alpha-preserving contract (<code>#FF008080</code> instead of <code>#FF0080</code>).</li>
+  <li>No index rebuild or settings change required — pure parser/rendering fix.</li>
+</ul>
 <h2>1.8.5 – 2026-04-28</h2>
 <h3>Fixed</h3>
 <ul>

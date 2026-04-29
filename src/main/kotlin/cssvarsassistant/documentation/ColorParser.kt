@@ -70,29 +70,37 @@ object ColorParser {
         return null
     }
 
+    // Issue #22 — CSS Color Level 4 hex syntaxes:
+    //   3-digit  #RGB      → #RRGGBB
+    //   4-digit  #RGBA     → #RRGGBBAA   (alpha LAST)
+    //   6-digit  #RRGGBB
+    //   8-digit  #RRGGBBAA              (alpha LAST)
+    //
+    // Earlier 8-digit handling treated the first byte as alpha (Java `Color.getRGB()`
+    // ARGB packed-int order), which produced wrong RGB plus a dropped alpha — the
+    // visible symptom in #22 was `#7F80FF1A` rendering as `#80FF1A` in the Hex
+    // column. The CSS spec orders alpha last, and we now follow it. 4-digit
+    // shorthand is also accepted; it was previously rejected because the
+    // `length == 8` branch was the only alpha-aware path.
     private fun parseHexColor(hex: String): Color? = try {
-        when (hex.length) {
-            3 -> Color(
-                Integer.valueOf(hex.substring(0, 1).repeat(2), 16),
-                Integer.valueOf(hex.substring(1, 2).repeat(2), 16),
-                Integer.valueOf(hex.substring(2, 3).repeat(2), 16)
-            )
-
-            6 -> Color(
-                Integer.valueOf(hex.substring(0, 2), 16),
-                Integer.valueOf(hex.substring(2, 4), 16),
-                Integer.valueOf(hex.substring(4, 6), 16)
-            )
-
-            8 -> Color(
-                Integer.valueOf(hex.substring(2, 4), 16),
-                Integer.valueOf(hex.substring(4, 6), 16),
-                Integer.valueOf(hex.substring(6, 8), 16),
-                Integer.valueOf(hex.substring(0, 2), 16)
-            )
-
-            else -> null
+        // Each digit doubled (`a` → `aa`) gives the canonical 6/8-digit form.
+        // We delegate to one branch with explicit RGBA byte slots, which keeps
+        // the parser DRY and removes the off-by-one trap in the original
+        // 8-digit branch.
+        val expanded = when (hex.length) {
+            3 -> hex.map { "$it$it" }.joinToString("") + "ff"            // #RGB    → #RRGGBBFF
+            4 -> hex.map { "$it$it" }.joinToString("")                    // #RGBA   → #RRGGBBAA
+            6 -> "${hex}ff"                                                // #RRGGBB → #RRGGBBFF
+            8 -> hex                                                       // #RRGGBBAA verbatim
+            else -> return null
         }
+
+        Color(
+            Integer.valueOf(expanded.substring(0, 2), 16), // R
+            Integer.valueOf(expanded.substring(2, 4), 16), // G
+            Integer.valueOf(expanded.substring(4, 6), 16), // B
+            Integer.valueOf(expanded.substring(6, 8), 16)  // A (CSS spec: last byte)
+        )
     } catch (_: Exception) {
         null
     }
@@ -204,16 +212,33 @@ object ColorParser {
     }
 
     /**
-     * Take any parsed [Color] and turn it into an uppercase "#RRGGBB" string.
-     * Alpha is dropped (for your swatch previews you can assume fully opaque).
+     * Canonical hex serialisation for a parsed [Color].
+     *
+     * Returns "#RRGGBB" for fully-opaque colors and "#RRGGBBAA" when the alpha
+     * channel is below 255 — matching the input grammar accepted by
+     * [parseCssColor]. Issue #22 fixed two compounding bugs here: the 8-digit
+     * input parser used Java's ARGB byte order (alpha first) instead of the
+     * CSS spec's RGBA order (alpha last), and this method silently dropped
+     * alpha on the way out, so `#7F80FF1A` round-tripped as `#80FF1A`.
      */
-    fun colorToHex(color: Color): String {
-        return String.format("#%02X%02X%02X", color.red, color.green, color.blue)
-    }
+    fun colorToHex(color: Color): String =
+        if (color.alpha == 255) {
+            String.format("#%02X%02X%02X", color.red, color.green, color.blue)
+        } else {
+            String.format("#%02X%02X%02X%02X", color.red, color.green, color.blue, color.alpha)
+        }
+
+    /**
+     * RGB-only hex without alpha — for callers like the WebAIM contrast link
+     * whose URL grammar only understands 6-digit hex.
+     */
+    fun colorToRgbHex(color: Color): String =
+        String.format("#%02X%02X%02X", color.red, color.green, color.blue)
 
     /**
      * Combines parsing + hex conversion in one call.
-     * Returns e.g. "#1A90FF" or null if it wasn't a valid color.
+     * Returns e.g. "#1A90FF" or "#7F80FF1A" when alpha is present, or null if
+     * it wasn't a valid color.
      */
     fun toHexString(input: String): String? {
         return parseCssColor(input)?.let(::colorToHex)

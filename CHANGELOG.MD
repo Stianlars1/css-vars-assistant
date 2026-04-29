@@ -3,6 +3,25 @@
 All notable changes to this project will be documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/) and semantic-versioning.
 
+## [1.8.6] – 2026-04-29
+
+Bug-fix release closing issue [#22](https://github.com/Stianlars1/css-vars-assistant/issues/22) reported by [@LordMaddhi](https://github.com/LordMaddhi).
+
+### Fixed
+- **8-digit hex colors with alpha (issue [#22](https://github.com/Stianlars1/css-vars-assistant/issues/22)):** A value like `--accent: #7F80FF1A` (modern CSS Color Level 4 `#RRGGBBAA` syntax) was rendered in the hover popup's *Hex* column as `#80FF1A`, looking like the first two characters had been silently dropped. Two compounding bugs were responsible and have both been corrected:
+  - `ColorParser.parseHexColor` treated the 8-digit form as Java's `#AARRGGBB` packed-int order (alpha *first*) instead of the CSS spec's `#RRGGBBAA` (alpha *last*). For `#7F80FF1A` that meant red was read as `80`, green as `FF`, blue as `1A`, and `7F` was assigned to alpha — so the parsed RGB was already wrong before any formatting happened.
+  - `ColorParser.colorToHex` and the local `Color.toHex()` extension in `buildHtmlDocument.kt` always emitted six digits (`#%02X%02X%02X`), unconditionally dropping any alpha that *had* been parsed. Combined with bug #1 this produced the visible `#80FF1A` truncation.
+- **4-digit hex shorthand `#RGBA` is now recognised** (was previously rejected as an unknown color, falling through to "no swatch / no Hex column"). Each digit is doubled, mirroring the existing 3-digit `#RGB` shorthand.
+
+### Changed
+- **Canonical hex output now preserves alpha when present:** `ColorParser.toHexString("#7F80FF1A")` round-trips identically. Fully-opaque colors still produce 6-digit hex (`#1E90FF`), so existing snapshots and the WebAIM contrast-checker URL are unaffected. The new `ColorParser.colorToRgbHex(color)` helper is available for callers that strictly need 6-digit RGB output.
+- **Color swatch in the hover popup now uses `rgb(...)` / `rgba(...)`** instead of hex so semi-transparent colors preview accurately. JBHtmlEditorKit's CSS parser is conservative on 8-digit hex; rgba() is broadly supported across the platform versions this plugin targets. Locale is forced to `Locale.ROOT` so the alpha float always uses a `.` decimal separator (CSS doesn't accept `,`-separated numbers in `nb_NO`/`de_DE`/etc.).
+
+### Notes
+- Regression coverage in `ColorParserTest`: the primary `#7F80FF1A` round-trip, the 4-digit `#RGBA` and `#RGBF` shorthand cases, the 8-digit fully-opaque collapse-to-6-digit case, the 8-digit fully-transparent round-trip, and explicit channel-position assertions verifying alpha is read from the LAST byte. The pre-existing rgba tests have been updated to assert the new alpha-preserving contract (`#FF008080` instead of the previous `#FF0080`).
+- No index rebuild or settings change required — pure parser/rendering fix, no on-disk format change.
+- Out of scope: `hsla()` alpha (currently dropped by `parseHslColor` into a default-255 `Color`) and CSS Color Level 4 `lab()` / `lch()` / `oklab()` / `oklch()` / `color()` / `color-mix()` syntaxes. Those are deliberately not addressed here to keep the change minimal and focused on the reported issue; a follow-up can take them on if requested.
+
 ## [1.8.5] – 2026-04-28
 
 Bug-fix release closing issue [#21](https://github.com/Stianlars1/css-vars-assistant/issues/21) reported by [@kolkinn](https://github.com/kolkinn).
