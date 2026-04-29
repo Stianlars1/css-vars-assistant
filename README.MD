@@ -6,7 +6,7 @@
 
 If you find CSS Variables Assistant helpful, please consider rating it on [JetBrains Marketplace](https://plugins.jetbrains.com/plugin/27392-css-variables-assistant/reviews) ★★★★★ 🙏.
 
-**Version:** 1.8.5<br/>
+**Version:** 1.8.6<br/>
 **Compatible IDEs:** JetBrains IDEs with bundled JavaScript + CSS support — IntelliJ IDEA Ultimate, WebStorm, GoLand, PhpStorm, PyCharm Professional, and RubyMine.  
 **Author:** Stian Larsen  
 **Repo:** [github.com/Stianlars1/css-vars-assistant](https://github.com/Stianlars1/css-vars-assistant)
@@ -18,6 +18,18 @@ If you find CSS Variables Assistant helpful, please consider rating it on [JetBr
 
 
 Supercharge your CSS custom properties and preprocessor variables in JetBrains IDEs with advanced autocomplete, documentation, and debugging tools.
+---
+
+## ✨ What's new in 1.8.6
+
+Bug-fix release closing issue [#22](https://github.com/Stianlars1/css-vars-assistant/issues/22) reported by [@LordMaddhi](https://github.com/LordMaddhi).
+
+| Category                                                    | Highlights                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+|-------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **🎨 8-digit hex colors with alpha now handled correctly** | Modern CSS Color Level 4 `#RRGGBBAA` values like `#7F80FF1A` no longer render as a truncated `#80FF1A` in the hover popup's *Hex* column. Two compounding bugs were fixed: the parser was reading alpha as the *first* byte (Java `#AARRGGBB` order) instead of the *last* byte per the CSS spec, and the formatter was unconditionally dropping alpha. The canonical hex output now preserves alpha when present (`#7F80FF1A` round-trips identically), and 4-digit `#RGBA` shorthand is recognised. Color swatches use `rgba()` so semi-transparent colors preview accurately. Fully-opaque colors still produce 6-digit hex, so existing snapshots and the WebAIM contrast-checker URL are unaffected. |
+
+[Full Changelog →](https://github.com/Stianlars1/css-vars-assistant/blob/main/CHANGELOG.MD)
+
 ---
 
 ## ✨ What's new in 1.8.5

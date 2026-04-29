@@ -243,11 +243,14 @@ fun buildHtmlDocument(
 
     /* ── WebAIM helper link for first colour found ───────────────────────── */
     sorted.firstNotNullOfOrNull { ColorParser.parseCssColor(it.resInfo.resolved) }?.let { c ->
+        // WebAIM expects strict 6-digit RGB. Issue #22: `Color.toHex()` is
+        // now alpha-aware and may emit 8 digits, so use the RGB-only helper
+        // here to keep the link grammar valid for semi-transparent colors.
         sb.append(
             """<p style='margin-top:10px'>
                        <a target="_blank"
                           href="https://webaim.org/resources/contrastchecker/?fcolor=${
-                c.toHex().removePrefix("#")
+                c.toHexRgb().removePrefix("#")
             }&bcolor=000000">
                           Check contrast on WebAIM Contrast Checker
                        </a></p>"""
@@ -260,7 +263,18 @@ fun buildHtmlDocument(
 
 
 /* ── tiny util helpers ─────────────────────────────────────────────────────── */
+// Issue #22 — the Hex column previously dropped the alpha byte, which combined
+// with the parser's wrong byte ordering produced the visible truncation
+// (`#7F80FF1A` → `#80FF1A`). We now emit "#rrggbb" when fully opaque and
+// "#rrggbbaa" otherwise, matching CSS Color Level 4. Lower-case is preserved
+// for backward compatibility with existing snapshot tests / hover output.
 fun java.awt.Color.toHex(): String =
+    if (alpha == 255) "#%02x%02x%02x".format(red, green, blue)
+    else "#%02x%02x%02x%02x".format(red, green, blue, alpha)
+
+// 6-digit lower-case hex for callers that cannot accept alpha — currently the
+// WebAIM contrast-checker URL, whose `fcolor=` param is RRGGBB-only.
+internal fun java.awt.Color.toHexRgb(): String =
     "#%02x%02x%02x".format(red, green, blue)
 
 fun contextLabel(ctx: String, isColor: Boolean, prettifyTheme: Boolean = true): String {
@@ -390,7 +404,22 @@ private fun humanise(raw: String): String {
 
 fun colorSwatchHtml(css: String): String =
     ColorParser.parseCssColor(css)?.let {
-        "<div style='background-color:${it.toHex()};border:1px solid #FFFFFF;display:inline-block;width:14px;height:14px;'></div>"
+        // Issue #22 — render the swatch with `rgba(...)` so semi-transparent
+        // colors (8-digit hex, rgba inputs) preview accurately. Previously the
+        // alpha was silently dropped, which made `#7F80FF1A` look like solid
+        // `#80FF1A` next to its (now-correct) "#7F80FF1A" Hex column entry.
+        // JBHtmlEditorKit's CSS parser is conservative; rgba() is broadly
+        // supported across the platform versions this plugin targets, while
+        // 8-digit hex is not. We force `Locale.ROOT` so the alpha float uses
+        // a "." decimal separator on every locale (CSS doesn't accept `,`).
+        val bg = if (it.alpha == 255) {
+            "rgb(${it.red},${it.green},${it.blue})"
+        } else {
+            "rgba(${it.red},${it.green},${it.blue},${
+                String.format(java.util.Locale.ROOT, "%.3f", it.alpha / 255.0)
+            })"
+        }
+        "<div style='background-color:$bg;border:1px solid #FFFFFF;display:inline-block;width:14px;height:14px;'></div>"
     } ?: "&nbsp;"
 
 /**

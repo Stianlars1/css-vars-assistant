@@ -2,6 +2,7 @@ package cssvarsassistant.documentation
 
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 
 class ColorParserTest {
@@ -18,9 +19,47 @@ class ColorParserTest {
         assertEquals("#AABBCC", ColorParser.toHexString("#ABC"))
     }
 
-    @Test fun `8‑digit hex drops alpha`() {
-        // #80FF0000 has 50% alpha + red ; toHexString should drop alpha and yield red
-        assertEquals("#FF0000", ColorParser.toHexString("#80FF0000"))
+    // Issue #22 — 8-digit hex (#RRGGBBAA per CSS Color Level 4) was previously
+    // mis-parsed as #AARRGGBB (Java ARGB int order) and the alpha was then
+    // silently dropped. Both bugs combined to truncate `#7F80FF1A` to
+    // `#80FF1A`. Round-trip through parseCssColor + colorToHex must now
+    // preserve alpha verbatim.
+    @Test fun `8-digit hex preserves alpha and uses CSS spec ordering`() {
+        // Reported value from the issue: alpha is the LAST byte (1A), not the first.
+        assertEquals("#7F80FF1A", ColorParser.toHexString("#7F80FF1A"))
+    }
+
+    @Test fun `8-digit hex round-trips when alpha is below full opacity`() {
+        // #80FF0000 means R=0x80, G=0xFF, B=0x00, A=0x00 (fully transparent
+        // yellow-green). The previous test expected `#FF0000` here because the
+        // parser put alpha first AND the formatter dropped alpha. Both have
+        // been corrected and now the round-trip is identity-preserving.
+        assertEquals("#80FF0000", ColorParser.toHexString("#80FF0000"))
+    }
+
+    @Test fun `8-digit hex with full opacity collapses to 6 digits`() {
+        // Alpha = FF means fully opaque; output stays 6-digit so existing
+        // callers and snapshots aren't disturbed when no alpha is present.
+        assertEquals("#1E90FF", ColorParser.toHexString("#1E90FFFF"))
+    }
+
+    @Test fun `4-digit hex shorthand expands with alpha`() {
+        // #RGBA → #RRGGBBAA (each digit doubled, just like 3-digit shorthand).
+        // Was previously unsupported (parser branched on 3/6/8 only).
+        assertEquals("#AABBCCDD", ColorParser.toHexString("#ABCD"))
+    }
+
+    @Test fun `4-digit hex shorthand with full opacity collapses to 6 digits`() {
+        assertEquals("#AABBCC", ColorParser.toHexString("#ABCF"))
+    }
+
+    @Test fun `parses 8-digit hex into Color object with correct channels`() {
+        val c = ColorParser.parseCssColor("#7F80FF1A")
+        assertNotNull(c)
+        assertEquals(0x7F, c!!.red,   "red byte must come from positions 1-2")
+        assertEquals(0x80, c.green, "green byte must come from positions 3-4")
+        assertEquals(0xFF, c.blue,  "blue byte must come from positions 5-6")
+        assertEquals(0x1A, c.alpha, "alpha byte must come from positions 7-8 (CSS spec)")
     }
 
     @Test fun `hex with surrounding whitespace`() {
@@ -38,13 +77,22 @@ class ColorParserTest {
         assertEquals("#FF0080", ColorParser.toHexString("rgb(100%,0%,50%)"))
     }
 
-    @Test fun `rgba slash alpha syntax`() {
-        // alpha 50% → 128 but dropped by toHexString()
-        assertEquals("#FF0080", ColorParser.toHexString("rgba(255 0 128 / 50%)"))
+    @Test fun `rgba slash alpha syntax preserves alpha`() {
+        // alpha 50% → 128 (= 0x80). Issue #22 — alpha is now preserved in the
+        // canonical hex output instead of being silently dropped.
+        assertEquals("#FF008080", ColorParser.toHexString("rgba(255 0 128 / 50%)"))
     }
 
-    @Test fun `rgba comma alpha syntax`() {
-        assertEquals("#00FF00", ColorParser.toHexString("rgba(0, 255, 0, 0.5)"))
+    @Test fun `rgba comma alpha syntax preserves alpha`() {
+        // 0.5 → 128 (= 0x80). Issue #22 — alpha preserved.
+        assertEquals("#00FF0080", ColorParser.toHexString("rgba(0, 255, 0, 0.5)"))
+    }
+
+    @Test fun `rgba with explicit full opacity stays 6 digits`() {
+        // Fully opaque rgba should still emit 6-digit hex so existing snapshots
+        // and downstream consumers (WebAIM contrast link, swatch background)
+        // are not disturbed for the common opaque case.
+        assertEquals("#FF0080", ColorParser.toHexString("rgba(255, 0, 128, 1)"))
     }
 
     // ----- HSL / HSLA -----

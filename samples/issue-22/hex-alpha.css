@@ -1,0 +1,32 @@
+/* Reproducer for issue #22 — 8-digit hex with alpha
+ * https://github.com/Stianlars1/css-vars-assistant/issues/22
+ *
+ * Hover each `var(...)` reference inside `.card`. The hover popup's
+ * `Hex` column must echo the full alpha-aware value back, not the
+ * pre-fix truncated form.
+ */
+:root {
+    /* Reported case from @LordMaddhi: alpha is the LAST byte (1A),
+     * not the first (7F). Pre-fix this rendered as `#80FF1A`. */
+    --accent-translucent:    #7F80FF1A;
+
+    /* Common shadcn / Tailwind alpha overlays */
+    --backdrop-50:           #00000080; /* 50% black */
+    --primary-12:            rgba(255, 0, 128, 0.5); /* 50% magenta */
+
+    /* 4-digit shorthand was previously rejected silently */
+    --tooltip-bg:            #ABCD;     /* expands to #AABBCCDD */
+
+    /* Sanity rows — fully opaque must still render as 6-digit hex */
+    --solid-blue:            #1E90FF;
+    --solid-with-FF-suffix:  #1E90FFFF; /* should collapse to 6-digit */
+}
+
+.card {
+    background:    var(--accent-translucent);
+    box-shadow:    0 8px 24px var(--backdrop-50);
+    color:         var(--primary-12);
+    border:        1px solid var(--solid-blue);
+    --inherit:     var(--solid-with-FF-suffix);
+    --tooltip:     var(--tooltip-bg);
+}
