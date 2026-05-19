@@ -1,5 +1,6 @@
 package cssvarsassistant.documentation
 
+import cssvarsassistant.settings.CssVarsAssistantSettings
 import cssvarsassistant.testing.CssVarsAssistantPlatformTestCase
 
 class DocHelpersResolveVarValueTest : CssVarsAssistantPlatformTestCase() {
@@ -71,5 +72,211 @@ class DocHelpersResolveVarValueTest : CssVarsAssistantPlatformTestCase() {
 
         val info = resolveVarValue(project, "calc(8px * var(--unit))")
         assertEquals("calc(8px * 4px)", info.resolved)
+    }
+
+    fun testImportedScssCustomPropertyResolvesThroughNestedPreprocessorAliasChain() {
+        updateSettings {
+            indexingScope = CssVarsAssistantSettings.IndexingScope.PROJECT_WITH_IMPORTS
+            maxImportDepth = 5
+        }
+        addProjectStylesheet(
+            "node_modules/@vendor/design/_foundation.scss",
+            """
+            ${'$'}space-base: 8px;
+            """
+        )
+        addProjectStylesheet(
+            "node_modules/@vendor/design/_tokens.scss",
+            """
+            @import "./foundation";
+            ${'$'}space-lg: ${'$'}space-base;
+
+            :root {
+              --space-lg: ${'$'}space-lg;
+            }
+            """
+        )
+        addProjectStylesheet(
+            "styles/app.scss",
+            """
+            @import "@vendor/design/tokens";
+            """
+        )
+
+        val info = resolveVarValue(project, "var(--space-lg)")
+
+        assertEquals("8px", info.resolved)
+        assertEquals(listOf("var(--space-lg)", "\$space-lg", "\$space-base"), info.steps)
+    }
+
+    fun testImportedScssCustomPropertyRespectsMaxImportDepth() {
+        updateSettings {
+            indexingScope = CssVarsAssistantSettings.IndexingScope.PROJECT_WITH_IMPORTS
+            maxImportDepth = 1
+        }
+        addProjectStylesheet(
+            "node_modules/@vendor/design/_foundation.scss",
+            """
+            ${'$'}space-base: 8px;
+            """
+        )
+        addProjectStylesheet(
+            "node_modules/@vendor/design/_tokens.scss",
+            """
+            @import "./foundation";
+            ${'$'}space-lg: ${'$'}space-base;
+
+            :root {
+              --space-lg: ${'$'}space-lg;
+            }
+            """
+        )
+        addProjectStylesheet(
+            "styles/app.scss",
+            """
+            @import "@vendor/design/tokens";
+            """
+        )
+
+        val info = resolveVarValue(project, "var(--space-lg)")
+
+        assertEquals("\$space-base", info.resolved)
+        assertEquals(listOf("var(--space-lg)", "\$space-lg"), info.steps)
+    }
+
+    fun testImportedScssArithmeticAliasChainResolvesRecursively() {
+        updateSettings {
+            indexingScope = CssVarsAssistantSettings.IndexingScope.PROJECT_WITH_IMPORTS
+            maxImportDepth = 5
+        }
+        addProjectStylesheet(
+            "node_modules/@vendor/design/_foundation.scss",
+            """
+            ${'$'}space-base: 8px;
+            """
+        )
+        addProjectStylesheet(
+            "node_modules/@vendor/design/_tokens.scss",
+            """
+            @import "./foundation";
+            ${'$'}space-lg: (${'$'}space-base * 2);
+
+            :root {
+              --space-lg: ${'$'}space-lg;
+            }
+            """
+        )
+        addProjectStylesheet(
+            "styles/app.scss",
+            """
+            @import "@vendor/design/tokens";
+            """
+        )
+
+        val info = resolveVarValue(project, "var(--space-lg)")
+
+        assertEquals("16px", info.resolved)
+        assertEquals(
+            listOf("var(--space-lg)", "\$space-lg", "\$space-base", "(8px * 2) = 16px"),
+            info.steps
+        )
+    }
+
+    fun testPrefixedScssReferenceDoesNotFallbackToLessVariableWithSameBareName() {
+        addProjectStylesheet(
+            "tokens.less",
+            """
+            @brand-primary: #7f80ff;
+            """
+        )
+
+        val info = resolveVarValue(project, "\$brand-primary")
+
+        assertEquals("\$brand-primary", info.resolved)
+        assertTrue(info.steps.isEmpty())
+    }
+
+    fun testCircularPreprocessorAliasesReturnWithoutInfiniteRecursion() {
+        addProjectStylesheet(
+            "tokens.scss",
+            """
+            ${'$'}a: ${'$'}b;
+            ${'$'}b: ${'$'}a;
+            """
+        )
+
+        val info = resolveVarValue(project, "\$a")
+
+        assertEquals("\$a", info.resolved)
+        assertTrue(info.steps.isEmpty())
+    }
+
+    fun testImportedSassCustomPropertyResolvesThroughNestedPreprocessorAliasChain() {
+        updateSettings {
+            indexingScope = CssVarsAssistantSettings.IndexingScope.PROJECT_WITH_IMPORTS
+            maxImportDepth = 5
+        }
+        addProjectStylesheet(
+            "node_modules/@vendor/sass/_foundation.sass",
+            """
+            ${'$'}space-base: 8px
+            """
+        )
+        addProjectStylesheet(
+            "node_modules/@vendor/sass/_tokens.sass",
+            """
+            @import "./foundation"
+            ${'$'}space-lg: ${'$'}space-base
+
+            :root
+              --space-lg: ${'$'}space-lg
+            """
+        )
+        addProjectStylesheet(
+            "styles/app.sass",
+            """
+            @import "@vendor/sass/tokens"
+            """
+        )
+
+        val info = resolveVarValue(project, "var(--space-lg)")
+
+        assertEquals("8px", info.resolved)
+        assertEquals(listOf("var(--space-lg)", "\$space-lg", "\$space-base"), info.steps)
+    }
+
+    fun testImportedLessCustomPropertyResolvesThroughNestedPreprocessorAliasChain() {
+        updateSettings {
+            indexingScope = CssVarsAssistantSettings.IndexingScope.PROJECT_WITH_IMPORTS
+            maxImportDepth = 5
+        }
+        addProjectStylesheet(
+            "node_modules/@vendor/less/base.less",
+            """
+            @space-base: 8px;
+            """
+        )
+        addProjectStylesheet(
+            "node_modules/@vendor/less/tokens.less",
+            """
+            @import "./base";
+            @space-lg: @space-base;
+
+            :root {
+              --space-lg: @space-lg;
+            }
+            """
+        )
+        addProjectStylesheet(
+            "styles/app.less",
+            """
+            @import "@vendor/less/tokens";
+            """
+        )
+
+        val info = resolveVarValue(project, "var(--space-lg)")
+
+        assertEquals("8px", info.resolved)
+        assertEquals(listOf("var(--space-lg)", "@space-lg", "@space-base"), info.steps)
     }
 }

@@ -67,6 +67,8 @@ class MarketplaceCompatibilityMetadataTest {
         assertTrue("id(\"org.jetbrains.intellij.platform\") version \"2.13.1\"" in buildScript)
         assertTrue("bundledPlugin(\"JavaScript\")" in buildScript)
         assertTrue("bundledPlugin(\"com.intellij.css\")" in buildScript)
+        assertTrue("bundledPlugin(\"org.jetbrains.plugins.sass\")" in buildScript)
+        assertTrue("bundledPlugin(\"org.jetbrains.plugins.less\")" in buildScript)
         assertTrue("sinceBuild = \"251\"" in buildScript)
         assertTrue("JavaLanguageVersion.of(21)" in buildScript)
         assertTrue("jvmTarget.set(JvmTarget.JVM_21)" in buildScript)

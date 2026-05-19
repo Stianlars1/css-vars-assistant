@@ -1,6 +1,7 @@
 package cssvarsassistant.completion
 
 import cssvarsassistant.documentation.CssVariableDocumentationService
+import cssvarsassistant.settings.CssVarsAssistantSettings
 import cssvarsassistant.testing.CssVarsAssistantPlatformTestCase
 
 class CssVariableCompletionHarnessTest : CssVarsAssistantPlatformTestCase() {
@@ -44,6 +45,683 @@ class CssVariableCompletionHarnessTest : CssVarsAssistantPlatformTestCase() {
         assertEquals(1, entries.size)
         assertEquals("default", entries.single().context)
         assertEquals("8px", entries.single().value)
+    }
+
+    fun testScssVariableCompletionReturnsDollarVariables() {
+        addProjectStylesheet(
+            "tokens.scss",
+            """
+            ${'$'}brand-primary: #7f80ff;
+            ${'$'}brand-secondary: #111111;
+            """
+        )
+
+        val lookups = completeCssVariablesInProjectFile(
+            "app.scss",
+            """
+            .button {
+              color: ${'$'}brand<caret>;
+            }
+            """
+        )
+
+        assertTrue(
+            "lookups=${lookups.joinToString()} text=${myFixture.editor.document.text}",
+            lookups.any {
+                it.lookupString == "\$brand-primary" &&
+                        it.itemText == "\$brand-primary" &&
+                        it.typeText == "#7f80ff"
+            }
+        )
+        assertTrue(
+            "lookups=${lookups.joinToString()} text=${myFixture.editor.document.text}",
+            lookups.any {
+                it.lookupString == "\$brand-secondary" &&
+                        it.itemText == "\$brand-secondary" &&
+                        it.typeText == "#111111"
+            }
+        )
+    }
+
+    fun testSassVariableCompletionReturnsDollarVariables() {
+        addProjectStylesheet(
+            "tokens.sass",
+            """
+            ${'$'}brand-primary: #7f80ff
+            ${'$'}brand-secondary: #111111
+            """
+        )
+
+        val lookups = completeCssVariablesInProjectFile(
+            "app.sass",
+            """
+            .button
+              color: ${'$'}brand<caret>
+            """
+        )
+
+        assertTrue(
+            "lookups=${lookups.joinToString()} text=${myFixture.editor.document.text}",
+            lookups.any {
+                it.lookupString == "\$brand-primary" &&
+                        it.itemText == "\$brand-primary" &&
+                        it.typeText == "#7f80ff"
+            }
+        )
+    }
+
+    fun testLessVariableCompletionReturnsAtVariables() {
+        addProjectStylesheet(
+            "tokens.less",
+            """
+            @brand-primary: #7f80ff;
+            @brand-secondary: #111111;
+            """
+        )
+
+        val lookups = completeCssVariablesInProjectFile(
+            "app.less",
+            """
+            .button {
+              color: @brand<caret>;
+            }
+            """
+        )
+
+        assertTrue(
+            "lookups=${lookups.joinToString()} text=${myFixture.editor.document.text}",
+            lookups.any {
+                it.lookupString == "@brand-primary" &&
+                        it.itemText == "@brand-primary" &&
+                        it.typeText == "#7f80ff"
+            }
+        )
+    }
+
+    fun testScssVariableCompletionInsertsCleanDollarVariable() {
+        configureProjectFile(
+            "app.scss",
+            """
+            ${'$'}brand-primary: #7f80ff;
+            ${'$'}brand-secondary: #111111;
+
+            .button {
+              color: ${'$'}brand<caret>;
+            }
+            """
+        )
+
+        val elements = myFixture.completeBasic()
+            ?: error("expected preprocessor lookup to remain open")
+        val target = elements.firstOrNull { it.lookupString == "\$brand-primary" }
+            ?: error("lookup did not contain \$brand-primary; available: ${elements.joinToString { it.lookupString }}")
+        myFixture.lookup.currentItem = target
+        myFixture.finishLookup('\n')
+
+        myFixture.checkResult(
+            """
+            ${'$'}brand-primary: #7f80ff;
+            ${'$'}brand-secondary: #111111;
+
+            .button {
+              color: ${'$'}brand-primary;
+            }
+            """.trimIndent()
+        )
+    }
+
+    fun testLessVariableCompletionInsertsCleanAtVariable() {
+        configureProjectFile(
+            "app.less",
+            """
+            @brand-primary: #7f80ff;
+            @brand-secondary: #111111;
+
+            .button {
+              color: @brand<caret>;
+            }
+            """
+        )
+
+        val elements = myFixture.completeBasic()
+            ?: error("expected preprocessor lookup to remain open")
+        val target = elements.firstOrNull { it.lookupString == "@brand-primary" }
+            ?: error("lookup did not contain @brand-primary; available: ${elements.joinToString { it.lookupString }}")
+        myFixture.lookup.currentItem = target
+        myFixture.finishLookup('\n')
+
+        myFixture.checkResult(
+            """
+            @brand-primary: #7f80ff;
+            @brand-secondary: #111111;
+
+            .button {
+              color: @brand-primary;
+            }
+            """.trimIndent()
+        )
+    }
+
+    fun testScssVariableCompletionReturnsImportedNodeModulesDesignTokensOnly() {
+        updateSettings {
+            indexingScope = CssVarsAssistantSettings.IndexingScope.PROJECT_WITH_IMPORTS
+            maxImportDepth = 5
+        }
+        addProjectStylesheet(
+            "node_modules/@vendor/design/_tokens.scss",
+            """
+            ${'$'}brand-primary: #7f80ff;
+            ${'$'}brand-secondary: #111111;
+            """
+        )
+        addProjectStylesheet(
+            "node_modules/@vendor/design/_unused.scss",
+            """
+            ${'$'}brand-unused: #ff0000;
+            """
+        )
+
+        val lookups = completeCssVariablesInProjectFile(
+            "styles/app.scss",
+            """
+            @import "@vendor/design/tokens";
+
+            .button {
+              color: ${'$'}brand<caret>;
+            }
+            """
+        )
+
+        val lookupStrings = lookups.map { it.lookupString }
+        assertContainsElements(lookupStrings, "\$brand-primary", "\$brand-secondary")
+        assertDoesntContain(lookupStrings, "\$brand-unused")
+    }
+
+    fun testSassVariableCompletionReturnsImportedNodeModulesDesignTokensOnly() {
+        updateSettings {
+            indexingScope = CssVarsAssistantSettings.IndexingScope.PROJECT_WITH_IMPORTS
+            maxImportDepth = 5
+        }
+        addProjectStylesheet(
+            "node_modules/@vendor/sass/_tokens.sass",
+            """
+            ${'$'}brand-primary: #7f80ff
+            ${'$'}brand-secondary: #111111
+            """
+        )
+        addProjectStylesheet(
+            "node_modules/@vendor/sass/_unused.sass",
+            """
+            ${'$'}brand-unused: #ff0000
+            """
+        )
+
+        val lookups = completeCssVariablesInProjectFile(
+            "styles/app.sass",
+            """
+            @import "@vendor/sass/tokens"
+
+            .button
+              color: ${'$'}brand<caret>
+            """
+        )
+
+        val lookupStrings = lookups.map { it.lookupString }
+        assertContainsElements(lookupStrings, "\$brand-primary", "\$brand-secondary")
+        assertDoesntContain(lookupStrings, "\$brand-unused")
+    }
+
+    fun testLessVariableCompletionReturnsImportedNodeModulesDesignTokensOnly() {
+        updateSettings {
+            indexingScope = CssVarsAssistantSettings.IndexingScope.PROJECT_WITH_IMPORTS
+            maxImportDepth = 5
+        }
+        addProjectStylesheet(
+            "node_modules/@vendor/less/tokens.less",
+            """
+            @brand-primary: #7f80ff;
+            @brand-secondary: #111111;
+            """
+        )
+        addProjectStylesheet(
+            "node_modules/@vendor/less/unused.less",
+            """
+            @brand-unused: #ff0000;
+            """
+        )
+
+        val lookups = completeCssVariablesInProjectFile(
+            "styles/app.less",
+            """
+            @import "@vendor/less/tokens";
+
+            .button {
+              color: @brand<caret>;
+            }
+            """
+        )
+
+        val lookupStrings = lookups.map { it.lookupString }
+        assertContainsElements(lookupStrings, "@brand-primary", "@brand-secondary")
+        assertDoesntContain(lookupStrings, "@brand-unused")
+    }
+
+    fun testCssVariableCompletionResolvesImportedScssPreprocessorAliasChain() {
+        updateSettings {
+            indexingScope = CssVarsAssistantSettings.IndexingScope.PROJECT_WITH_IMPORTS
+            maxImportDepth = 5
+        }
+        addProjectStylesheet(
+            "node_modules/@vendor/design/_foundation.scss",
+            """
+            ${'$'}brand-base: #7f80ff;
+            """
+        )
+        addProjectStylesheet(
+            "node_modules/@vendor/design/_tokens.scss",
+            """
+            @import "./foundation";
+            ${'$'}brand-primary: ${'$'}brand-base;
+            ${'$'}brand-secondary: #111111;
+
+            :root {
+              --brand-primary: ${'$'}brand-primary;
+              --brand-secondary: ${'$'}brand-secondary;
+            }
+            """
+        )
+
+        val lookups = completeCssVariablesInProjectFile(
+            "styles/app.scss",
+            """
+            @import "@vendor/design/tokens";
+
+            .button {
+              color: var(--brand<caret>);
+            }
+            """
+        )
+
+        assertTrue(
+            "lookups=${lookups.joinToString()} text=${myFixture.editor.document.text}",
+            lookups.any {
+                it.lookupString == "--brand-primary" &&
+                        it.itemText == "brand-primary" &&
+                        it.typeText == "#7f80ff ↗"
+            }
+        )
+    }
+
+    fun testCssVariableCompletionResolvesImportedSassPreprocessorAliasChain() {
+        updateSettings {
+            indexingScope = CssVarsAssistantSettings.IndexingScope.PROJECT_WITH_IMPORTS
+            maxImportDepth = 5
+        }
+        addProjectStylesheet(
+            "node_modules/@vendor/sass/_foundation.sass",
+            """
+            ${'$'}brand-base: #7f80ff
+            """
+        )
+        addProjectStylesheet(
+            "node_modules/@vendor/sass/_tokens.sass",
+            """
+            @import "./foundation"
+            ${'$'}brand-primary: ${'$'}brand-base
+            ${'$'}brand-secondary: #111111
+
+            :root
+              --brand-primary: ${'$'}brand-primary
+              --brand-secondary: ${'$'}brand-secondary
+            """
+        )
+
+        val lookups = completeCssVariablesInProjectFile(
+            "styles/app.sass",
+            """
+            @import "@vendor/sass/tokens"
+
+            .button
+              color: var(--brand<caret>)
+            """
+        )
+
+        assertTrue(
+            "lookups=${lookups.joinToString()} text=${myFixture.editor.document.text}",
+            lookups.any {
+                it.lookupString == "--brand-primary" &&
+                        it.itemText == "brand-primary" &&
+                        it.typeText == "#7f80ff ↗"
+            }
+        )
+    }
+
+    fun testPreprocessorCompletionDoesNotRunInsideCssVarFunction() {
+        updateSettings {
+            allowIdeCompletions = false
+        }
+        addProjectStylesheet(
+            "tokens.scss",
+            """
+            ${'$'}brand-primary: #7f80ff;
+            """
+        )
+
+        val lookups = completeCssVariables(
+            "app.scss",
+            """
+            .button {
+              color: var(${'$'}brand<caret>);
+            }
+            """
+        )
+
+        assertTrue(lookups.joinToString(), lookups.isEmpty())
+    }
+
+    fun testScssVariableDocumentationResolvesAliasChain() {
+        addProjectStylesheet(
+            "tokens.scss",
+            """
+            ${'$'}spacing-base: 8px;
+            ${'$'}spacing-lg: ${'$'}spacing-base;
+            """
+        )
+        configureProjectFile(
+            "app.scss",
+            """
+            .card {
+              padding: ${'$'}spacing-lg<caret>;
+            }
+            """
+        )
+
+        val variableElement = requireNotNull(myFixture.file.findElementAt(myFixture.caretOffset - 1))
+
+        val hint = CssVariableDocumentationService.generateHint(variableElement, "\$spacing-lg")
+        assertEquals("Resolution: \$spacing-lg → \$spacing-base → 8px", hint)
+
+        val html = CssVariableDocumentationService.generateDocumentation(variableElement, "\$spacing-lg")
+        requireNotNull(html)
+        assertTrue(html, html.contains("\$spacing-lg"))
+        assertTrue(html, html.contains("8px"))
+    }
+
+    fun testScssVariableDocumentationResolvesImportedNodeModulesAliasChain() {
+        updateSettings {
+            indexingScope = CssVarsAssistantSettings.IndexingScope.PROJECT_WITH_IMPORTS
+            maxImportDepth = 5
+        }
+        addProjectStylesheet(
+            "node_modules/@vendor/design/_foundation.scss",
+            """
+            ${'$'}spacing-base: 8px;
+            """
+        )
+        addProjectStylesheet(
+            "node_modules/@vendor/design/_tokens.scss",
+            """
+            @import "./foundation";
+            ${'$'}spacing-lg: ${'$'}spacing-base;
+            """
+        )
+        configureProjectFile(
+            "styles/app.scss",
+            """
+            @import "@vendor/design/tokens";
+
+            .card {
+              padding: ${'$'}spacing-lg<caret>;
+            }
+            """
+        )
+
+        val variableElement = requireNotNull(myFixture.file.findElementAt(myFixture.caretOffset - 1))
+
+        val hint = CssVariableDocumentationService.generateHint(variableElement, "\$spacing-lg")
+        assertEquals("Resolution: \$spacing-lg → \$spacing-base → 8px", hint)
+
+        val html = CssVariableDocumentationService.generateDocumentation(variableElement, "\$spacing-lg")
+        requireNotNull(html)
+        assertTrue(html, html.contains("\$spacing-lg"))
+        assertTrue(html, html.contains("8px"))
+    }
+
+    fun testSassVariableDocumentationResolvesImportedNodeModulesAliasChain() {
+        updateSettings {
+            indexingScope = CssVarsAssistantSettings.IndexingScope.PROJECT_WITH_IMPORTS
+            maxImportDepth = 5
+        }
+        addProjectStylesheet(
+            "node_modules/@vendor/sass/_foundation.sass",
+            """
+            ${'$'}spacing-base: 8px
+            """
+        )
+        addProjectStylesheet(
+            "node_modules/@vendor/sass/_tokens.sass",
+            """
+            @import "./foundation"
+            ${'$'}spacing-lg: ${'$'}spacing-base
+            """
+        )
+        configureProjectFile(
+            "styles/app.sass",
+            """
+            @import "@vendor/sass/tokens"
+
+            .card
+              padding: ${'$'}spacing-lg<caret>
+            """
+        )
+
+        val variableElement = requireNotNull(myFixture.file.findElementAt(myFixture.caretOffset - 1))
+
+        val hint = CssVariableDocumentationService.generateHint(variableElement, "\$spacing-lg")
+        assertEquals("Resolution: \$spacing-lg → \$spacing-base → 8px", hint)
+
+        val html = CssVariableDocumentationService.generateDocumentation(variableElement, "\$spacing-lg")
+        requireNotNull(html)
+        assertTrue(html, html.contains("\$spacing-lg"))
+        assertTrue(html, html.contains("8px"))
+    }
+
+    fun testCssVariableDocumentationResolvesImportedScssPreprocessorAliasChain() {
+        updateSettings {
+            indexingScope = CssVarsAssistantSettings.IndexingScope.PROJECT_WITH_IMPORTS
+            maxImportDepth = 5
+        }
+        addProjectStylesheet(
+            "node_modules/@vendor/design/_foundation.scss",
+            """
+            ${'$'}spacing-base: 8px;
+            """
+        )
+        addProjectStylesheet(
+            "node_modules/@vendor/design/_tokens.scss",
+            """
+            @import "./foundation";
+            ${'$'}spacing-lg: ${'$'}spacing-base;
+
+            :root {
+              --spacing-lg: ${'$'}spacing-lg;
+            }
+            """
+        )
+        configureProjectFile(
+            "styles/app.scss",
+            """
+            @import "@vendor/design/tokens";
+
+            .card {
+              padding: var(--spacing-lg<caret>);
+            }
+            """
+        )
+
+        val variableElement = requireNotNull(myFixture.file.findElementAt(myFixture.caretOffset - 1))
+
+        val hint = CssVariableDocumentationService.generateHint(variableElement, "--spacing-lg")
+        assertEquals("Resolution: \$spacing-lg → \$spacing-base → 8px", hint)
+
+        val html = CssVariableDocumentationService.generateDocumentation(variableElement, "--spacing-lg")
+        requireNotNull(html)
+        assertTrue(html, html.contains("--spacing-lg"))
+        assertTrue(html, html.contains("8px"))
+    }
+
+    fun testCssVariableDocumentationResolvesImportedSassPreprocessorAliasChain() {
+        updateSettings {
+            indexingScope = CssVarsAssistantSettings.IndexingScope.PROJECT_WITH_IMPORTS
+            maxImportDepth = 5
+        }
+        addProjectStylesheet(
+            "node_modules/@vendor/sass/_foundation.sass",
+            """
+            ${'$'}spacing-base: 8px
+            """
+        )
+        addProjectStylesheet(
+            "node_modules/@vendor/sass/_tokens.sass",
+            """
+            @import "./foundation"
+            ${'$'}spacing-lg: ${'$'}spacing-base
+
+            :root
+              --spacing-lg: ${'$'}spacing-lg
+            """
+        )
+        configureProjectFile(
+            "styles/app.sass",
+            """
+            @import "@vendor/sass/tokens"
+
+            .card
+              padding: var(--spacing-lg<caret>)
+            """
+        )
+
+        val variableElement = requireNotNull(myFixture.file.findElementAt(myFixture.caretOffset - 1))
+
+        val hint = CssVariableDocumentationService.generateHint(variableElement, "--spacing-lg")
+        assertEquals("Resolution: \$spacing-lg → \$spacing-base → 8px", hint)
+
+        val html = CssVariableDocumentationService.generateDocumentation(variableElement, "--spacing-lg")
+        requireNotNull(html)
+        assertTrue(html, html.contains("--spacing-lg"))
+        assertTrue(html, html.contains("8px"))
+    }
+
+    fun testLessVariableDocumentationResolvesAliasChain() {
+        addProjectStylesheet(
+            "tokens.less",
+            """
+            @spacing-base: 8px;
+            @spacing-lg: @spacing-base;
+            """
+        )
+        configureProjectFile(
+            "app.less",
+            """
+            .card {
+              padding: @spacing-lg<caret>;
+            }
+            """
+        )
+
+        val variableElement = requireNotNull(myFixture.file.findElementAt(myFixture.caretOffset - 1))
+
+        val hint = CssVariableDocumentationService.generateHint(variableElement, "@spacing-lg")
+        assertEquals("Resolution: @spacing-lg → @spacing-base → 8px", hint)
+
+        val html = CssVariableDocumentationService.generateDocumentation(variableElement, "@spacing-lg")
+        requireNotNull(html)
+        assertTrue(html, html.contains("@spacing-lg"))
+        assertTrue(html, html.contains("8px"))
+    }
+
+    fun testLessVariableDocumentationResolvesImportedNodeModulesAliasChain() {
+        updateSettings {
+            indexingScope = CssVarsAssistantSettings.IndexingScope.PROJECT_WITH_IMPORTS
+            maxImportDepth = 5
+        }
+        addProjectStylesheet(
+            "node_modules/@vendor/less/base.less",
+            """
+            @spacing-base: 8px;
+            """
+        )
+        addProjectStylesheet(
+            "node_modules/@vendor/less/tokens.less",
+            """
+            @import "./base";
+            @spacing-lg: @spacing-base;
+            """
+        )
+        configureProjectFile(
+            "styles/app.less",
+            """
+            @import "@vendor/less/tokens";
+
+            .card {
+              padding: @spacing-lg<caret>;
+            }
+            """
+        )
+
+        val variableElement = requireNotNull(myFixture.file.findElementAt(myFixture.caretOffset - 1))
+
+        val hint = CssVariableDocumentationService.generateHint(variableElement, "@spacing-lg")
+        assertEquals("Resolution: @spacing-lg → @spacing-base → 8px", hint)
+
+        val html = CssVariableDocumentationService.generateDocumentation(variableElement, "@spacing-lg")
+        requireNotNull(html)
+        assertTrue(html, html.contains("@spacing-lg"))
+        assertTrue(html, html.contains("8px"))
+    }
+
+    fun testCssVariableDocumentationResolvesImportedLessPreprocessorAliasChain() {
+        updateSettings {
+            indexingScope = CssVarsAssistantSettings.IndexingScope.PROJECT_WITH_IMPORTS
+            maxImportDepth = 5
+        }
+        addProjectStylesheet(
+            "node_modules/@vendor/less/base.less",
+            """
+            @spacing-base: 8px;
+            """
+        )
+        addProjectStylesheet(
+            "node_modules/@vendor/less/tokens.less",
+            """
+            @import "./base";
+            @spacing-lg: @spacing-base;
+
+            :root {
+              --spacing-lg: @spacing-lg;
+            }
+            """
+        )
+        configureProjectFile(
+            "styles/app.less",
+            """
+            @import "@vendor/less/tokens";
+
+            .card {
+              padding: var(--spacing-lg<caret>);
+            }
+            """
+        )
+
+        val variableElement = requireNotNull(myFixture.file.findElementAt(myFixture.caretOffset - 1))
+
+        val hint = CssVariableDocumentationService.generateHint(variableElement, "--spacing-lg")
+        assertEquals("Resolution: @spacing-lg → @spacing-base → 8px", hint)
+
+        val html = CssVariableDocumentationService.generateDocumentation(variableElement, "--spacing-lg")
+        requireNotNull(html)
+        assertTrue(html, html.contains("--spacing-lg"))
+        assertTrue(html, html.contains("8px"))
     }
 
     fun testStrongPrefixMatchesHideWeakerSubstringMatches() {

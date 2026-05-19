@@ -167,8 +167,9 @@ object ImportResolver {
             return null
         }
 
-        // If path already has an extension, use it directly
-        if (relativePath.contains('.')) {
+        // If the final path segment already has an extension, use it directly.
+        // The whole import string may contain "." from "./" or "../".
+        if (pathSegments.last().contains('.')) {
             return VfsUtil.findRelativeFile(currentDir, *pathSegments.toTypedArray())
         }
 
@@ -182,10 +183,11 @@ object ImportResolver {
         }
 
         for (ext in prioritizedExtensions) {
-            val pathWithExtension = pathSegments.dropLast(1) + "${pathSegments.last()}.$ext"
-            val resolved = VfsUtil.findRelativeFile(currentDir, *pathWithExtension.toTypedArray())
-            if (resolved != null && resolved.exists()) {
-                return resolved
+            for (candidate in stylesheetImportCandidates(pathSegments, ext)) {
+                val resolved = VfsUtil.findRelativeFile(currentDir, *candidate.toTypedArray())
+                if (resolved != null && resolved.exists()) {
+                    return resolved
+                }
             }
         }
 
@@ -230,8 +232,10 @@ object ImportResolver {
         packagePath: String,
         importingFile: VirtualFile
     ): VirtualFile? {
-        // If path already has an extension, use it directly
-        if (packagePath.contains('.')) {
+        // If the final path segment already has an extension, use it directly.
+        // Scoped packages may contain "." in directory names.
+        val rawPathParts = packagePath.split('/').filter { it.isNotEmpty() }
+        if (rawPathParts.lastOrNull()?.contains('.') == true) {
             val pathParts = packagePath.split('/')
             var current = nodeModules
 
@@ -251,21 +255,33 @@ object ImportResolver {
             else -> listOf("css", "scss", "sass", "less")
         }
 
+        val pathSegments = packagePath.split('/').filter { it.isNotEmpty() }
         for (ext in prioritizedExtensions) {
-            val pathWithExtension = "$packagePath.$ext"
-            val pathParts = pathWithExtension.split('/')
-            var current = nodeModules
+            for (candidate in stylesheetImportCandidates(pathSegments, ext)) {
+                var current = nodeModules
 
-            for (part in pathParts) {
-                current = current.findChild(part) ?: break
-            }
+                for (part in candidate) {
+                    current = current.findChild(part) ?: break
+                }
 
-            if (current != nodeModules && !current.isDirectory && current.exists()) {
-                return current
+                if (current != nodeModules && !current.isDirectory && current.exists()) {
+                    return current
+                }
             }
         }
 
         return null
+    }
+
+    private fun stylesheetImportCandidates(pathSegments: List<String>, extension: String): List<List<String>> {
+        val fileName = pathSegments.lastOrNull() ?: return emptyList()
+        val regular = pathSegments.dropLast(1) + "$fileName.$extension"
+        if (extension !in setOf("scss", "sass")) {
+            return listOf(regular)
+        }
+
+        val partial = pathSegments.dropLast(1) + "_$fileName.$extension"
+        return listOf(regular, partial)
     }
 
     private fun isStylesheetFile(file: VirtualFile): Boolean =

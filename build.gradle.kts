@@ -14,7 +14,7 @@ plugins {
 }
 
 group = "com.stianlarsen"
-version = "1.8.6"
+version = "1.9.0"
 
 repositories {
     mavenCentral()
@@ -28,6 +28,8 @@ dependencies {
         intellijIdeaUltimate("2025.1")
         bundledPlugin("JavaScript")
         bundledPlugin("com.intellij.css")
+        bundledPlugin("org.jetbrains.plugins.sass")
+        bundledPlugin("org.jetbrains.plugins.less")
         testFramework(TestFrameworkType.Platform)
 
         // Add verification tools (instrumentationTools() is deprecated and removed)
@@ -89,6 +91,7 @@ intellijPlatform {
 <h3>Why developers install it</h3>
 <ul>
   <li><b>Smart autocomplete inside <code>var(--…)</code></b> – your entire token catalog surfaces the moment you open a <code>var()</code> call. Works in CSS, SCSS, SASS and LESS files.</li>
+  <li><b>Direct SCSS/Sass/LESS variable completion</b> – complete <code>&#36;brand-primary</code> in SCSS/Sass and <code>@brand-primary</code> in LESS outside <code>var(...)</code>, with the same resolved-value preview, colour icons and quick documentation used for CSS custom properties.</li>
   <li><b>Instant in-place documentation</b> – hover any <code>--token</code> for a rich popup showing the resolved value, colour swatch, HSB / hex, pixel equivalent for <code>rem</code> / <code>em</code> / <code>%</code> / <code>vh</code> / <code>vw</code>, WCAG AA / AAA contrast ratio, and the full <code>@import</code> resolution chain.</li>
   <li><b>Follows <code>@import</code> chains automatically</b> – indexes variables defined in design-token packages inside <code>node_modules</code>, with configurable depth and scope controls so you only pay for the resolution you need.</li>
   <li><b>Understands media-query context</b> – tokens redefined under <code>@media (prefers-color-scheme: dark)</code>, <code>min-width</code> breakpoints or any other context are shown side-by-side so you can compare values at a glance.</li>
@@ -105,7 +108,18 @@ intellijPlatform {
   CSS variables, CSS custom properties, design tokens, <code>var(--token)</code>, <code>var()</code> autocomplete, Tailwind CSS, shadcn/ui, Radix UI, Radix Themes, Material Design tokens, MUI, Open Props, CSS cascade, <code>:root</code>, <code>calc()</code>, nested CSS variables, recursive variable resolution, dark mode tokens, theme variables, WebStorm CSS plugin, IntelliJ IDEA CSS autocomplete, JetBrains plugin design tokens, SCSS variables, Sass variables, LESS variables, <code>@import</code> resolution, JSDoc CSS, WCAG contrast checker, px equivalent, rem to px converter, hex to HSL, colour swatch, CSS-in-JS bridge.
 </p>
 
-<h3>✨ New in 1.8.6</h3>
+<h3>✨ New in 1.9.0</h3>
+<p>
+  Feature release inspired by <a href="https://github.com/Stianlars1/css-vars-assistant/discussions/24">Discussion #24</a> from <a href="https://github.com/LorincJuraj">@LorincJuraj</a>. CSS Variables Assistant now supports direct SCSS/Sass <code>$...</code> and LESS <code>@...</code> variables in completion and quick documentation, not only CSS custom properties inside <code>var(...)</code>.
+</p>
+<ul>
+  <li><b>Direct preprocessor variable completion:</b> type <code>&#36;brand</code> in SCSS/Sass or <code>@brand</code> in LESS to get project and imported design-system variables with resolved values, colour swatches and derived-value markers. Declaration left-hand sides and plain CSS files are guarded so normal editing stays clean.</li>
+  <li><b>Quick documentation for <code>$...</code> and <code>@...</code> references:</b> hover/direct documentation now renders the existing rich table for preprocessor variables, including resolved value, value type, pixel/colour columns and alias resolution chain.</li>
+  <li><b>Imported design-system support:</b> preprocessor variables from project imports and explicitly imported <code>node_modules</code> packages are indexed through the importing stylesheet. Sass partials such as <code>_tokens.scss</code> / <code>_tokens.sass</code>, nested imports, and CSS custom properties that resolve through imported SCSS/Sass/LESS aliases are covered.</li>
+  <li><b>Index rebuild:</b> preprocessor index keys now preserve their syntax (<code>&#36;token</code> vs <code>@token</code>) so SCSS/Sass and LESS variables with the same bare name no longer collide.</li>
+</ul>
+
+<h3>Previously in 1.8.6</h3>
 <p>
   Bug-fix release closing <a href="https://github.com/Stianlars1/css-vars-assistant/issues/22">issue #22</a> reported by <a href="https://github.com/LordMaddhi">@LordMaddhi</a>. 8-digit hex colors with alpha — the modern CSS Color Level 4 <code>#RRGGBBAA</code> syntax — are now handled correctly.
 </p>
@@ -195,6 +209,22 @@ intellijPlatform {
 """.trimIndent()
 
         changeNotes = """
+<h2>1.9.0 – 2026-05-19</h2>
+<h3>Added</h3>
+<ul>
+  <li><b>Direct SCSS/Sass and LESS variable completion (Discussion <a href="https://github.com/Stianlars1/css-vars-assistant/discussions/24">#24</a>, suggested by @LorincJuraj):</b> complete <code>&#36;brand-primary</code> in SCSS/Sass and <code>@brand-primary</code> in LESS directly in value positions, outside <code>var(...)</code>. Lookup items reuse the existing value preview, colour icon, sorting and derived-value marker behaviour.</li>
+  <li><b>Quick documentation for direct preprocessor variables:</b> hovering or invoking quick docs on <code>$...</code> / <code>@...</code> references now renders the same rich documentation table used for CSS custom properties, including resolved value, type, pixel/colour columns and resolution chain.</li>
+  <li><b>Import-backed preprocessor design-system lookup:</b> project imports and explicitly imported <code>node_modules</code> stylesheets now feed the preprocessor index. SCSS/Sass/LESS variables from imported token packages are available to direct completion, documentation and CSS custom-property resolution.</li>
+</ul>
+<h3>Changed</h3>
+<ul>
+  <li><b>Preprocessor index keys preserve syntax:</b> <code>&#36;token</code> and <code>@token</code> are stored separately, preventing SCSS/Sass and LESS variables with the same bare name from colliding. The index version was bumped so existing caches rebuild once after upgrade.</li>
+  <li><b>Sass and import parsing hardened:</b> Sass indented custom properties without semicolons are indexed, Sass partial imports (<code>_tokens.scss</code> / <code>_tokens.sass</code>) resolve, and extensionless relative imports such as <code>./foundation</code> no longer get mistaken for already-extensioned paths because of the leading <code>./</code>.</li>
+</ul>
+<h3>Testing</h3>
+<ul>
+  <li>Added coverage for SCSS, Sass and LESS indexing, direct completion, insertion, documentation target extraction, recursive imported alias resolution, arithmetic aliases, max import depth, circular aliases, <code>$</code>/<code>@</code> separation and <code>PROJECT_ONLY</code> / <code>PROJECT_WITH_IMPORTS</code> / <code>GLOBAL</code> scope boundaries.</li>
+</ul>
 <h2>1.8.6 – 2026-04-29</h2>
 <h3>Fixed</h3>
 <ul>

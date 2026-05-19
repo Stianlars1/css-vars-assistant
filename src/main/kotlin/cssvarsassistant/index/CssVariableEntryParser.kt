@@ -27,6 +27,7 @@ internal object CssVariableEntryParser {
     // the lookahead terminator binds correctly.
     private val variableDeclarationRegex = Regex("""(--[A-Za-z0-9\-_]+)\s*:\s*([^;}]+?)\s*(?:;|(?=\}))""")
     private val variableDeclarationStartRegex = Regex("""(--[A-Za-z0-9\-_]+)\s*:\s*(.*)$""")
+    private val sassVariableDeclarationRegex = Regex("""^\s*(--[A-Za-z0-9\-_]+)\s*:\s*(.+?)\s*$""")
 
     // Single-line `/* ... */` comments embedded inside an otherwise normal
     // line. Multi-line block comments are handled separately via the
@@ -56,7 +57,7 @@ internal object CssVariableEntryParser {
         val depthAfterOpen: Int
     )
 
-    fun parse(text: CharSequence): List<ParsedCssVariableEntry> {
+    fun parse(text: CharSequence, extension: String? = null): List<ParsedCssVariableEntry> {
         val entries = mutableListOf<ParsedCssVariableEntry>()
         val blockContexts = ArrayDeque<BlockContext>()
         var braceDepth = 0
@@ -208,6 +209,59 @@ internal object CssVariableEntryParser {
             while (blockContexts.isNotEmpty() && blockContexts.last().depthAfterOpen > braceDepth) {
                 blockContexts.removeLast()
             }
+        }
+
+        if (extension?.lowercase() == "sass") {
+            val seen = entries.asSequence()
+                .map { it.name to it.line }
+                .toSet()
+            entries += parseSassLineCustomProperties(text)
+                .filterNot { it.name to it.line in seen }
+        }
+
+        return entries.sortedBy { it.line }
+    }
+
+    private fun parseSassLineCustomProperties(text: CharSequence): List<ParsedCssVariableEntry> {
+        val entries = mutableListOf<ParsedCssVariableEntry>()
+        var inBlockComment = false
+
+        for ((lineIndex, rawLine) in text.lines().withIndex()) {
+            var line = rawLine
+
+            if (inBlockComment) {
+                val closeIdx = line.indexOf("*/")
+                if (closeIdx < 0) continue
+                inBlockComment = false
+                line = line.substring(closeIdx + 2)
+            }
+
+            while (true) {
+                val openIdx = line.indexOf("/*")
+                if (openIdx < 0) break
+                val closeIdx = line.indexOf("*/", startIndex = openIdx + 2)
+                if (closeIdx < 0) {
+                    line = line.substring(0, openIdx)
+                    inBlockComment = true
+                    break
+                }
+                line = line.removeRange(openIdx, closeIdx + 2)
+            }
+
+            line = lineCommentRegex.replace(line, "").trim()
+            if (line.isEmpty()) continue
+
+            val match = sassVariableDeclarationRegex.find(line) ?: continue
+            val value = match.groupValues[2].trim()
+            if (value.endsWith(";")) continue
+
+            entries += ParsedCssVariableEntry(
+                name = match.groupValues[1],
+                context = DEFAULT_CONTEXT,
+                value = normalizeValue(value),
+                comment = "",
+                line = lineIndex + 1
+            )
         }
 
         return entries

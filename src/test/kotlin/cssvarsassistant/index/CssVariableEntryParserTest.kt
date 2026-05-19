@@ -106,6 +106,26 @@ class CssVariableEntryParserTest {
         )
     }
 
+    @Test
+    fun `parses sass indented custom properties without semicolons`() {
+        val entries = CssVariableEntryParser.parse(
+            """
+            :root
+              --space-lg: ${'$'}space-lg
+              --brand-primary: ${'$'}brand-primary
+            """.trimIndent(),
+            extension = "sass"
+        )
+
+        assertEquals(
+            listOf(
+                ParsedCssVariableEntry("--space-lg", "default", "\$space-lg", "", line = 2),
+                ParsedCssVariableEntry("--brand-primary", "default", "\$brand-primary", "", line = 3)
+            ),
+            entries
+        )
+    }
+
     // Regression: a single line that starts with /* ... */ and then has a real
     // variable declaration after the comment must still index the variable.
     // Historic bug: the parser fell into `continue` after consuming the inline

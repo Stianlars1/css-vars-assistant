@@ -20,9 +20,11 @@ import cssvarsassistant.documentation.resolveVarValue
 import cssvarsassistant.feedback.RatePromptService
 import cssvarsassistant.index.CSS_VARIABLE_INDEXER_NAME
 import cssvarsassistant.index.CssVariableIndexValueCodec
+import cssvarsassistant.index.PREPROCESSOR_VARIABLE_INDEX_NAME
 import cssvarsassistant.model.DocParser
 import cssvarsassistant.settings.CssVarsAssistantSettings
 import cssvarsassistant.util.CssTextUtil
+import cssvarsassistant.util.PreprocessorUtil
 import cssvarsassistant.util.ScopeUtil
 import cssvarsassistant.util.ValueUtil
 import java.awt.Component
@@ -35,6 +37,69 @@ internal fun shouldStopAfterCssVarCompletion(
     entryCount: Int,
     allowIdeCompletions: Boolean
 ): Boolean = entryCount > 0 || !allowIdeCompletions
+
+internal data class PreprocessorCompletionQuery(
+    val symbol: Char,
+    val rawPrefix: String,
+    val normalizedPrefix: String
+)
+
+internal fun extractPreprocessorCompletionQuery(
+    fileExtension: String?,
+    text: String,
+    offset: Int
+): PreprocessorCompletionQuery? {
+    val ext = fileExtension?.lowercase() ?: return null
+    if (offset < 0 || offset > text.length) return null
+
+    var nameStart = offset
+    while (nameStart > 0 && isPreprocessorNameChar(text[nameStart - 1])) {
+        nameStart--
+    }
+
+    if (nameStart <= 0) return null
+    val symbolOffset = nameStart - 1
+    val symbol = text[symbolOffset]
+    if (!isAllowedPreprocessorSymbol(ext, symbol)) return null
+    if (isPreprocessorDeclarationLeftHandSide(text, symbolOffset)) return null
+
+    return PreprocessorCompletionQuery(
+        symbol = symbol,
+        rawPrefix = text.substring(symbolOffset, offset),
+        normalizedPrefix = text.substring(nameStart, offset)
+    )
+}
+
+private fun isPreprocessorNameChar(ch: Char): Boolean =
+    ch.isLetterOrDigit() || ch == '_' || ch == '-'
+
+private fun isAllowedPreprocessorSymbol(extension: String, symbol: Char): Boolean =
+    when (extension) {
+        "scss", "sass" -> symbol == '$'
+        "less" -> symbol == '@'
+        else -> false
+    }
+
+private fun isPreprocessorDeclarationLeftHandSide(text: String, symbolOffset: Int): Boolean {
+    val lineStart = maxOf(
+        text.lastIndexOf('\n', startIndex = (symbolOffset - 1).coerceAtLeast(0)),
+        text.lastIndexOf('\r', startIndex = (symbolOffset - 1).coerceAtLeast(0))
+    ) + 1
+    return text.substring(lineStart, symbolOffset).isBlank()
+}
+
+internal class PreprocessorPrefixMatcher(prefix: String) : PrefixMatcher(prefix) {
+    override fun prefixMatches(name: String): Boolean {
+        if (prefix.isBlank()) return true
+        val normalizedPrefix = prefix.removePrefix("$").removePrefix("@")
+        val normalizedName = name.removePrefix("$").removePrefix("@")
+        return name.startsWith(prefix, ignoreCase = true) ||
+                normalizedName.startsWith(normalizedPrefix, ignoreCase = true)
+    }
+
+    override fun cloneWithPrefix(prefix: String): PrefixMatcher =
+        PreprocessorPrefixMatcher(prefix)
+}
 
 class CssVariableCompletion : CompletionContributor() {
     private val logger = Logger.getInstance(CssVariableCompletion::class.java)
@@ -79,7 +144,17 @@ class CssVariableCompletion : CompletionContributor() {
                         ProgressManager.checkCanceled()
 
                         val insideVarFunction = isInsideVarFunction(params)
-                        if (!insideVarFunction) return
+                        if (!insideVarFunction) {
+                            val preprocessorQuery = extractPreprocessorCompletionQuery(
+                                stylesheetExtension(params),
+                                params.editor.document.text,
+                                params.editor.caretModel.offset
+                            )
+                            if (preprocessorQuery != null) {
+                                addPreprocessorCompletions(params, result, preprocessorQuery, startTime)
+                            }
+                            return
+                        }
 
                         // 1.8.4 / issue #20: force IntelliJ to re-invoke the
                         // contributor on every prefix change. The contributor's
@@ -346,6 +421,105 @@ class CssVariableCompletion : CompletionContributor() {
         )
     }
 
+
+    private fun addPreprocessorCompletions(
+        params: CompletionParameters,
+        result: CompletionResultSet,
+        query: PreprocessorCompletionQuery,
+        startTime: Long
+    ) {
+        val project = params.position.project
+        val settings = CssVarsAssistantSettings.getInstance()
+        val scope = ScopeUtil.currentPreprocessorScope(project)
+
+        result.restartCompletionOnPrefixChange(
+            com.intellij.patterns.StandardPatterns.string()
+        )
+        val completionResult = result.withPrefixMatcher(PreprocessorPrefixMatcher(query.rawPrefix))
+
+        val entries = FileBasedIndex.getInstance()
+            .getAllKeys(PREPROCESSOR_VARIABLE_INDEX_NAME, project)
+            .asSequence()
+            .filter { key ->
+                key.firstOrNull() == query.symbol &&
+                        key.removePrefix(query.symbol.toString())
+                            .startsWith(query.normalizedPrefix, ignoreCase = true)
+            }
+            .filter { key ->
+                FileBasedIndex.getInstance()
+                    .getValues(PREPROCESSOR_VARIABLE_INDEX_NAME, key, scope)
+                    .isNotEmpty()
+            }
+            .distinct()
+            .mapNotNull { key ->
+                ProgressManager.checkCanceled()
+                val rawValues = FileBasedIndex.getInstance()
+                    .getValues(PREPROCESSOR_VARIABLE_INDEX_NAME, key, scope)
+                    .distinct()
+                if (rawValues.isEmpty()) return@mapNotNull null
+
+                val resolution = PreprocessorUtil.resolveVariableWithSteps(project, key, scope)
+                val mainValue = resolution.resolved.trim()
+                val didResolve = rawValues.none { it.trim() == mainValue }
+                Entry(
+                    rawName = key,
+                    display = key.removePrefix(query.symbol.toString()),
+                    mainValue = mainValue,
+                    allValues = listOf("default" to mainValue),
+                    doc = "",
+                    isAllColor = ColorParser.parseCssColor(mainValue) != null,
+                    derived = didResolve,
+                    matchPriority = 0,
+                    matchedQuery = query.normalizedPrefix
+                )
+            }
+            .toMutableList()
+
+        entries.sortWith(createSmartComparator(settings.sortingOrder, query.normalizedPrefix))
+
+        entries.forEachIndexed { index, entry ->
+            ProgressManager.checkCanceled()
+            val color = ColorParser.parseCssColor(entry.mainValue)
+            val icon: Icon = if (color != null) {
+                ColorIcon(12, color, false)
+            } else {
+                AllIcons.FileTypes.Css
+            }
+            val valueText = entry.mainValue.let { if (entry.derived) "$it ↗" else it }
+            val element = LookupElementBuilder
+                .create(entry.rawName)
+                .withPresentableText(entry.rawName)
+                .withIcon(icon)
+                .withTypeText(valueText, true)
+
+            completionResult.addElement(
+                PrioritizedLookupElement.withPriority(
+                    element,
+                    (COMPLETION_LOOKUP_ELEMENT_PRIORITY_BASE - index).toDouble()
+                )
+            )
+        }
+
+        if (shouldStopAfterCssVarCompletion(entries.size, settings.allowIdeCompletions)) {
+            result.stopHere()
+        }
+
+        if (entries.isNotEmpty()) {
+            RatePromptService.getInstance().recordUsage()
+        }
+
+        logger.info(
+            "Preprocessor var completion: ${System.currentTimeMillis() - startTime}ms, " +
+                    "query='${query.rawPrefix}', returned ${entries.size}: " +
+                    entries.joinToString(",") { it.rawName }
+        )
+    }
+
+    private fun stylesheetExtension(params: CompletionParameters): String? =
+        params.originalFile.virtualFile?.extension?.lowercase()
+            ?: params.position.containingFile.virtualFile?.extension?.lowercase()
+            ?: params.originalFile.name.substringAfterLast('.', missingDelimiterValue = "").takeIf { it.isNotBlank() }
+                ?.lowercase()
 
     internal fun createSmartComparator(
         order: CssVarsAssistantSettings.SortingOrder,

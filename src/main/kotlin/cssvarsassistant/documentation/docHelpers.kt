@@ -73,9 +73,9 @@ fun resolveVarValue(
             return ResolutionInfo(raw, raw, steps)
         }
 
-        val preprocessorMatch = Regex("""^[\s]*[@$]([\w-]+)$""").find(raw.trim())
+        val preprocessorMatch = Regex("""^[\s]*([@$])([\w-]+)$""").find(raw.trim())
         if (preprocessorMatch != null) {
-            val varName = preprocessorMatch.groupValues[1]
+            val varName = preprocessorMatch.groupValues[1] + preprocessorMatch.groupValues[2]
             val resolution = findPreprocessorVariableValue(project, varName, steps)
             if (resolution != null && resolution.resolved != raw) {
                 return ResolutionInfo(
@@ -115,7 +115,7 @@ fun findPreprocessorVariableValue(
     } catch (e: ProcessCanceledException) {
         throw e
     } catch (e: Exception) {
-        LOG.warn("Failed to resolve @$varName", e)
+        LOG.warn("Failed to resolve $varName", e)
         null
     }
 }
@@ -132,6 +132,8 @@ fun extractCssVariableName(element: PsiElement): String? {
         return elementText.trim()
     }
 
+    extractPreprocessorVariableName(element)?.let { return it }
+
     // Check parent element safely
     val parent = element.parent
     if (parent?.isValid == true) {
@@ -142,6 +144,27 @@ fun extractCssVariableName(element: PsiElement): String? {
     }
 
     return null
+}
+
+private fun extractPreprocessorVariableName(element: PsiElement): String? {
+    val containingFile = element.containingFile ?: return null
+    val textRange = element.textRange ?: return null
+    val text = containingFile.text ?: return null
+    if (text.isEmpty()) return null
+
+    val windowStart = maxOf(0, textRange.startOffset - 50)
+    val windowEnd = minOf(text.length, textRange.endOffset + 50)
+    val elementStart = textRange.startOffset
+    val elementEnd = textRange.endOffset
+
+    return Regex("""[@$][\w-]+""")
+        .findAll(text.substring(windowStart, windowEnd))
+        .firstOrNull { match ->
+            val start = windowStart + match.range.first
+            val end = windowStart + match.range.last + 1
+            start < elementEnd && end > elementStart
+        }
+        ?.value
 }
 
 /* ─────────────────────── other helpers ───────────────────────── */

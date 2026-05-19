@@ -40,6 +40,61 @@ class ImportResolverTest : CssVarsAssistantPlatformTestCase() {
         assertContainsElements(importedFiles, relativeImport, packageImport)
     }
 
+    fun testCollectProjectImportsResolvesScssPartialsFromNodeModules() {
+        updateSettings {
+            indexingScope = CssVarsAssistantSettings.IndexingScope.PROJECT_WITH_IMPORTS
+            maxImportDepth = 5
+        }
+
+        val packageImport = myFixture.addFileToProject(
+            "node_modules/@vendor/design/_tokens.scss",
+            """
+            ${'$'}brand-primary: #7f80ff;
+            """
+        ).virtualFile
+        myFixture.addFileToProject(
+            "styles/app.scss",
+            """
+            @import "@vendor/design/tokens";
+            """
+        )
+
+        val importedFiles = ImportResolver.collectProjectImports(project, CssVarsAssistantSettings.getInstance().maxImportDepth)
+
+        assertContainsElements(importedFiles, packageImport)
+    }
+
+    fun testCollectProjectImportsResolvesNestedScssPartials() {
+        updateSettings {
+            indexingScope = CssVarsAssistantSettings.IndexingScope.PROJECT_WITH_IMPORTS
+            maxImportDepth = 5
+        }
+
+        val tokensImport = myFixture.addFileToProject(
+            "node_modules/@vendor/design/_tokens.scss",
+            """
+            @import "./foundation";
+            ${'$'}space-lg: ${'$'}space-base;
+            """
+        ).virtualFile
+        val foundationImport = myFixture.addFileToProject(
+            "node_modules/@vendor/design/_foundation.scss",
+            """
+            ${'$'}space-base: 8px;
+            """
+        ).virtualFile
+        myFixture.addFileToProject(
+            "styles/app.scss",
+            """
+            @import "@vendor/design/tokens";
+            """
+        )
+
+        val importedFiles = ImportResolver.collectProjectImports(project, CssVarsAssistantSettings.getInstance().maxImportDepth)
+
+        assertContainsElements(importedFiles, tokensImport, foundationImport)
+    }
+
     fun testCssIndexImportResolutionDoesNotPopulateImportCache() {
         updateSettings {
             indexingScope = CssVarsAssistantSettings.IndexingScope.PROJECT_WITH_IMPORTS

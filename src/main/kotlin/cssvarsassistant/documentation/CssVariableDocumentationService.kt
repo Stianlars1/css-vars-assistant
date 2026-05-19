@@ -11,9 +11,11 @@ import cssvarsassistant.completion.CssVariableCompletion
 import cssvarsassistant.index.CSS_VARIABLE_INDEXER_NAME
 import cssvarsassistant.index.CssVariableIndexValueCodec
 import cssvarsassistant.index.IndexedCssVariableValue
+import cssvarsassistant.index.PREPROCESSOR_VARIABLE_INDEX_NAME
 import cssvarsassistant.model.DocParser
 import cssvarsassistant.settings.CssVarsAssistantSettings
 import cssvarsassistant.util.CssTextUtil
+import cssvarsassistant.util.PreprocessorUtil
 import cssvarsassistant.util.RankUtil.rank
 import cssvarsassistant.util.ScopeUtil
 import cssvarsassistant.util.ValueUtil
@@ -29,6 +31,10 @@ object CssVariableDocumentationService {
             ProgressManager.checkCanceled()
 
             val settings = CssVarsAssistantSettings.getInstance()
+            if (isPreprocessorVariable(varName)) {
+                return generatePreprocessorDocumentation(element, varName)
+            }
+
             val cssScope = ScopeUtil.effectiveCssIndexingScope(project, settings)
 
             // Phase 8b / issue #19: `processValues` yields `(VirtualFile, packed)`
@@ -190,6 +196,50 @@ object CssVariableDocumentationService {
         val sourceFile: String
     )
 
+    private data class RawPreprocessorEntry(
+        val value: String,
+        val sourceFile: String?
+    )
+
+    private fun generatePreprocessorDocumentation(element: PsiElement, varName: String): String? {
+        val project = element.project
+        val scope = ScopeUtil.currentPreprocessorScope(project)
+        val rawEntries = mutableListOf<RawPreprocessorEntry>()
+
+        FileBasedIndex.getInstance().processValues(
+            PREPROCESSOR_VARIABLE_INDEX_NAME,
+            varName,
+            null,
+            { file, rawValue ->
+                rawEntries += RawPreprocessorEntry(rawValue, file.name)
+                true
+            },
+            scope
+        )
+
+        if (rawEntries.isEmpty()) return null
+
+        val resolution = PreprocessorUtil.resolveVariableWithSteps(project, varName, scope)
+        val rows = listOf(
+            HoverRow(
+                context = "default",
+                resInfo = resolution,
+                comment = "",
+                sourceFile = rawEntries.firstOrNull()?.sourceFile,
+                sourceLine = null
+            )
+        )
+        val doc = DocParser.parse("", resolution.resolved)
+
+        return buildHtmlDocument(
+            varName = varName,
+            doc = doc,
+            sorted = rows,
+            showPixelCol = shouldShowPixelColumn(rows),
+            winnerIndex = 0
+        )
+    }
+
     private fun extractLocalValues(fileText: String, varName: String): Set<String> {
         // Issue #18 Bug A mirror: the same comment-leak that affected completion
         // also affected the "is this a local declaration?" check here, causing
@@ -229,6 +279,10 @@ object CssVariableDocumentationService {
     fun generateHint(element: PsiElement, varName: String): String? {
         val project = element.project
         val settings = CssVarsAssistantSettings.getInstance()
+        if (isPreprocessorVariable(varName)) {
+            return generatePreprocessorHint(project, varName)
+        }
+
         val scope = ScopeUtil.effectiveCssIndexingScope(project, settings)
 
         return try {
@@ -265,4 +319,30 @@ object CssVariableDocumentationService {
             null
         }
     }
+
+    private fun generatePreprocessorHint(project: com.intellij.openapi.project.Project, varName: String): String? {
+        val scope = ScopeUtil.currentPreprocessorScope(project)
+        val values = FileBasedIndex.getInstance()
+            .getValues(PREPROCESSOR_VARIABLE_INDEX_NAME, varName, scope)
+        if (values.isEmpty()) return null
+
+        val resolutionInfo = PreprocessorUtil.resolveVariableWithSteps(project, varName, scope)
+        return if (resolutionInfo.steps.isNotEmpty() && resolutionInfo.original != resolutionInfo.resolved) {
+            "Resolution: ${resolutionInfo.steps.joinToString(" → ")} → ${resolutionInfo.resolved}"
+        } else {
+            "$varName → ${resolutionInfo.resolved}"
+        }
+    }
+
+    private fun isPreprocessorVariable(varName: String): Boolean =
+        varName.startsWith("$") || varName.startsWith("@")
+
+    private fun shouldShowPixelColumn(rows: List<HoverRow>): Boolean =
+        rows.any { entry ->
+            if (!ValueUtil.isSizeValue(entry.resInfo.resolved)) return@any false
+            val unit = entry.resInfo.resolved.replace(Regex("[0-9.+\\-]"), "").trim().lowercase()
+            val pxVal = ValueUtil.convertToPixels(entry.resInfo.resolved)
+            val numericRaw = entry.resInfo.resolved.replace(Regex("[^0-9.+\\-]"), "").toDoubleOrNull() ?: pxVal
+            unit != "px" || pxVal.roundToInt() != numericRaw.roundToInt()
+        }
 }

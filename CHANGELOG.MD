@@ -3,6 +3,27 @@
 All notable changes to this project will be documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/) and semantic-versioning.
 
+## [1.9.0] – 2026-05-19
+
+Feature release inspired by [Discussion #24](https://github.com/Stianlars1/css-vars-assistant/discussions/24), suggested by [@LorincJuraj](https://github.com/LorincJuraj).
+
+### Added
+- **Direct SCSS/Sass and LESS variable completion:** You can now complete `$brand-primary` in SCSS/Sass and `@brand-primary` in LESS directly in value positions, outside `var(...)`. Lookup items reuse the existing resolved-value preview, colour icon, sort order, and derived-value marker used for CSS custom properties.
+- **Quick documentation for direct preprocessor variables:** Hover / quick docs for `$...` and `@...` references now render the same rich documentation table as CSS custom properties, including resolved value, type, pixel/colour columns, and the resolution chain.
+- **Import-backed preprocessor design-system lookup:** Project imports and explicitly imported `node_modules` stylesheets now feed the preprocessor index, so imported SCSS/Sass/LESS token packages work in direct completion, documentation, and CSS custom-property resolution.
+
+### Changed
+- **Preprocessor index keys now preserve syntax:** `$token` and `@token` are stored separately, preventing SCSS/Sass and LESS variables with the same bare name from colliding. `INDEX_VERSION` is bumped to `1047`, so existing caches rebuild once after upgrade.
+- **Sass and import parsing hardened:** Sass indented custom properties without semicolons are indexed, Sass partial imports (`_tokens.scss` / `_tokens.sass`) resolve, and extensionless relative imports like `./foundation` no longer get mistaken for already-extensioned paths because of the leading `./`.
+
+### Fixed
+- **CSS custom properties can resolve through imported preprocessor aliases:** `--space-lg: $space-lg` or `--space-lg: @space-lg` now resolves through imported SCSS/Sass/LESS alias chains, including nested imports and explicitly imported external design systems.
+- **Scope boundaries are locked down:** `PROJECT_ONLY`, `PROJECT_WITH_IMPORTS`, and `GLOBAL` behavior is covered for preprocessor variables, including the rule that unimported `node_modules` token files do not leak into project/import scoped completion.
+
+### Testing
+- Added regression coverage for SCSS, Sass and LESS indexing, direct completion, insertion, documentation target extraction, recursive imported alias resolution, arithmetic aliases, max import depth, circular aliases, `$`/`@` separation, and scope boundaries.
+- Added a manual side-load verification fixture under `samples/discussion-24/`.
+
 ## [1.8.6] – 2026-04-29
 
 Bug-fix release closing issue [#22](https://github.com/Stianlars1/css-vars-assistant/issues/22) reported by [@LordMaddhi](https://github.com/LordMaddhi).

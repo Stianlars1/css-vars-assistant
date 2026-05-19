@@ -15,11 +15,41 @@ class DocHelpersTest : CssVarsAssistantPlatformTestCase() {
 
         val withPrefix = resolveVarValue(project, "\$spacing-lg", steps = listOf("var(--panel-gap)"))
         assertEquals("8px", withPrefix.resolved)
-        assertEquals(listOf("var(--panel-gap)", "@spacing-lg", "@spacing-base"), withPrefix.steps)
+        assertEquals(listOf("var(--panel-gap)", "\$spacing-lg", "\$spacing-base"), withPrefix.steps)
 
         val withoutPrefix = resolveVarValue(project, "\$spacing-lg")
         assertEquals("8px", withoutPrefix.resolved)
-        assertEquals(listOf("@spacing-lg", "@spacing-base"), withoutPrefix.steps)
+        assertEquals(listOf("\$spacing-lg", "\$spacing-base"), withoutPrefix.steps)
+    }
+
+    fun testExtractCssVariableNameFindsDirectScssVariableReference() {
+        configureProjectFile(
+            "app.scss",
+            """
+            .card {
+              padding: ${'$'}spacing-lg<caret>;
+            }
+            """
+        )
+
+        val element = requireNotNull(myFixture.file.findElementAt(myFixture.caretOffset - 1))
+
+        assertEquals("\$spacing-lg", extractCssVariableName(element))
+    }
+
+    fun testExtractCssVariableNameFindsDirectLessVariableReference() {
+        configureProjectFile(
+            "app.less",
+            """
+            .card {
+              padding: @spacing-lg<caret>;
+            }
+            """
+        )
+
+        val element = requireNotNull(myFixture.file.findElementAt(myFixture.caretOffset - 1))
+
+        assertEquals("@spacing-lg", extractCssVariableName(element))
     }
 
     // Regression for issue #18 Bug A: `lastLocalValueInFile` searched the raw

@@ -6,7 +6,7 @@
 
 If you find CSS Variables Assistant helpful, please consider rating it on [JetBrains Marketplace](https://plugins.jetbrains.com/plugin/27392-css-variables-assistant/reviews) ★★★★★ 🙏.
 
-**Version:** 1.8.6<br/>
+**Version:** 1.9.0<br/>
 **Compatible IDEs:** JetBrains IDEs with bundled JavaScript + CSS support — IntelliJ IDEA Ultimate, WebStorm, GoLand, PhpStorm, PyCharm Professional, and RubyMine.  
 **Author:** Stian Larsen  
 **Repo:** [github.com/Stianlars1/css-vars-assistant](https://github.com/Stianlars1/css-vars-assistant)
@@ -18,6 +18,23 @@ If you find CSS Variables Assistant helpful, please consider rating it on [JetBr
 
 
 Supercharge your CSS custom properties and preprocessor variables in JetBrains IDEs with advanced autocomplete, documentation, and debugging tools.
+---
+
+## ✨ What's new in 1.9.0
+
+Feature release inspired by [Discussion #24](https://github.com/Stianlars1/css-vars-assistant/discussions/24), suggested by [@LorincJuraj](https://github.com/LorincJuraj).
+
+| Category | Highlights |
+|---|---|
+| **Direct SCSS/Sass and LESS variable completion** | Complete `$brand-primary` in SCSS/Sass and `@brand-primary` in LESS directly in value positions, outside `var(...)`. Lookup items reuse the same resolved-value preview, colour icon, sort order, and derived-value marker as CSS custom properties. |
+| **Quick docs for `$...` / `@...` references** | Hover or invoke quick documentation on direct preprocessor variables to see the existing rich table with resolved value, type, pixel/colour columns, and the resolution chain. |
+| **Imported design-system support** | Project imports and explicitly imported `node_modules` stylesheets now feed the preprocessor index. Sass partials (`_tokens.scss` / `_tokens.sass`), nested imports, and CSS custom properties that resolve through imported SCSS/Sass/LESS aliases are covered. |
+| **Index rebuild** | Preprocessor index keys now preserve syntax (`$token` vs `@token`) so SCSS/Sass and LESS variables with the same bare name no longer collide. Existing indexes rebuild once after upgrade. |
+
+A side-load verification fixture lives at [`samples/discussion-24/`](https://github.com/Stianlars1/css-vars-assistant/tree/main/samples/discussion-24).
+
+[Full Changelog →](https://github.com/Stianlars1/css-vars-assistant/blob/main/CHANGELOG.MD)
+
 ---
 
 ## ✨ What's new in 1.8.6
@@ -142,8 +159,8 @@ Biggest quality release to date — closes issue [#18](https://github.com/Stianl
 
 ## Features
 
-- **Instant variable lookup:** Blazing-fast completions and documentation for `CSS`, `SCSS`, `SASS` and `LESS` variables.
-- **Smart autocomplete:** Context-aware suggestions for `var(--…)`, `@less`, and `$scss` with value/context-based sorting.
+- **Instant variable lookup:** Blazing-fast completions and documentation for CSS custom properties plus `SCSS`, `SASS` and `LESS` preprocessor variables.
+- **Smart autocomplete:** Context-aware suggestions for `var(--…)`, direct `$scss` / `$sass` variables, and direct `@less` variables with value/context-based sorting.
 - **Rich documentation popups:**
     - **Customizable Columns:** Choose what you see (Context, Value, Source, etc.).
     - **Resolution Chain:** A tooltip shows the full resolution path of a variable.
@@ -154,7 +171,7 @@ Biggest quality release to date — closes issue [#18](https://github.com/Stianl
     - **CSS cascade compliance:** Shows the actual winning value first, following proper CSS cascade rules
     - **Legend for derived variables:** Explains the ↗ symbol for variables resolved through imports
 - **JSDoc-style comments:** Auto-parsing and display of `@name`, `@description`, and `@example`.
-- **Advanced import resolution:** Follows and indexes imports across `CSS`, `SCSS`, `SASS` & `LESS`.
+- **Advanced import resolution:** Follows and indexes imports across `CSS`, `SCSS`, `SASS` & `LESS`, including imported design-system packages and Sass partials.
 - **Debugging tools:** Trace variable origins and import chains visually.
 - **Configurable sorting:** Completion list sorted by value _(ascending/descending)_.
 - **Works everywhere:** `CSS`, `SCSS`, `SASS`, `LESS`.

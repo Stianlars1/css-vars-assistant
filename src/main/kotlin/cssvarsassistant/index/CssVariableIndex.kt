@@ -52,7 +52,7 @@ class CssVariableIndex : FileBasedIndexExtension<String, String>() {
                 indexImportedFiles(inputData.file, inputData.project, settings, map)
             }
             // Index the current file
-            indexFileContent(inputData.contentAsText, map)
+            indexFileContent(inputData.contentAsText, inputData.file.extension?.lowercase(), map)
 
         } catch (e: Exception) {
             com.intellij.openapi.diagnostic.Logger.getInstance(CssVariableIndex::class.java)
@@ -103,7 +103,7 @@ class CssVariableIndex : FileBasedIndexExtension<String, String>() {
             for (importedFile in importedFiles) {
                 try {
                     val importedContent = String(importedFile.contentsToByteArray())
-                    indexFileContent(importedContent, map)
+                    indexFileContent(importedContent, importedFile.extension?.lowercase(), map)
                 } catch (e: Exception) {
                     com.intellij.openapi.diagnostic.Logger.getInstance(CssVariableIndex::class.java)
                         .debug("Error indexing imported file ${importedFile.path}", e)
@@ -118,8 +118,8 @@ class CssVariableIndex : FileBasedIndexExtension<String, String>() {
     /**
      * Indexes CSS variable declarations from file content
      */
-    private fun indexFileContent(text: CharSequence, map: MutableMap<String, String>) {
-        CssVariableEntryParser.parse(text).forEach { parsedEntry ->
+    private fun indexFileContent(text: CharSequence, extension: String?, map: MutableMap<String, String>) {
+        CssVariableEntryParser.parse(text, extension).forEach { parsedEntry ->
             val entry = CssVariableIndexValueCodec.encode(
                 parsedEntry.context,
                 parsedEntry.value,

@@ -9,6 +9,7 @@ import cssvarsassistant.completion.CssVarKeyCache
 import cssvarsassistant.index.CSS_VARIABLE_INDEXER_NAME
 import cssvarsassistant.index.CssVariableIndexValueCodec
 import cssvarsassistant.index.ImportCache
+import cssvarsassistant.index.PREPROCESSOR_VARIABLE_INDEX_NAME
 import cssvarsassistant.settings.CssVarsAssistantSettings
 import cssvarsassistant.util.PreprocessorUtil
 import cssvarsassistant.util.ScopeUtil
@@ -90,6 +91,14 @@ abstract class CssVarsAssistantPlatformTestCase : BasePlatformTestCase() {
                     comment = entry.comment
                 )
             }
+    }
+
+    protected fun readIndexedPreprocessorValues(
+        variableName: String,
+        scope: GlobalSearchScope = GlobalSearchScope.projectScope(project)
+    ): List<String> {
+        return FileBasedIndex.getInstance()
+            .getValues(PREPROCESSOR_VARIABLE_INDEX_NAME, variableName, scope)
     }
 
     private fun renderLookup(element: LookupElement): RenderedLookup {
