@@ -15,7 +15,6 @@ import cssvarsassistant.index.PREPROCESSOR_VARIABLE_INDEX_NAME
 import cssvarsassistant.model.DocParser
 import cssvarsassistant.settings.CssVarsAssistantSettings
 import cssvarsassistant.util.CssTextUtil
-import cssvarsassistant.util.PreprocessorUtil
 import cssvarsassistant.util.RankUtil.rank
 import cssvarsassistant.util.ScopeUtil
 import cssvarsassistant.util.ValueUtil
@@ -23,6 +22,7 @@ import kotlin.math.roundToInt
 
 object CssVariableDocumentationService {
     private val logger = Logger.getInstance(CssVariableCompletion::class.java)
+    private val cssVarReferenceRegex = Regex("""^\s*var\(\s*(--[\w-]+)\s*\)\s*$""")
 
     fun generateDocumentation(element: PsiElement, varName: String): String? {
         try {
@@ -219,7 +219,18 @@ object CssVariableDocumentationService {
 
         if (rawEntries.isEmpty()) return null
 
-        val resolution = PreprocessorUtil.resolveVariableWithSteps(project, varName, scope)
+        val directCssVarAlias = rawEntries
+            .asSequence()
+            .mapNotNull { extractCssVarReference(it.value) }
+            .firstOrNull()
+        if (directCssVarAlias != null) {
+            generateDocumentation(element, directCssVarAlias)?.let { return it }
+        }
+
+        val resolution = findPreprocessorVariableValue(project, varName) ?: ResolutionInfo(varName, varName)
+        extractCssVarReference(resolution.resolved)?.let { cssAlias ->
+            generateDocumentation(element, cssAlias)?.let { return it }
+        }
         val rows = listOf(
             HoverRow(
                 context = "default",
@@ -326,7 +337,8 @@ object CssVariableDocumentationService {
             .getValues(PREPROCESSOR_VARIABLE_INDEX_NAME, varName, scope)
         if (values.isEmpty()) return null
 
-        val resolutionInfo = PreprocessorUtil.resolveVariableWithSteps(project, varName, scope)
+        val resolutionInfo = findPreprocessorVariableValue(project, varName)
+            ?: ResolutionInfo(varName, varName)
         return if (resolutionInfo.steps.isNotEmpty() && resolutionInfo.original != resolutionInfo.resolved) {
             "Resolution: ${resolutionInfo.steps.joinToString(" → ")} → ${resolutionInfo.resolved}"
         } else {
@@ -345,4 +357,7 @@ object CssVariableDocumentationService {
             val numericRaw = entry.resInfo.resolved.replace(Regex("[^0-9.+\\-]"), "").toDoubleOrNull() ?: pxVal
             unit != "px" || pxVal.roundToInt() != numericRaw.roundToInt()
         }
+
+    private fun extractCssVarReference(value: String): String? =
+        cssVarReferenceRegex.find(value)?.groupValues?.get(1)
 }

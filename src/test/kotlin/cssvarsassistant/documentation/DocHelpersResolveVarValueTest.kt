@@ -182,6 +182,42 @@ class DocHelpersResolveVarValueTest : CssVarsAssistantPlatformTestCase() {
         )
     }
 
+    fun testScssAliasToCssCustomPropertyResolvesThroughCssVariable() {
+        addProjectStylesheet(
+            "tokens.scss",
+            """
+            :root {
+              --surface: #112233;
+            }
+
+            ${'$'}surface-token: var(--surface);
+            """
+        )
+
+        val info = resolveVarValue(project, "\$surface-token")
+
+        assertEquals("#112233", info.resolved)
+        assertEquals(listOf("\$surface-token", "var(--surface)"), info.steps)
+    }
+
+    fun testLessAliasToCssCustomPropertyResolvesThroughCssVariable() {
+        addProjectStylesheet(
+            "tokens.less",
+            """
+            :root {
+              --surface: #445566;
+            }
+
+            @surface-token: var(--surface);
+            """
+        )
+
+        val info = resolveVarValue(project, "@surface-token")
+
+        assertEquals("#445566", info.resolved)
+        assertEquals(listOf("@surface-token", "var(--surface)"), info.steps)
+    }
+
     fun testPrefixedScssReferenceDoesNotFallbackToLessVariableWithSameBareName() {
         addProjectStylesheet(
             "tokens.less",

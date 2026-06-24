@@ -111,6 +111,13 @@ fun findPreprocessorVariableValue(
             emptySet(),
             currentSteps
         )
+        if (Regex("""var\(\s*--[\w-]+\s*\)""").containsMatchIn(resolution.resolved)) {
+            return resolveVarValue(
+                project = project,
+                raw = resolution.resolved,
+                steps = resolution.steps
+            )
+        }
         return resolution
     } catch (e: ProcessCanceledException) {
         throw e

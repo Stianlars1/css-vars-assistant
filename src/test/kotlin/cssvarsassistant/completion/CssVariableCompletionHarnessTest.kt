@@ -447,6 +447,67 @@ class CssVariableCompletionHarnessTest : CssVarsAssistantPlatformTestCase() {
         assertTrue(html, html.contains("8px"))
     }
 
+    fun testScssAliasToCssVarDocumentationShowsCssVariableContexts() {
+        configureProjectFile(
+            "app.scss",
+            """
+            [data-theme='dark'] {
+              --foo: red;
+            }
+
+            [data-theme='light'] {
+              --foo: blue;
+            }
+
+            ${'$'}foo: var(--foo);
+
+            .test {
+              color: ${'$'}foo<caret>;
+            }
+            """
+        )
+
+        val variableElement = requireNotNull(myFixture.file.findElementAt(myFixture.caretOffset - 1))
+        val html = CssVariableDocumentationService.generateDocumentation(variableElement, "\$foo")
+
+        requireNotNull(html)
+        assertTrue(html, html.contains("--foo"))
+        assertTrue(html, html.contains("red"))
+        assertTrue(html, html.contains("blue"))
+    }
+
+    fun testScssVariableCompletionResolvesAliasToCssCustomPropertyValue() {
+        addProjectStylesheet(
+            "tokens.scss",
+            """
+            :root {
+              --surface: #123456;
+            }
+
+            ${'$'}surface-token: var(--surface);
+            ${'$'}surface-alt: #0f0f0f;
+            """
+        )
+
+        val lookups = completeCssVariablesInProjectFile(
+            "app.scss",
+            """
+            .card {
+              color: ${'$'}sur<caret>;
+            }
+            """
+        )
+
+        assertTrue(
+            "lookups=${lookups.joinToString()}",
+            lookups.any {
+                it.lookupString == "\$surface-token" &&
+                    it.itemText == "\$surface-token" &&
+                    it.typeText == "#123456 ↗"
+            }
+        )
+    }
+
     fun testScssVariableDocumentationResolvesImportedNodeModulesAliasChain() {
         updateSettings {
             indexingScope = CssVarsAssistantSettings.IndexingScope.PROJECT_WITH_IMPORTS
