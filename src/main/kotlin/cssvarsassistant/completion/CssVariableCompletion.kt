@@ -15,6 +15,7 @@ import com.intellij.util.ProcessingContext
 import com.intellij.util.indexing.FileBasedIndex
 import com.intellij.util.ui.ColorIcon
 import cssvarsassistant.documentation.ColorParser
+import cssvarsassistant.documentation.findPreprocessorVariableValue
 import cssvarsassistant.documentation.lastLocalValueInFile
 import cssvarsassistant.documentation.resolveVarValue
 import cssvarsassistant.feedback.RatePromptService
@@ -24,7 +25,6 @@ import cssvarsassistant.index.PREPROCESSOR_VARIABLE_INDEX_NAME
 import cssvarsassistant.model.DocParser
 import cssvarsassistant.settings.CssVarsAssistantSettings
 import cssvarsassistant.util.CssTextUtil
-import cssvarsassistant.util.PreprocessorUtil
 import cssvarsassistant.util.ScopeUtil
 import cssvarsassistant.util.ValueUtil
 import java.awt.Component
@@ -458,7 +458,8 @@ class CssVariableCompletion : CompletionContributor() {
                     .distinct()
                 if (rawValues.isEmpty()) return@mapNotNull null
 
-                val resolution = PreprocessorUtil.resolveVariableWithSteps(project, key, scope)
+                val resolution = findPreprocessorVariableValue(project, key)
+                    ?: return@mapNotNull null
                 val mainValue = resolution.resolved.trim()
                 val didResolve = rawValues.none { it.trim() == mainValue }
                 Entry(

@@ -5,7 +5,9 @@ import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.project.DumbService
+import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiElement
+import com.intellij.psi.search.GlobalSearchScope
 import com.intellij.util.indexing.FileBasedIndex
 import cssvarsassistant.completion.CssVariableCompletion
 import cssvarsassistant.index.CSS_VARIABLE_INDEXER_NAME
@@ -30,11 +32,30 @@ object CssVariableDocumentationService {
             if (DumbService.isDumb(project)) return null
             ProgressManager.checkCanceled()
 
-            val settings = CssVarsAssistantSettings.getInstance()
             if (isPreprocessorVariable(varName)) {
                 return generatePreprocessorDocumentation(element, varName)
             }
 
+            return generateCssVarDocumentation(element, displayName = varName, lookupName = varName)
+        } catch (e: ProcessCanceledException) {
+            throw e
+        } catch (e: Exception) {
+            logger.error("Error generating documentation", e)
+            return null
+        }
+    }
+
+    private fun generateCssVarDocumentation(
+        element: PsiElement,
+        displayName: String,
+        lookupName: String
+    ): String? {
+        try {
+            val project = element.project
+            if (DumbService.isDumb(project)) return null
+            ProgressManager.checkCanceled()
+
+            val settings = CssVarsAssistantSettings.getInstance()
             val cssScope = ScopeUtil.effectiveCssIndexingScope(project, settings)
 
             // Phase 8b / issue #19: `processValues` yields `(VirtualFile, packed)`
@@ -46,7 +67,7 @@ object CssVariableDocumentationService {
             val rawEntries = mutableListOf<RawEntryWithFile>()
             FileBasedIndex.getInstance().processValues(
                 CSS_VARIABLE_INDEXER_NAME,
-                varName,
+                lookupName,
                 null,
                 { file, packed ->
                     CssVariableIndexValueCodec.decodePacked(packed).forEach { decoded ->
@@ -74,7 +95,7 @@ object CssVariableDocumentationService {
 
             // Get local file text and find local values
             val activeText = element.containingFile.text
-            val localValues = extractLocalValues(activeText, varName)
+            val localValues = extractLocalValues(activeText, lookupName)
 
             // Mark entries as local or imported
             val enrichedEntries = parsed.map { entry ->
@@ -160,7 +181,7 @@ object CssVariableDocumentationService {
                 )
             }
 
-            return buildHtmlDocument(varName, doc, hoverRows, showPixelCol, winnerIndex)
+            return buildHtmlDocument(displayName, doc, hoverRows, showPixelCol, winnerIndex)
 
 
         } catch (e: ProcessCanceledException) {
@@ -219,7 +240,20 @@ object CssVariableDocumentationService {
 
         if (rawEntries.isEmpty()) return null
 
-        val resolution = PreprocessorUtil.resolveVariableWithSteps(project, varName, scope)
+        findCssAliasForPreprocessor(
+            project = project,
+            varName = varName,
+            scope = scope,
+            rawValues = rawEntries.map { it.value }
+        )?.let { cssVarName ->
+            generateCssVarDocumentation(
+                element,
+                displayName = "$varName → var($cssVarName)",
+                lookupName = cssVarName
+            )?.let { return it }
+        }
+
+        val resolution = findPreprocessorVariableValue(project, varName) ?: ResolutionInfo(varName, varName)
         val rows = listOf(
             HoverRow(
                 context = "default",
@@ -238,6 +272,18 @@ object CssVariableDocumentationService {
             showPixelCol = shouldShowPixelColumn(rows),
             winnerIndex = 0
         )
+    }
+
+    private fun findCssAliasForPreprocessor(
+        project: Project,
+        varName: String,
+        scope: GlobalSearchScope,
+        rawValues: Iterable<String>
+    ): String? {
+        rawValues.firstNotNullOfOrNull { extractCssVarAlias(it) }?.let { return it }
+
+        val preprocessorOnlyResolution = PreprocessorUtil.resolveVariableWithSteps(project, varName, scope)
+        return extractCssVarAlias(preprocessorOnlyResolution.resolved)
     }
 
     private fun extractLocalValues(fileText: String, varName: String): Set<String> {
@@ -326,12 +372,48 @@ object CssVariableDocumentationService {
             .getValues(PREPROCESSOR_VARIABLE_INDEX_NAME, varName, scope)
         if (values.isEmpty()) return null
 
-        val resolutionInfo = PreprocessorUtil.resolveVariableWithSteps(project, varName, scope)
+        generateCssAliasHint(project, varName, scope, values)?.let { return it }
+
+        val resolutionInfo = findPreprocessorVariableValue(project, varName)
+            ?: ResolutionInfo(varName, varName)
         return if (resolutionInfo.steps.isNotEmpty() && resolutionInfo.original != resolutionInfo.resolved) {
             "Resolution: ${resolutionInfo.steps.joinToString(" → ")} → ${resolutionInfo.resolved}"
         } else {
             "$varName → ${resolutionInfo.resolved}"
         }
+    }
+
+    private fun generateCssAliasHint(
+        project: Project,
+        varName: String,
+        scope: GlobalSearchScope,
+        rawValues: Iterable<String>
+    ): String? {
+        val preprocessorOnlyResolution = PreprocessorUtil.resolveVariableWithSteps(project, varName, scope)
+        val cssVarName = rawValues.firstNotNullOfOrNull { extractCssVarAlias(it) }
+            ?: extractCssVarAlias(preprocessorOnlyResolution.resolved)
+            ?: return null
+
+        val cssScope = ScopeUtil.effectiveCssIndexingScope(
+            project,
+            CssVarsAssistantSettings.getInstance()
+        )
+        val rawEntries = CssVariableIndexValueCodec.decode(
+            FileBasedIndex.getInstance().getValues(CSS_VARIABLE_INDEXER_NAME, cssVarName, cssScope)
+        )
+        if (rawEntries.isEmpty()) return null
+
+        val rawValue = rawEntries.find { it.context == "default" }?.value
+            ?: rawEntries.first().value
+        val cssInfo = resolveVarValue(project, rawValue)
+        val prefixSteps = preprocessorOnlyResolution.steps.ifEmpty { listOf(varName) }
+        val cssSteps = if (cssInfo.steps.isNotEmpty() && cssInfo.original != cssInfo.resolved) {
+            cssInfo.steps + cssInfo.resolved
+        } else {
+            listOf(cssInfo.resolved)
+        }
+
+        return "Resolution: ${(prefixSteps + "var($cssVarName)" + cssSteps).joinToString(" → ")}"
     }
 
     private fun isPreprocessorVariable(varName: String): Boolean =
@@ -345,4 +427,5 @@ object CssVariableDocumentationService {
             val numericRaw = entry.resInfo.resolved.replace(Regex("[^0-9.+\\-]"), "").toDoubleOrNull() ?: pxVal
             unit != "px" || pxVal.roundToInt() != numericRaw.roundToInt()
         }
+
 }
