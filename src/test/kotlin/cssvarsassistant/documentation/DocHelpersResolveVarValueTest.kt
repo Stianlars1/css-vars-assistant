@@ -200,6 +200,42 @@ class DocHelpersResolveVarValueTest : CssVarsAssistantPlatformTestCase() {
         assertEquals(listOf("\$surface-token", "var(--surface)"), info.steps)
     }
 
+    fun testScssAliasWithFallbackToCssCustomPropertyResolvesThroughCssVariable() {
+        addProjectStylesheet(
+            "tokens.scss",
+            """
+            :root {
+              --surface: #112233;
+            }
+
+            ${'$'}surface-token: var(--surface, #ffffff);
+            """
+        )
+
+        val info = resolveVarValue(project, "\$surface-token")
+
+        assertEquals("#112233", info.resolved)
+        assertEquals(listOf("\$surface-token", "var(--surface)"), info.steps)
+    }
+
+    fun testCompoundScssValueWithCssCustomPropertyStaysLiteral() {
+        addProjectStylesheet(
+            "tokens.scss",
+            """
+            :root {
+              --surface: #112233;
+            }
+
+            ${'$'}surface-border: 1px solid var(--surface);
+            """
+        )
+
+        val info = resolveVarValue(project, "\$surface-border")
+
+        assertEquals("1px solid var(--surface)", info.resolved)
+        assertEquals(listOf("\$surface-border"), info.steps)
+    }
+
     fun testLessAliasToCssCustomPropertyResolvesThroughCssVariable() {
         addProjectStylesheet(
             "tokens.less",

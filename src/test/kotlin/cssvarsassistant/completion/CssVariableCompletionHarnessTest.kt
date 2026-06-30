@@ -471,9 +471,62 @@ class CssVariableCompletionHarnessTest : CssVarsAssistantPlatformTestCase() {
         val html = CssVariableDocumentationService.generateDocumentation(variableElement, "\$foo")
 
         requireNotNull(html)
+        assertTrue(html, html.contains("\$foo"))
         assertTrue(html, html.contains("--foo"))
         assertTrue(html, html.contains("red"))
         assertTrue(html, html.contains("blue"))
+    }
+
+    fun testScssAliasWithFallbackDocumentationShowsCssVariableContextsAndHint() {
+        configureProjectFile(
+            "app.scss",
+            """
+            :root {
+              --surface: #112233;
+            }
+
+            ${'$'}surface-token: var(--surface, #ffffff);
+
+            .test {
+              color: ${'$'}surface-token<caret>;
+            }
+            """
+        )
+
+        val variableElement = requireNotNull(myFixture.file.findElementAt(myFixture.caretOffset - 1))
+        val html = CssVariableDocumentationService.generateDocumentation(variableElement, "\$surface-token")
+
+        requireNotNull(html)
+        assertTrue(html, html.contains("\$surface-token"))
+        assertTrue(html, html.contains("--surface"))
+        assertTrue(html, html.contains("#112233"))
+
+        val hint = CssVariableDocumentationService.generateHint(variableElement, "\$surface-token")
+        assertEquals("Resolution: \$surface-token → var(--surface) → #112233", hint)
+    }
+
+    fun testCompoundScssValueWithCssVarDocumentationStaysLiteral() {
+        configureProjectFile(
+            "app.scss",
+            """
+            :root {
+              --surface: #112233;
+            }
+
+            ${'$'}surface-border: 1px solid var(--surface);
+
+            .test {
+              border: ${'$'}surface-border<caret>;
+            }
+            """
+        )
+
+        val variableElement = requireNotNull(myFixture.file.findElementAt(myFixture.caretOffset - 1))
+        val html = CssVariableDocumentationService.generateDocumentation(variableElement, "\$surface-border")
+
+        requireNotNull(html)
+        assertTrue(html, html.contains("\$surface-border"))
+        assertTrue(html, html.contains("1px solid var(--surface)"))
     }
 
     fun testScssVariableCompletionResolvesAliasToCssCustomPropertyValue() {

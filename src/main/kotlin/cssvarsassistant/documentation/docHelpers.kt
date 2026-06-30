@@ -33,7 +33,7 @@ fun resolveVarValue(
     try {
         ProgressManager.checkCanceled()
 
-        Regex("""var\(\s*(--[\w-]+)\s*\)""").find(raw)?.let { m ->
+        Regex("""var\(\s*(--[\w-]+)\s*(?:,[^()]*)?\)""").find(raw)?.let { m ->
             val ref = m.groupValues[1]
             if (ref !in visited) {
                 val newSteps = steps + "var($ref)"
@@ -111,7 +111,7 @@ fun findPreprocessorVariableValue(
             emptySet(),
             currentSteps
         )
-        if (Regex("""var\(\s*--[\w-]+\s*\)""").containsMatchIn(resolution.resolved)) {
+        if (extractCssVarAlias(resolution.resolved) != null) {
             return resolveVarValue(
                 project = project,
                 raw = resolution.resolved,
@@ -186,3 +186,10 @@ fun lastLocalValueInFile(fileText: String, varName: String): String? =
         .findAll(CssTextUtil.stripCssComments(fileText))
         .map { it.groupValues[1].trim() }
         .lastOrNull()
+
+private val PURE_CSS_VAR_ALIAS = Regex(
+    """^\s*var\(\s*(--[\w-]+)\s*(?:,[^()]*)?\)\s*;?\s*$"""
+)
+
+fun extractCssVarAlias(rawValue: String): String? =
+    PURE_CSS_VAR_ALIAS.find(rawValue)?.groupValues?.get(1)
