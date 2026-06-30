@@ -3,6 +3,23 @@
 All notable changes to this project will be documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/) and semantic-versioning.
 
+## [1.9.1] – 2026-06-30
+
+Bug-fix release closing issue [#26](https://github.com/Stianlars1/css-vars-assistant/issues/26), reported with a PR by [@caseyjhol](https://github.com/caseyjhol).
+
+### Fixed
+- **SCSS / LESS variable aliases to CSS custom properties:** Hovering `$foo` when `$foo: var(--foo)` now shows the underlying CSS custom property's rich documentation table instead of a literal `var(--foo)` row. This preserves theme rows, swatches, hex values, source line attribution, and contrast details for design systems that expose tokens as Sass / LESS aliases.
+- **Clear alias title:** The popup title keeps both sides visible, e.g. `$foo → var(--foo)` / `@foo → var(--foo)`, so users can see the preprocessor variable they hovered and the CSS custom property it delegates to.
+- **Fallback aliases:** Pure aliases with fallbacks, such as `var(--foo, #fff)`, now resolve through the indexed CSS custom property when available.
+- **Quick-info hint chain:** Hints now include the bridge, e.g. `$token → var(--token) → #112233`, instead of jumping straight from the preprocessor variable to the resolved value.
+
+### Guardrails
+- **Compound expressions stay literal:** Values such as `1px solid var(--foo)` are intentionally not treated as pure aliases. They remain on the literal preprocessor-value documentation path so the popup does not misrepresent mixed expressions as a single themed CSS variable.
+- No settings change or index rebuild required.
+
+### Testing
+- Added regression coverage for SCSS and LESS alias resolution, fallback aliases, documentation title preservation, quick-info hints, completion previews, and compound-expression boundaries.
+
 ## [1.9.0] – 2026-05-19
 
 Feature release inspired by [Discussion #24](https://github.com/Stianlars1/css-vars-assistant/discussions/24), suggested by [@LorincJuraj](https://github.com/LorincJuraj).

@@ -6,7 +6,7 @@
 
 If you find CSS Variables Assistant helpful, please consider rating it on [JetBrains Marketplace](https://plugins.jetbrains.com/plugin/27392-css-variables-assistant/reviews) ★★★★★ 🙏.
 
-**Version:** 1.9.0<br/>
+**Version:** 1.9.1<br/>
 **Compatible IDEs:** JetBrains IDEs with bundled JavaScript + CSS support — IntelliJ IDEA Ultimate, WebStorm, GoLand, PhpStorm, PyCharm Professional, and RubyMine.  
 **Author:** Stian Larsen  
 **Repo:** [github.com/Stianlars1/css-vars-assistant](https://github.com/Stianlars1/css-vars-assistant)
@@ -18,6 +18,21 @@ If you find CSS Variables Assistant helpful, please consider rating it on [JetBr
 
 
 Supercharge your CSS custom properties and preprocessor variables in JetBrains IDEs with advanced autocomplete, documentation, and debugging tools.
+---
+
+## ✨ What's new in 1.9.1
+
+Bug-fix release closing [issue #26](https://github.com/Stianlars1/css-vars-assistant/issues/26), reported with a PR by [@caseyjhol](https://github.com/caseyjhol).
+
+| Category | Highlights |
+|---|---|
+| **Alias-aware hover for `$foo: var(--foo)`** | Sass / LESS variables that are pure aliases to CSS custom properties now show the same theme rows, swatches, hex values, source column, and contrast data as hovering the underlying `var(--foo)`. |
+| **Clear alias title** | The popup keeps both sides visible, e.g. `$foo → var(--foo)`, so you can see what you hovered and which CSS custom property powers it. |
+| **Fallback aliases and hints** | Direct aliases like `var(--foo, #fff)` resolve through the indexed CSS variable, and quick-info now shows the bridge: `$token → var(--token) → #112233`. |
+| **Compound values stay literal** | Values like `1px solid var(--foo)` are not treated as pure aliases, avoiding misleading theme tables for mixed expressions. |
+
+[Full Changelog →](https://github.com/Stianlars1/css-vars-assistant/blob/main/CHANGELOG.MD)
+
 ---
 
 ## ✨ What's new in 1.9.0

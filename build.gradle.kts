@@ -14,7 +14,7 @@ plugins {
 }
 
 group = "com.stianlarsen"
-version = "1.9.0"
+version = "1.9.1"
 
 repositories {
     mavenCentral()
@@ -108,7 +108,18 @@ intellijPlatform {
   CSS variables, CSS custom properties, design tokens, <code>var(--token)</code>, <code>var()</code> autocomplete, Tailwind CSS, shadcn/ui, Radix UI, Radix Themes, Material Design tokens, MUI, Open Props, CSS cascade, <code>:root</code>, <code>calc()</code>, nested CSS variables, recursive variable resolution, dark mode tokens, theme variables, WebStorm CSS plugin, IntelliJ IDEA CSS autocomplete, JetBrains plugin design tokens, SCSS variables, Sass variables, LESS variables, <code>@import</code> resolution, JSDoc CSS, WCAG contrast checker, px equivalent, rem to px converter, hex to HSL, colour swatch, CSS-in-JS bridge.
 </p>
 
-<h3>✨ New in 1.9.0</h3>
+<h3>✨ New in 1.9.1</h3>
+<p>
+  Bug-fix release closing <a href="https://github.com/Stianlars1/css-vars-assistant/issues/26">issue #26</a>, reported with a PR by <a href="https://github.com/caseyjhol">@caseyjhol</a>. Sass and LESS variables that are pure aliases to CSS custom properties now keep the full CSS Variables Assistant hover experience.
+</p>
+<ul>
+  <li><b>Alias-aware hover for preprocessor variables:</b> hovering <code>&#36;foo</code> or <code>@foo</code> when it is defined as <code>var(--foo)</code> now shows the same theme rows, swatches, hex values, source column, and contrast data as hovering the underlying <code>var(--foo)</code>.</li>
+  <li><b>Fallback aliases are covered:</b> direct aliases like <code>var(--foo, #fff)</code> resolve through the CSS custom property while preserving the fallback-safe syntax path.</li>
+  <li><b>Quick-info hints show the chain:</b> hints now make the relationship explicit, for example <code>&#36;token → var(--token) → #112233</code>.</li>
+  <li><b>Compound expressions stay honest:</b> values like <code>1px solid var(--foo)</code> remain on the literal preprocessor-value path instead of being misrepresented as a single themed CSS variable.</li>
+</ul>
+
+<h3>Previously in 1.9.0</h3>
 <p>
   Feature release inspired by <a href="https://github.com/Stianlars1/css-vars-assistant/discussions/24">Discussion #24</a> from <a href="https://github.com/LorincJuraj">@LorincJuraj</a>. CSS Variables Assistant now supports direct SCSS/Sass <code>$...</code> and LESS <code>@...</code> variables in completion and quick documentation, not only CSS custom properties inside <code>var(...)</code>.
 </p>
@@ -209,6 +220,23 @@ intellijPlatform {
 """.trimIndent()
 
         changeNotes = """
+<h2>1.9.1 – 2026-06-30</h2>
+<h3>Fixed</h3>
+<ul>
+  <li><b>SCSS / LESS variables that alias CSS custom properties (issue <a href="https://github.com/Stianlars1/css-vars-assistant/issues/26">#26</a>, reported by @caseyjhol):</b> hovering <code>&#36;foo</code> when <code>&#36;foo: var(--foo)</code> now surfaces the underlying CSS variable's full theme table, swatches, hex values, source information, and contrast details instead of reducing the popup to a literal <code>var(--foo)</code> value.</li>
+  <li><b>Alias labels stay understandable:</b> the hover title keeps the preprocessor variable visible as <code>&#36;foo → var(--foo)</code> / <code>@foo → var(--foo)</code>, so users can see both what they hovered and which CSS custom property powers it.</li>
+  <li><b>Fallback aliases work:</b> direct aliases such as <code>var(--foo, #fff)</code> now resolve through <code>--foo</code> when the CSS variable is indexed.</li>
+  <li><b>Quick-info hints include the bridge:</b> hints now show the alias chain, e.g. <code>&#36;token → var(--token) → #112233</code>.</li>
+  <li><b>Compound expressions stay literal:</b> values such as <code>1px solid var(--foo)</code> are intentionally not treated as pure aliases.</li>
+</ul>
+<h3>Testing</h3>
+<ul>
+  <li>Added regression coverage for SCSS and LESS alias resolution, fallback aliases, quick-info hints, documentation title preservation, and compound-expression boundaries.</li>
+</ul>
+<h3>Notes</h3>
+<ul>
+  <li>No settings change or index rebuild required.</li>
+</ul>
 <h2>1.9.0 – 2026-05-19</h2>
 <h3>Added</h3>
 <ul>
