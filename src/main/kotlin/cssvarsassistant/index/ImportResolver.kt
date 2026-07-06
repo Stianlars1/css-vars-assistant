@@ -10,10 +10,23 @@ object ImportResolver {
     private val LOG = Logger.getInstance(ImportResolver::class.java)
     private val IMPORT_PATTERN =
         Regex("""@import\s+(?:"([^"]+)"|'([^']+)'|\burl\(\s*(?:"([^"]+)"|'([^']+)'|([^)]+))\s*\))""")
+    private val SASS_MODULE_PATTERN =
+        Regex("""@(use|forward)\s+(?:"([^"]+)"|'([^']+)')""")
 
     data class ResolvedImport(
         val requestedPath: String,
         val resolvedFile: VirtualFile?
+    )
+
+    private enum class EntrypointKind {
+        SASS,
+        CSS,
+        OTHER
+    }
+
+    private data class EntrypointCandidate(
+        val path: String,
+        val kind: EntrypointKind
     )
 
     fun resolveDirectImports(
@@ -108,6 +121,13 @@ object ImportResolver {
         IMPORT_PATTERN.findAll(content).forEach { match ->
             // Extract the actual import path from any of the capture groups
             val importPath = match.groupValues.drop(1).firstOrNull { it.isNotBlank() }
+            if (importPath != null) {
+                imports.add(importPath.trim())
+            }
+        }
+
+        SASS_MODULE_PATTERN.findAll(content).forEach { match ->
+            val importPath = match.groupValues.drop(2).firstOrNull { it.isNotBlank() }
             if (importPath != null) {
                 imports.add(importPath.trim())
             }
@@ -270,6 +290,233 @@ object ImportResolver {
             }
         }
 
+        resolvePackageDirectory(nodeModules, pathSegments)?.let { packageDir ->
+            val packageRootSegments = packageRootSegments(pathSegments)
+            val packageSubPath = pathSegments.drop(packageRootSegments.size).joinToString("/")
+            resolvePackageJsonEntrypoint(packageDir, packageSubPath, prioritizedExtensions)?.let { return it }
+        }
+
+        return null
+    }
+
+    private fun packageRootSegments(pathSegments: List<String>): List<String> {
+        if (pathSegments.isEmpty()) return emptyList()
+        return when {
+            pathSegments.first().startsWith("@") && pathSegments.size >= 2 -> pathSegments.take(2)
+            else -> pathSegments.take(1)
+        }
+    }
+
+    private fun resolvePackageDirectory(nodeModules: VirtualFile, pathSegments: List<String>): VirtualFile? {
+        if (pathSegments.isEmpty()) return null
+        val packageRootSegments = packageRootSegments(pathSegments)
+
+        var current = nodeModules
+        for (segment in packageRootSegments) {
+            current = current.findChild(segment) ?: return null
+        }
+        return if (current.isDirectory) current else null
+    }
+
+    private fun resolvePackageJsonEntrypoint(
+        packageDir: VirtualFile,
+        packageSubPath: String,
+        prioritizedExtensions: List<String>
+    ): VirtualFile? {
+        val packageJson = packageDir.findChild("package.json")
+            ?.takeIf { !it.isDirectory && it.exists() }
+            ?: return null
+        val packageJsonContent = try {
+            String(packageJson.contentsToByteArray())
+        } catch (_: Exception) {
+            return null
+        }
+
+        val exportsObject = extractObjectField(packageJsonContent, "exports")
+        if (packageSubPath.isNotBlank()) {
+            val subpathKey = "./$packageSubPath"
+            val subpathCandidates = extractExportCandidates(exportsObject, subpathKey)
+            return resolveFirstCandidate(packageDir, subpathCandidates, prioritizedExtensions)
+        }
+
+        val topLevelJson = removeObjectField(packageJsonContent, "exports")
+        val rootExportCandidates = extractExportCandidates(exportsObject, ".")
+        val explicitCssSubpathCandidates = extractExportCandidates(exportsObject, "./css")
+
+        val topLevelCandidates = mutableListOf<EntrypointCandidate>()
+        extractTopLevelStringField(topLevelJson, "sass")?.let {
+            topLevelCandidates += EntrypointCandidate(it, EntrypointKind.SASS)
+        }
+        extractTopLevelStringField(topLevelJson, "css")?.let {
+            topLevelCandidates += EntrypointCandidate(it, EntrypointKind.CSS)
+        }
+        extractTopLevelStringField(topLevelJson, "style")?.let {
+            topLevelCandidates += EntrypointCandidate(it, EntrypointKind.CSS)
+        }
+        extractTopLevelStringField(topLevelJson, "main")?.let {
+            topLevelCandidates += EntrypointCandidate(it, EntrypointKind.OTHER)
+        }
+
+        val sassCandidates = (rootExportCandidates + topLevelCandidates)
+            .filter { it.kind == EntrypointKind.SASS }
+        var firstResolvedSass: VirtualFile? = null
+        for (candidate in sassCandidates) {
+            val resolved = resolveEntrypointCandidate(packageDir, candidate.path, prioritizedExtensions) ?: continue
+            if (firstResolvedSass == null) {
+                firstResolvedSass = resolved
+            }
+            if (hasConcreteCssVariableDeclarations(resolved)) {
+                return resolved
+            }
+        }
+
+        val cssCandidates = (rootExportCandidates + topLevelCandidates + explicitCssSubpathCandidates)
+            .filter { it.kind == EntrypointKind.CSS }
+        resolveFirstCandidate(packageDir, cssCandidates, prioritizedExtensions)?.let { return it }
+
+        val otherCandidates = (rootExportCandidates + topLevelCandidates)
+            .filter { it.kind == EntrypointKind.OTHER }
+        resolveFirstCandidate(packageDir, otherCandidates, prioritizedExtensions)?.let { return it }
+
+        firstResolvedSass?.let { return it }
+
+        return null
+    }
+
+    private fun resolveFirstCandidate(
+        packageDir: VirtualFile,
+        candidates: List<EntrypointCandidate>,
+        prioritizedExtensions: List<String>
+    ): VirtualFile? {
+        val seen = linkedSetOf<String>()
+        for (candidate in candidates) {
+            if (!seen.add(candidate.path)) continue
+            resolveEntrypointCandidate(packageDir, candidate.path, prioritizedExtensions)?.let { return it }
+        }
+        return null
+    }
+
+    private fun resolveEntrypointCandidate(
+        packageDir: VirtualFile,
+        entry: String,
+        prioritizedExtensions: List<String>
+    ): VirtualFile? {
+        val normalized = entry.removePrefix("./").trim()
+        if (normalized.isEmpty()) return null
+        val pathSegments = normalized.split('/').filter { it.isNotEmpty() }
+        if (pathSegments.isEmpty()) return null
+
+        if (pathSegments.last().contains('.')) {
+            var current = packageDir
+            for (segment in pathSegments) {
+                current = current.findChild(segment) ?: return null
+            }
+            return if (current.exists() && !current.isDirectory && isStylesheetFile(current)) current else null
+        }
+
+        for (ext in prioritizedExtensions) {
+            for (candidate in stylesheetImportCandidates(pathSegments, ext)) {
+                var current = packageDir
+                for (segment in candidate) {
+                    current = current.findChild(segment) ?: break
+                }
+                if (current.exists() && !current.isDirectory && isStylesheetFile(current)) {
+                    return current
+                }
+            }
+        }
+
+        return null
+    }
+
+    private fun extractTopLevelStringField(json: String, field: String): String? =
+        Regex("""\"${Regex.escape(field)}\"\s*:\s*\"([^\"]+)\"""")
+            .find(json)
+            ?.groupValues
+            ?.getOrNull(1)
+
+    private fun extractExportCandidates(exportsObject: String?, exportKey: String): List<EntrypointCandidate> {
+        if (exportsObject.isNullOrBlank()) return emptyList()
+        val candidates = mutableListOf<EntrypointCandidate>()
+
+        extractTopLevelStringField(exportsObject, exportKey)?.let { exportValue ->
+            candidates += EntrypointCandidate(exportValue, classifyEntrypointKind(exportKey, exportValue))
+        }
+
+        extractObjectField(exportsObject, exportKey)?.let { exportValueObject ->
+            listOf("css", "style", "sass", "default", "import", "require", "main").forEach { key ->
+                extractTopLevelStringField(exportValueObject, key)?.let { value ->
+                    candidates += EntrypointCandidate(value, classifyEntrypointKind(key, value))
+                }
+            }
+        }
+
+        return candidates
+    }
+
+    private fun classifyEntrypointKind(key: String, value: String): EntrypointKind {
+        val normalizedKey = key.lowercase()
+        val normalizedValue = value.lowercase()
+        return when {
+            normalizedKey == "css" || normalizedKey == "style" -> EntrypointKind.CSS
+            normalizedKey == "sass" -> EntrypointKind.SASS
+            normalizedValue.endsWith(".css") -> EntrypointKind.CSS
+            normalizedValue.endsWith(".scss") || normalizedValue.endsWith(".sass") -> EntrypointKind.SASS
+            else -> EntrypointKind.OTHER
+        }
+    }
+
+    private fun hasConcreteCssVariableDeclarations(file: VirtualFile): Boolean =
+        try {
+            val content = String(file.contentsToByteArray())
+            CssVariableEntryParser.parse(content, file.extension?.lowercase()).isNotEmpty()
+        } catch (_: Exception) {
+            false
+        }
+
+    private fun extractObjectField(json: String, field: String): String? {
+        val keyPattern = Regex("""\"${Regex.escape(field)}\"\s*:\s*\{""")
+        val match = keyPattern.find(json) ?: return null
+        val openBrace = json.indexOf('{', match.range.first)
+        if (openBrace < 0) return null
+        val closeBrace = findMatchingBrace(json, openBrace) ?: return null
+        return json.substring(openBrace, closeBrace + 1)
+    }
+
+    private fun removeObjectField(json: String, field: String): String {
+        val keyPattern = Regex("""\"${Regex.escape(field)}\"\s*:\s*\{""")
+        val match = keyPattern.find(json) ?: return json
+        val openBrace = json.indexOf('{', match.range.first)
+        if (openBrace < 0) return json
+        val closeBrace = findMatchingBrace(json, openBrace) ?: return json
+        return json.removeRange(match.range.first, closeBrace + 1)
+    }
+
+    private fun findMatchingBrace(text: String, openIndex: Int): Int? {
+        var depth = 0
+        var inString = false
+        var escaped = false
+        for (idx in openIndex until text.length) {
+            val ch = text[idx]
+            if (inString) {
+                if (escaped) {
+                    escaped = false
+                } else if (ch == '\\') {
+                    escaped = true
+                } else if (ch == '"') {
+                    inString = false
+                }
+                continue
+            }
+            when (ch) {
+                '"' -> inString = true
+                '{' -> depth++
+                '}' -> {
+                    depth--
+                    if (depth == 0) return idx
+                }
+            }
+        }
         return null
     }
 
