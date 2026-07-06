@@ -726,6 +726,39 @@ class CssVariableCompletionHarnessTest : CssVarsAssistantPlatformTestCase() {
         assertTrue(html, html.contains("8px"))
     }
 
+    fun testCssVariableDocumentationCanonicalizesRootAndLightSelectorVariants() {
+        configureProjectFile(
+            "app.css",
+            """
+            :root, [data-theme=light] {
+              --foo: blue;
+            }
+
+            :root, [data-theme="light"] {
+              --foo: blue;
+            }
+
+            [data-theme='dark'] {
+              --foo: green;
+            }
+
+            .test {
+              border-color: var(--foo<caret>);
+            }
+            """
+        )
+
+        val variableElement = requireNotNull(myFixture.file.findElementAt(myFixture.caretOffset - 1))
+
+        val html = CssVariableDocumentationService.generateDocumentation(variableElement, "--foo")
+        requireNotNull(html)
+
+        assertTrue(html, html.contains("Default/Light"))
+        assertTrue(html, html.contains("Dark"))
+        assertFalse(html, html.contains(":root, [data-theme=light]"))
+        assertFalse(html, html.contains(":root, [data-theme=&quot;light&quot;]"))
+    }
+
     fun testLessVariableDocumentationResolvesAliasChain() {
         addProjectStylesheet(
             "tokens.less",
