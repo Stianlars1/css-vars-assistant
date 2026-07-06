@@ -278,8 +278,10 @@ internal fun java.awt.Color.toHexRgb(): String =
     "#%02x%02x%02x".format(red, green, blue)
 
 fun contextLabel(ctx: String, isColor: Boolean, prettifyTheme: Boolean = true): String {
-    if (ctx == "default") return if (isColor) "Light mode" else "Default"
+    if (ctx == "default") return "Default"
     if (ctx.equals("default/light", ignoreCase = true)) return "Default/Light"
+
+    rootPlusThemeLabel(ctx)?.let { return it }
 
     // Phase 8a / issue #19: if the context is (or begins with) a raw CSS
     // selector — attribute, class, id, pseudo-class — render it verbatim.
@@ -337,6 +339,42 @@ fun contextLabel(ctx: String, isColor: Boolean, prettifyTheme: Boolean = true): 
                 .takeIf { it.isNotEmpty() } ?: "Media query"
         }
     }
+}
+
+private fun rootPlusThemeLabel(ctx: String): String? {
+    if (',' !in ctx) return null
+    val selectors = ctx.split(',')
+        .map { it.trim() }
+        .filter { it.isNotBlank() }
+    if (selectors.isEmpty()) return null
+
+    val rootLike = setOf(":root", ":host", "html", "body", "*")
+    val hasRoot = selectors.any { it.lowercase() in rootLike }
+    if (!hasRoot) return null
+
+    val theme = selectors
+        .asSequence()
+        .mapNotNull { selector ->
+            val attr = Regex("""^\[[\w-]+\s*=\s*['"]?([\w-]+)['"]?]$""").matchEntire(selector)
+                ?.groupValues
+                ?.getOrNull(1)
+            if (attr != null) return@mapNotNull attr
+
+            Regex("""^\.([\w][\w-]*)$""").matchEntire(selector)
+                ?.groupValues
+                ?.getOrNull(1)
+        }
+        .firstOrNull { raw ->
+            raw.lowercase() !in rootLike
+        }
+        ?: return null
+
+    val humanizedTheme = theme
+        .replace('-', ' ')
+        .replace('_', ' ')
+        .replaceFirstChar { c -> if (c.isLowerCase()) c.titlecase() else c.toString() }
+
+    return "Default/$humanizedTheme"
 }
 
 // Phase 8b — Source-column formatter. Prefers `file.css:line` when the index

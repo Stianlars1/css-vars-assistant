@@ -111,6 +111,9 @@ class PrettifySelectorTest {
         assertEquals("Dark", contextLabel(".dark", isColor = false))
         assertEquals(".parent > .child", contextLabel(".parent > .child", isColor = false))
         assertEquals("Default/Light", contextLabel("default/light", isColor = false))
+        assertEquals("Default", contextLabel("default", isColor = true))
+        assertEquals("Default/Light", contextLabel(""":root, [data-theme="light"]""", isColor = false))
+        assertEquals("Default/Light", contextLabel(""":root, [data-theme=light]""", isColor = false))
     }
 
     // 1.8.3 setting: `prettifyTheme = false` keeps the raw selector so

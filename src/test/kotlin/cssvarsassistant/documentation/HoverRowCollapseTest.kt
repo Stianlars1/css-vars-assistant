@@ -129,4 +129,34 @@ class HoverRowCollapseTest {
             collapse(rows)
         )
     }
+
+    @Test
+    fun `merges Default and Light into Default slash Light`() {
+        val rows = listOf(
+            Row("Default", "blue"),
+            Row("Light", "blue"),
+            Row("Dark", "green")
+        )
+
+        assertEquals(
+            listOf(
+                Row("Default/Light", "blue"),
+                Row("Dark", "green")
+            ),
+            collapse(rows)
+        )
+    }
+
+    @Test
+    fun `drops standalone Default when Default slash Theme already exists`() {
+        val rows = listOf(
+            Row("Default", "blue"),
+            Row("Default/Light", "blue")
+        )
+
+        assertEquals(
+            listOf(Row("Default/Light", "blue")),
+            collapse(rows)
+        )
+    }
 }

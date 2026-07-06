@@ -36,7 +36,8 @@ internal fun <T> collapseRowsByValue(
     }
 
     return firstByValue.map { (v, first) ->
-        val joined = labelsByValue[v]!!.distinct().joinToString(", ")
+        val mergedLabels = canonicalizeContextLabels(labelsByValue[v]!!.distinct())
+        val joined = mergedLabels.joinToString(", ")
         val label = if (joined.length <= maxLabelLength) {
             joined
         } else {
@@ -44,4 +45,43 @@ internal fun <T> collapseRowsByValue(
         }
         merge(first, label)
     }
+}
+
+private fun canonicalizeContextLabels(labels: List<String>): List<String> {
+    if (labels.isEmpty()) return labels
+    val normalized = labels.toMutableList()
+
+    // If a merged group already includes a Default/<Theme> label, a standalone
+    // Default label adds no information and creates noisy output.
+    if (normalized.any { it.startsWith("Default/") }) {
+        normalized.remove("Default")
+    }
+
+    // When the same resolved value appears for both Default and a theme label,
+    // collapse that pair into Default/<Theme> for clearer semantic output.
+    val defaultIndex = normalized.indexOf("Default")
+    if (defaultIndex >= 0) {
+        val themeIndex = normalized.indexOfFirst { label ->
+            label != "Default" &&
+                !label.startsWith("Default/") &&
+                isThemeLabelCandidate(label)
+        }
+        if (themeIndex >= 0) {
+            val theme = normalized[themeIndex]
+            normalized.removeAt(themeIndex)
+            normalized.remove("Default")
+            normalized.add(0, "Default/$theme")
+        }
+    }
+
+    return normalized.distinct()
+}
+
+private fun isThemeLabelCandidate(label: String): Boolean {
+    if (label.isBlank()) return false
+    if (label.contains(",")) return false
+    if (label.contains(":")) return false
+    if (label.contains("(") || label.contains(")")) return false
+    if (label.contains(" mode", ignoreCase = true)) return false
+    return true
 }
