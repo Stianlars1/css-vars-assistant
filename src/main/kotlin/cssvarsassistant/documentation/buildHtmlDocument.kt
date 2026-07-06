@@ -279,6 +279,7 @@ internal fun java.awt.Color.toHexRgb(): String =
 
 fun contextLabel(ctx: String, isColor: Boolean, prettifyTheme: Boolean = true): String {
     if (ctx == "default") return if (isColor) "Light mode" else "Default"
+    if (ctx.equals("default/light", ignoreCase = true)) return "Default/Light"
 
     // Phase 8a / issue #19: if the context is (or begins with) a raw CSS
     // selector — attribute, class, id, pseudo-class — render it verbatim.

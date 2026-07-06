@@ -6,7 +6,7 @@ object RankUtil {
         val c = ctx.lowercase().trim()
 
         // 1. Default and light mode (highest priority)
-        if (c == "default" || c.isEmpty() ||
+        if (c == "default" || c == "default/light" || c.isEmpty() ||
             (c.contains("prefers-color-scheme") && c.contains("light"))
         ) {
             return Triple(0, null, c)

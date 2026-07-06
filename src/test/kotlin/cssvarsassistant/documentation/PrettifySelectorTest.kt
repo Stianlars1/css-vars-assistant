@@ -110,6 +110,7 @@ class PrettifySelectorTest {
         assertEquals("Catppuccin", contextLabel("""[data-theme="catppuccin"]""", isColor = false))
         assertEquals("Dark", contextLabel(".dark", isColor = false))
         assertEquals(".parent > .child", contextLabel(".parent > .child", isColor = false))
+        assertEquals("Default/Light", contextLabel("default/light", isColor = false))
     }
 
     // 1.8.3 setting: `prettifyTheme = false` keeps the raw selector so

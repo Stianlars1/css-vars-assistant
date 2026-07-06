@@ -337,6 +337,42 @@ class CssVariableEntryParserTest {
         )
     }
 
+    @Test
+    fun `root plus light selector list normalizes to default slash light context`() {
+        val entries = CssVariableEntryParser.parse(
+            """
+            :root, [data-nova-theme="light"] {
+              --bg: white;
+            }
+            """.trimIndent()
+        )
+
+        assertEquals(
+            listOf(
+                ParsedCssVariableEntry("--bg", "default/light", "white", "", line = 2)
+            ),
+            entries
+        )
+    }
+
+    @Test
+    fun `root plus non-light selector list stays verbatim`() {
+        val entries = CssVariableEntryParser.parse(
+            """
+            :root, [data-nova-theme="dark"] {
+              --bg: black;
+            }
+            """.trimIndent()
+        )
+
+        assertEquals(
+            listOf(
+                ParsedCssVariableEntry("--bg", ":root, [data-nova-theme=\"dark\"]", "black", "", line = 2)
+            ),
+            entries
+        )
+    }
+
     // Phase 8a — pathological giant selector lists (120+ chars) should be
     // truncated with an ellipsis so the Context column doesn't blow up the
     // popup width. Target limit is ~60 chars.

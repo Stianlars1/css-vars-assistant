@@ -15,6 +15,7 @@ internal data class ParsedCssVariableEntry(
 internal object CssVariableEntryParser {
 
     private const val DEFAULT_CONTEXT = "default"
+    private const val DEFAULT_LIGHT_CONTEXT = "default/light"
 
     // Declaration terminator is `;` OR a lookahead for `}`. The second form
     // catches the last declaration in a minified block where the trailing
@@ -291,7 +292,26 @@ internal object CssVariableEntryParser {
         // (or intentionally skipped) elsewhere, never as selector labels.
         if (prefix.startsWith("@")) return null
         if (prefix.lowercase() in ROOT_LIKE_SELECTORS) return null
-        return truncateSelectorLabel(prefix)
+        return truncateSelectorLabel(normalizeSelectorContext(prefix))
+    }
+
+    private fun normalizeSelectorContext(prefix: String): String {
+        if (',' !in prefix) return prefix
+
+        val selectors = prefix.split(',')
+            .map { it.trim() }
+            .filter { it.isNotEmpty() }
+        if (selectors.isEmpty()) return prefix
+
+        val hasRootLike = selectors.any { it.lowercase() in ROOT_LIKE_SELECTORS }
+        val hasLightThemeSelector = selectors.any { selector ->
+            val lower = selector.lowercase()
+            lower !in ROOT_LIKE_SELECTORS &&
+                "light" in lower &&
+                (lower.startsWith("[") || lower.startsWith("."))
+        }
+
+        return if (hasRootLike && hasLightThemeSelector) DEFAULT_LIGHT_CONTEXT else prefix
     }
 
     private fun truncateSelectorLabel(label: String): String =
