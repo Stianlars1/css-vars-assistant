@@ -759,6 +759,96 @@ class CssVariableCompletionHarnessTest : CssVarsAssistantPlatformTestCase() {
         assertFalse(html, html.contains(":root, [data-theme=&quot;light&quot;]"))
     }
 
+    fun testCssVariableDocumentationCanonicalizesSelectorListPlusRootToDefaultLight() {
+        configureProjectFile(
+            "app.css",
+            """
+            :root, [data-theme=light] {
+              --foo: blue;
+            }
+
+            :root {
+              --foo: blue;
+            }
+
+            [data-theme='dark'] {
+              --foo: green;
+            }
+
+            .test {
+              border-color: var(--foo<caret>);
+            }
+            """
+        )
+
+        val variableElement = requireNotNull(myFixture.file.findElementAt(myFixture.caretOffset - 1))
+        val html = CssVariableDocumentationService.generateDocumentation(variableElement, "--foo")
+        requireNotNull(html)
+
+        assertTrue(html, html.contains("Default/Light"))
+        assertTrue(html, html.contains("Dark"))
+        assertFalse(html, html.contains("Light mode"))
+        assertFalse(html, html.contains(":root, [data-theme=light]"))
+    }
+
+    fun testCssVariableDocumentationUsesDefaultForRootOnlyLightBaseline() {
+        configureProjectFile(
+            "app.css",
+            """
+            :root {
+              --foo: blue;
+            }
+
+            [data-theme='dark'] {
+              --foo: green;
+            }
+
+            .test {
+              border-color: var(--foo<caret>);
+            }
+            """
+        )
+
+        val variableElement = requireNotNull(myFixture.file.findElementAt(myFixture.caretOffset - 1))
+        val html = CssVariableDocumentationService.generateDocumentation(variableElement, "--foo")
+        requireNotNull(html)
+
+        assertTrue(html, html.contains("Default"))
+        assertTrue(html, html.contains("Dark"))
+        assertFalse(html, html.contains("Light mode"))
+    }
+
+    fun testCssVariableDocumentationCanonicalizesRootAndExplicitLightSelectorsToDefaultLight() {
+        configureProjectFile(
+            "app.css",
+            """
+            :root {
+              --foo: blue;
+            }
+
+            [data-theme="light"] {
+              --foo: blue;
+            }
+
+            [data-theme='dark'] {
+              --foo: green;
+            }
+
+            .test {
+              border-color: var(--foo<caret>);
+            }
+            """
+        )
+
+        val variableElement = requireNotNull(myFixture.file.findElementAt(myFixture.caretOffset - 1))
+        val html = CssVariableDocumentationService.generateDocumentation(variableElement, "--foo")
+        requireNotNull(html)
+
+        assertTrue(html, html.contains("Default/Light"))
+        assertTrue(html, html.contains("Dark"))
+        assertFalse(html, html.contains("Light mode, Light"))
+    }
+
     fun testLessVariableDocumentationResolvesAliasChain() {
         addProjectStylesheet(
             "tokens.less",
