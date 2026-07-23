@@ -3,6 +3,33 @@
 All notable changes to this project will be documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/) and semantic-versioning.
 
+## [1.9.2] – 2026-07-23
+
+Bug-fix release closing issues [#28](https://github.com/Stianlars1/css-vars-assistant/issues/28) and [#29](https://github.com/Stianlars1/css-vars-assistant/issues/29), both reported with follow-up PRs ([#30](https://github.com/Stianlars1/css-vars-assistant/pull/30), [#31](https://github.com/Stianlars1/css-vars-assistant/pull/31)) by [@caseyjhol](https://github.com/caseyjhol).
+
+### Fixed
+- **Sass module imports (`@use` / `@forward`) are now indexed (issue [#28](https://github.com/Stianlars1/css-vars-assistant/issues/28)):** Modern Sass codebases use `@use "..."` and `@forward "..."` instead of legacy `@import`. Prior to 1.9.2 those at-rules were silently skipped by the import scanner, so any token file behind a `@use` chain never entered the index. Hover / docs / completion now discover CSS custom properties declared in `@use`d partials, including package-root imports (`@use "@vendor/design" as *`) and `@use "..." as ns` namespaced aliases.
+- **Package-root Sass imports fall back to the CSS entrypoint when the Sass root is mixin-only (issue [#28](https://github.com/Stianlars1/css-vars-assistant/issues/28)):** A common design-system shape is a Sass entrypoint that only exposes mixins (so consumers control when side-effect CSS is emitted) while the concrete `--*` assignments live in the compiled CSS distribution. The import resolver now consults `package.json`'s `exports`, `sass`, `style`, and `css` fields, and — when the Sass entrypoint contains no CSS custom properties — falls back to the package's `css` / `style` entrypoint so the tokens remain discoverable.
+- **Root + theme selector-list hover contexts are canonicalised (issue [#29](https://github.com/Stianlars1/css-vars-assistant/issues/29)):** All five reproduction cases in the issue now render a consistent, semantic label:
+  - `:root, [data-theme="light"] { --foo: blue }` → renders as `Default/Light` (one merged row) instead of `` `:root, [data-theme=light]` ``.
+  - `:root, [data-theme=light]` and `:root, [data-theme="light"]` (differing only in quoting) collapse into the same canonical context so the popup no longer shows two variants of the same row.
+  - `:root, [data-theme=light]` + a separate `:root` declaration for the same value collapse cleanly under `Default/Light` rather than producing a mixed `Light mode, :root, [data-theme=…]` cell.
+  - Plain `:root { --foo: … }` is labelled `Default` (previously `Light mode` when the value happened to be a colour — misrepresenting the baseline as an explicit Light colour-scheme theme).
+  - Plain `:root` + explicit `[data-theme="light"]` merge into `Default/Light` for equal values, and remain separate rows when the values differ.
+- **Theme name in `Default/<Theme>` is derived from the actual selector**, not hardcoded to `Light`. `[data-theme="nova-light"]` merges as `Default/Nova Light`, `.theme-sepia` merges as `Default/Theme sepia`, etc.
+
+### How the fix works
+- **Parser (`CssVariableEntryParser`):** Selector-list contexts are split at top-level commas (respecting `[…]`, `(…)`, and quoted attribute values so `:is(.a, .b)` stays intact). Attribute-equals selectors like `[data-theme="light"]`, `[data-theme='light']`, and `[data-theme=light]` are normalised to a single canonical shape at parse time. When a list mixes root-like (`:root`, `:host`, `html`, `body`, `*`) and non-root selectors, the parser emits two `ParsedCssVariableEntry` records for the declaration — one with context `default`, one with the canonical theme context — and downstream collapse-by-value merges them into a single row.
+- **Hover pipeline (`HoverRowCollapse.canonicalizeContextLabels`):** After rows are grouped by resolved value, a lone `Default` label is paired with its first theme-name sibling and rendered as `Default/<Theme>`. Multi-theme groups render as `Default/<Theme1>, <Theme2>, …`. Groups without `Default` keep the existing 1.8.3 comma-join behaviour, and groups that already contain a `Default/<Theme>` label drop the redundant standalone `Default`.
+- **Backward compatibility:** No settings change or index rebuild required. `contextLabel("default", isColor = true)` now returns `Default` instead of `Light mode` — the label is more accurate for files that only declare a baseline, and prevents the merge above from missing the pair. Existing regression tests in `HoverRowCollapseTest` (1.8.3 many-themes-share-a-value behaviour) still pass unchanged.
+
+### Testing
+- New parser coverage in `SelectorListCanonicalizationTest` for all five cases in #29, plus the "all-root-like list", "theme-only list dedup across quoting", and "mixed class + attribute list" edges.
+- New label-merge coverage in `DefaultThemeLabelMergeTest` for single-theme, duplicate-default, multi-theme, arbitrary-theme-name (Nova Light / Sepia), theme-only, and Default-alone cases.
+- New Sass-module import coverage in `SassModuleImportTest` and additional cases in `ImportResolverTest` for `@use "@vendor/design"`, `@use "..." as ns`, `@forward "..."`, `_index.scss` partial resolution, `package.json` `exports` / `sass` / `style` / `css` field precedence, and the CSS-fallback path when Sass roots are mixin-only.
+- New completion-harness fixtures in `CssVariableCompletionHarnessTest` for end-to-end hover documentation through a `@use` chain (both direct-Sass and CSS-fallback flavours).
+- `PrettifySelectorTest` extended to lock in `contextLabel("default", isColor = true) == "Default"`.
+
 ## [1.9.1] – 2026-06-30
 
 Bug-fix release closing issue [#26](https://github.com/Stianlars1/css-vars-assistant/issues/26), reported with a PR by [@caseyjhol](https://github.com/caseyjhol).

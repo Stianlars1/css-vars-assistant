@@ -14,7 +14,7 @@ plugins {
 }
 
 group = "com.stianlarsen"
-version = "1.9.1"
+version = "1.9.2"
 
 repositories {
     mavenCentral()
@@ -108,7 +108,19 @@ intellijPlatform {
   CSS variables, CSS custom properties, design tokens, <code>var(--token)</code>, <code>var()</code> autocomplete, Tailwind CSS, shadcn/ui, Radix UI, Radix Themes, Material Design tokens, MUI, Open Props, CSS cascade, <code>:root</code>, <code>calc()</code>, nested CSS variables, recursive variable resolution, dark mode tokens, theme variables, WebStorm CSS plugin, IntelliJ IDEA CSS autocomplete, JetBrains plugin design tokens, SCSS variables, Sass variables, LESS variables, <code>@import</code> resolution, JSDoc CSS, WCAG contrast checker, px equivalent, rem to px converter, hex to HSL, colour swatch, CSS-in-JS bridge.
 </p>
 
-<h3>✨ New in 1.9.1</h3>
+<h3>✨ New in 1.9.2</h3>
+<p>
+  Bug-fix release closing <a href="https://github.com/Stianlars1/css-vars-assistant/issues/28">issue #28</a> and <a href="https://github.com/Stianlars1/css-vars-assistant/issues/29">issue #29</a>, both reported with follow-up PRs (<a href="https://github.com/Stianlars1/css-vars-assistant/pull/30">#30</a>, <a href="https://github.com/Stianlars1/css-vars-assistant/pull/31">#31</a>) by <a href="https://github.com/caseyjhol">@caseyjhol</a>. Modern Sass module imports are now indexed, and root + theme selector-list hover contexts are canonicalised.
+</p>
+<ul>
+  <li><b>Sass module imports (<code>@use</code> / <code>@forward</code>) are indexed:</b> tokens declared in <code>@use</code>d partials feed hover, docs, and completion. Package-root imports such as <code>@use "@vendor/design" as *</code>, namespaced aliases (<code>@use "..." as ns</code>), and <code>_index.scss</code> partial resolution are all supported.</li>
+  <li><b>CSS-entrypoint fallback for mixin-only Sass roots:</b> when a package's Sass entrypoint contains no concrete <code>--*</code> declarations (common in "include core() once" mixin patterns), the resolver consults <code>package.json</code>'s <code>exports</code> / <code>sass</code> / <code>style</code> / <code>css</code> fields and falls back to the CSS distribution so tokens remain discoverable.</li>
+  <li><b>Canonical <code>Default/&lt;Theme&gt;</code> hover labels:</b> <code>:root, [data-theme="light"] { --foo: blue }</code> collapses to a single <code>Default/Light</code> row instead of showing the raw selector list. Attribute-equals quoting variants (<code>[data-theme=light]</code> vs <code>[data-theme="light"]</code>) are normalised to one canonical shape, so quoting-only variants no longer show up as duplicate rows.</li>
+  <li><b>Arbitrary theme names are preserved:</b> the theme in <code>Default/&lt;Theme&gt;</code> is derived from the actual selector, not hardcoded to Light. <code>[data-theme="nova-light"]</code> becomes <code>Default/Nova Light</code>, <code>.theme-sepia</code> becomes <code>Default/Theme sepia</code>, and so on.</li>
+  <li><b>Baseline is called <code>Default</code>:</b> plain <code>:root { --foo: … }</code> renders as <code>Default</code> even when the value is a colour. Previously colour-valued baselines were labelled <code>Light mode</code>, misrepresenting them as an explicit Light colour-scheme theme.</li>
+</ul>
+
+<h3>Previously in 1.9.1</h3>
 <p>
   Bug-fix release closing <a href="https://github.com/Stianlars1/css-vars-assistant/issues/26">issue #26</a>, reported with a PR by <a href="https://github.com/caseyjhol">@caseyjhol</a>. Sass and LESS variables that are pure aliases to CSS custom properties now keep the full CSS Variables Assistant hover experience.
 </p>
@@ -220,6 +232,26 @@ intellijPlatform {
 """.trimIndent()
 
         changeNotes = """
+<h2>1.9.2 – 2026-07-23</h2>
+<h3>Fixed</h3>
+<ul>
+  <li><b>Sass module imports (<code>@use</code> / <code>@forward</code>) are indexed (issue <a href="https://github.com/Stianlars1/css-vars-assistant/issues/28">#28</a>, PR <a href="https://github.com/Stianlars1/css-vars-assistant/pull/30">#30</a>, reported by @caseyjhol):</b> the import scanner now recognises <code>@use "..."</code> and <code>@forward "..."</code> in addition to legacy <code>@import</code>. Tokens declared in <code>@use</code>d partials — including package-root imports (<code>@use "@vendor/design" as *</code>), namespaced aliases (<code>@use "..." as ns</code>), and <code>_index.scss</code> partial resolution — feed hover, docs, and completion.</li>
+  <li><b>Package-root CSS-entrypoint fallback:</b> when a package's Sass entrypoint is mixin-only (no concrete <code>--*</code> declarations), the resolver consults <code>package.json</code>'s <code>exports</code> / <code>sass</code> / <code>style</code> / <code>css</code> fields and falls back to the CSS distribution so design systems that emit tokens via a <code>@include core()</code> mixin still work.</li>
+  <li><b>Root + theme selector-list hover contexts canonicalised (issue <a href="https://github.com/Stianlars1/css-vars-assistant/issues/29">#29</a>, PR <a href="https://github.com/Stianlars1/css-vars-assistant/pull/31">#31</a>, reported by @caseyjhol):</b> all five reproduction cases in the issue render a consistent, semantic label. <code>:root, [data-theme="light"] { --foo: blue }</code> collapses to a single <code>Default/Light</code> row. Attribute-equals quoting variants (<code>[data-theme=light]</code> vs <code>[data-theme="light"]</code>) normalise to one canonical shape.</li>
+  <li><b>Theme name derived from the actual selector:</b> the <code>Default/&lt;Theme&gt;</code> label uses the real selector text, not a hardcoded Light. <code>[data-theme="nova-light"]</code> merges as <code>Default/Nova Light</code>, <code>.theme-sepia</code> as <code>Default/Theme sepia</code>, and so on.</li>
+  <li><b>Baseline <code>:root</code> is labelled <code>Default</code>:</b> even for colour values. Previously colour-valued baselines were labelled <code>Light mode</code>, misrepresenting them as an explicit Light colour-scheme theme.</li>
+</ul>
+<h3>Testing</h3>
+<ul>
+  <li>New parser coverage in <code>SelectorListCanonicalizationTest</code> for all five #29 cases plus edge cases (all-root-like list, theme-only list dedup across quoting, mixed class + attribute list).</li>
+  <li>New label-merge coverage in <code>DefaultThemeLabelMergeTest</code> for single-theme, duplicate-default, multi-theme, arbitrary theme-name, theme-only, and Default-alone.</li>
+  <li>New Sass-module import coverage in <code>SassModuleImportTest</code> and additional <code>ImportResolverTest</code> cases for <code>@use</code>, <code>@forward</code>, <code>_index.scss</code> partials, <code>package.json</code> field precedence, and the CSS-fallback path.</li>
+  <li>New end-to-end completion-harness fixtures for <code>@use</code>-chain hover documentation (both direct-Sass and CSS-fallback flavours).</li>
+</ul>
+<h3>Notes</h3>
+<ul>
+  <li>No settings change or index rebuild required.</li>
+</ul>
 <h2>1.9.1 – 2026-06-30</h2>
 <h3>Fixed</h3>
 <ul>

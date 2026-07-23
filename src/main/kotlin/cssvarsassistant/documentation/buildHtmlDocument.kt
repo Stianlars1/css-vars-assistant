@@ -278,7 +278,18 @@ internal fun java.awt.Color.toHexRgb(): String =
     "#%02x%02x%02x".format(red, green, blue)
 
 fun contextLabel(ctx: String, isColor: Boolean, prettifyTheme: Boolean = true): String {
-    if (ctx == "default") return if (isColor) "Light mode" else "Default"
+    // Issue #29: the parser now emits `default` for `:root`/`html`/`body`/`*`
+    // and, when a selector-list mixes root-like + theme selectors (e.g.
+    // `:root, [data-theme="light"]`), it emits both a `default` entry AND a
+    // theme entry with the same value. We always render `default` as
+    // `Default` — even for colour values — so `collapseRowsByValue` +
+    // `canonicalizeContextLabels` downstream can spot the pair and merge it
+    // into a single `Default/<Theme>` row. Previously we rendered `Default`
+    // as `Light mode` for colour values, which misrepresented the baseline
+    // as a Light colour-scheme theme even in files with no explicit Light
+    // theme at all (see Case 4 of #29). `isColor` is still consulted below
+    // for other context shapes.
+    if (ctx == "default") return "Default"
 
     // Phase 8a / issue #19: if the context is (or begins with) a raw CSS
     // selector — attribute, class, id, pseudo-class — render it verbatim.

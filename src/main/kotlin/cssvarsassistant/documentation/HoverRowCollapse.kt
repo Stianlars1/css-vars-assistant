@@ -36,7 +36,8 @@ internal fun <T> collapseRowsByValue(
     }
 
     return firstByValue.map { (v, first) ->
-        val joined = labelsByValue[v]!!.distinct().joinToString(", ")
+        val canonicalLabels = canonicalizeContextLabels(labelsByValue[v]!!.distinct())
+        val joined = canonicalLabels.joinToString(", ")
         val label = if (joined.length <= maxLabelLength) {
             joined
         } else {
@@ -44,4 +45,60 @@ internal fun <T> collapseRowsByValue(
         }
         merge(first, label)
     }
+}
+
+// Issue #29 — after `collapseRowsByValue` groups labels by resolved value,
+// pair a lone `Default` label with its first theme sibling so the popup
+// shows a single `Default/<Theme>` row instead of `Default, Light`
+// (or, worse, `Default, Light, Nova Light, Sepia` — which loses the "these
+// themes all match the baseline" story).
+//
+// Rules:
+//   - If the merged group already contains a `Default/<Theme>` label,
+//     drop any standalone `Default` — it adds no information.
+//   - If the group contains a `Default` label AND at least one theme label
+//     that looks like a plain theme name (no commas / colons / parens,
+//     not `<x> mode`), fuse them: replace the pair with `Default/<Theme>`
+//     at the position of the original `Default`. Subsequent theme labels
+//     stay in their original order and join with `, ` per the existing
+//     collapse contract.
+//   - Anything else — no `Default`, or no theme candidate — passes through
+//     unchanged so the 1.8.3 "many themes share the same value" merge
+//     behaviour is preserved.
+private fun canonicalizeContextLabels(labels: List<String>): List<String> {
+    if (labels.isEmpty()) return labels
+    val normalized = labels.toMutableList()
+
+    // Drop redundant `Default` when the group already carries a Default/*.
+    if (normalized.any { it.startsWith("Default/") }) {
+        normalized.remove("Default")
+    }
+
+    val defaultIndex = normalized.indexOf("Default")
+    if (defaultIndex >= 0) {
+        val themeIndex = normalized.indexOfFirst { label ->
+            label != "Default" &&
+                !label.startsWith("Default/") &&
+                isThemeLabelCandidate(label)
+        }
+        if (themeIndex >= 0) {
+            val theme = normalized[themeIndex]
+            normalized.removeAt(themeIndex)
+            normalized.remove("Default")
+            normalized.add(0, "Default/$theme")
+        }
+    }
+
+    return normalized.distinct()
+}
+
+private fun isThemeLabelCandidate(label: String): Boolean {
+    if (label.isBlank()) return false
+    if (label.contains(",")) return false
+    if (label.contains(":")) return false
+    if (label.contains("(") || label.contains(")")) return false
+    // Existing prettified media-query labels — `Light mode`, `Dark mode`, …
+    // aren't theme selectors; keep them as separate rows.
+    if (label.contains(" mode", ignoreCase = true)) return false
+    return true
 }
