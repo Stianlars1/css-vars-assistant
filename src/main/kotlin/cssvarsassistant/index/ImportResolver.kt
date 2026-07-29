@@ -90,8 +90,8 @@ object ImportResolver {
             val imports = extractImportPaths(content)
 
             for (importPath in imports) {
-                val resolvedFile = resolveImportPath(file, importPath, project)
-                if (resolvedFile != null && resolvedFile.exists()) {
+                for (resolvedFile in resolveImportPaths(file, importPath, project)) {
+                    if (!resolvedFile.exists()) continue
                     resolvedFiles.add(resolvedFile)
 
                     // Recursively resolve imports in the resolved file
@@ -139,38 +139,55 @@ object ImportResolver {
     /**
      * Resolves a single import path relative to the current file
      */
-    fun resolveImportPath(currentFile: VirtualFile, importPath: String, project: Project): VirtualFile? {
+    fun resolveImportPath(currentFile: VirtualFile, importPath: String, project: Project): VirtualFile? =
+        resolveImportPaths(currentFile, importPath, project).firstOrNull()
+
+    /**
+     * Resolves every file needed for one import.
+     *
+     * Most imports resolve to one file. A package-root Sass import can resolve
+     * to both its Sass API entrypoint and a CSS fallback: keeping both retains
+     * imported Sass variables while still exposing concrete custom-property
+     * declarations from the compiled CSS distribution.
+     */
+    private fun resolveImportPaths(
+        currentFile: VirtualFile,
+        importPath: String,
+        project: Project
+    ): List<VirtualFile> {
         try {
             return when {
                 importPath.startsWith("./") || importPath.startsWith("../") -> {
                     // Explicit relative path
-                    resolveRelativePath(currentFile, importPath)
+                    listOfNotNull(resolveRelativePath(currentFile, importPath))
                 }
 
                 importPath.startsWith("/") -> {
                     // Absolute path: resolve from project root
-                    project.guessProjectDir()?.findFileByRelativePath(importPath.removePrefix("/"))
+                    listOfNotNull(
+                        project.guessProjectDir()?.findFileByRelativePath(importPath.removePrefix("/"))
+                    )
                 }
 
                 importPath.startsWith("@") -> {
                     // Scoped or package path (node_modules)
-                    resolveNodeModulesPath(currentFile, importPath, project)
+                    resolveNodeModulesPaths(currentFile, importPath, project)
                 }
 
                 else -> {
                     // Bare path (no ./, no /, no @) – likely a relative import in same dir
                     val localFile = resolveRelativePath(currentFile, importPath)
                     if (localFile != null && localFile.exists()) {
-                        localFile  // Found e.g. "colors-semantic.less" in current directory
+                        listOf(localFile) // Found e.g. "colors-semantic.less" in current directory
                     } else {
                         // Not a file in current folder, treat as a node_modules package path
-                        resolveNodeModulesPath(currentFile, importPath, project)
+                        resolveNodeModulesPaths(currentFile, importPath, project)
                     }
                 }
             }
         } catch (e: Exception) {
             LOG.debug("Error resolving import path: $importPath", e)
-            return null
+            return emptyList()
         }
     }
 
@@ -217,19 +234,19 @@ object ImportResolver {
     /**
      * Resolves node_modules paths like @sb1/ffe-core/css/ffe or bootstrap/dist/css/bootstrap
      */
-    private fun resolveNodeModulesPath(
+    private fun resolveNodeModulesPaths(
         currentFile: VirtualFile,
         packagePath: String,
         project: Project
-    ): VirtualFile? {
+    ): List<VirtualFile> {
         // Find node_modules directory by traversing up from current file
         var searchDir = currentFile.parent
 
         while (searchDir != null) {
             val nodeModules = searchDir.findChild("node_modules")
             if (nodeModules != null && nodeModules.isDirectory) {
-                val resolvedFile = resolveInNodeModules(nodeModules, packagePath, currentFile)
-                if (resolvedFile != null) return resolvedFile
+                val resolvedFiles = resolveInNodeModules(nodeModules, packagePath, currentFile)
+                if (resolvedFiles.isNotEmpty()) return resolvedFiles
             }
             searchDir = searchDir.parent
         }
@@ -240,7 +257,7 @@ object ImportResolver {
             return resolveInNodeModules(projectNodeModules, packagePath, currentFile)
         }
 
-        return null
+        return emptyList()
     }
 
     /**
@@ -251,7 +268,7 @@ object ImportResolver {
         nodeModules: VirtualFile,
         packagePath: String,
         importingFile: VirtualFile
-    ): VirtualFile? {
+    ): List<VirtualFile> {
         // If the final path segment already has an extension, use it directly.
         // Scoped packages may contain "." in directory names.
         val rawPathParts = packagePath.split('/').filter { it.isNotEmpty() }
@@ -260,10 +277,10 @@ object ImportResolver {
             var current = nodeModules
 
             for (part in pathParts) {
-                current = current.findChild(part) ?: return null
+                current = current.findChild(part) ?: return emptyList()
             }
 
-            return if (current.isDirectory) null else current
+            return if (current.isDirectory) emptyList() else listOf(current)
         }
 
         // Prioritize extensions based on the importing file's extension
@@ -285,7 +302,7 @@ object ImportResolver {
                 }
 
                 if (current != nodeModules && !current.isDirectory && current.exists()) {
-                    return current
+                    return listOf(current)
                 }
             }
         }
@@ -293,10 +310,21 @@ object ImportResolver {
         resolvePackageDirectory(nodeModules, pathSegments)?.let { packageDir ->
             val packageRootSegments = packageRootSegments(pathSegments)
             val packageSubPath = pathSegments.drop(packageRootSegments.size).joinToString("/")
-            resolvePackageJsonEntrypoint(packageDir, packageSubPath, prioritizedExtensions)?.let { return it }
+            val packageEntrypoints =
+                resolvePackageJsonEntrypoints(packageDir, packageSubPath, prioritizedExtensions)
+            if (packageEntrypoints.isNotEmpty()) return packageEntrypoints
         }
 
-        return null
+        // Sass resolves a directory import to index.scss / _index.scss (and
+        // their indented-Sass equivalents). This also covers package roots
+        // that do not declare a Sass entrypoint in package.json.
+        resolveDirectory(nodeModules, pathSegments)?.let { directory ->
+            resolveEntrypointCandidate(directory, "index", prioritizedExtensions)?.let {
+                return listOf(it)
+            }
+        }
+
+        return emptyList()
     }
 
     private fun packageRootSegments(pathSegments: List<String>): List<String> {
@@ -318,25 +346,35 @@ object ImportResolver {
         return if (current.isDirectory) current else null
     }
 
-    private fun resolvePackageJsonEntrypoint(
+    private fun resolveDirectory(root: VirtualFile, pathSegments: List<String>): VirtualFile? {
+        var current = root
+        for (segment in pathSegments) {
+            current = current.findChild(segment) ?: return null
+        }
+        return current.takeIf { it.isDirectory }
+    }
+
+    private fun resolvePackageJsonEntrypoints(
         packageDir: VirtualFile,
         packageSubPath: String,
         prioritizedExtensions: List<String>
-    ): VirtualFile? {
+    ): List<VirtualFile> {
         val packageJson = packageDir.findChild("package.json")
             ?.takeIf { !it.isDirectory && it.exists() }
-            ?: return null
+            ?: return emptyList()
         val packageJsonContent = try {
             String(packageJson.contentsToByteArray())
         } catch (_: Exception) {
-            return null
+            return emptyList()
         }
 
         val exportsObject = extractObjectField(packageJsonContent, "exports")
         if (packageSubPath.isNotBlank()) {
             val subpathKey = "./$packageSubPath"
             val subpathCandidates = extractExportCandidates(exportsObject, subpathKey)
-            return resolveFirstCandidate(packageDir, subpathCandidates, prioritizedExtensions)
+            return listOfNotNull(
+                resolveFirstCandidate(packageDir, subpathCandidates, prioritizedExtensions)
+            )
         }
 
         val topLevelJson = removeObjectField(packageJsonContent, "exports")
@@ -366,21 +404,25 @@ object ImportResolver {
                 firstResolvedSass = resolved
             }
             if (hasConcreteCssVariableDeclarations(resolved)) {
-                return resolved
+                return listOf(resolved)
             }
         }
 
         val cssCandidates = (rootExportCandidates + topLevelCandidates + explicitCssSubpathCandidates)
             .filter { it.kind == EntrypointKind.CSS }
-        resolveFirstCandidate(packageDir, cssCandidates, prioritizedExtensions)?.let { return it }
+        resolveFirstCandidate(packageDir, cssCandidates, prioritizedExtensions)?.let { cssEntrypoint ->
+            return listOfNotNull(firstResolvedSass, cssEntrypoint).distinct()
+        }
 
         val otherCandidates = (rootExportCandidates + topLevelCandidates)
             .filter { it.kind == EntrypointKind.OTHER }
-        resolveFirstCandidate(packageDir, otherCandidates, prioritizedExtensions)?.let { return it }
+        resolveFirstCandidate(packageDir, otherCandidates, prioritizedExtensions)?.let {
+            return listOf(it)
+        }
 
-        firstResolvedSass?.let { return it }
+        firstResolvedSass?.let { return listOf(it) }
 
-        return null
+        return emptyList()
     }
 
     private fun resolveFirstCandidate(

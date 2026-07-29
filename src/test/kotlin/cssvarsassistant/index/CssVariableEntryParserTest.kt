@@ -233,7 +233,7 @@ class CssVariableEntryParserTest {
         assertEquals(
             listOf(
                 ParsedCssVariableEntry("--bg", "default", "white", "", line = 2),
-                ParsedCssVariableEntry("--bg", "[data-theme=\"dark\"]", "black", "", line = 5)
+                ParsedCssVariableEntry("--bg", "[data-theme=dark]", "black", "", line = 5)
             ),
             entries
         )
@@ -310,11 +310,12 @@ class CssVariableEntryParserTest {
         )
     }
 
-    // Phase 8a — comma-separated selector lists are preserved verbatim so the
+    // Phase 8a — comma-separated selector lists are preserved as one context so the
     // user can see that "both .dark and [data-theme=dark] got this value" in
-    // one row rather than two duplicated rows.
+    // one row rather than two duplicated rows. Equivalent attribute quoting is
+    // canonicalised before indexing so it cannot create duplicate contexts.
     @Test
-    fun `comma-separated selector list stays verbatim`() {
+    fun `comma-separated selector list stays one canonical context`() {
         val entries = CssVariableEntryParser.parse(
             """
             .dark, [data-theme="dark"] {
@@ -327,7 +328,7 @@ class CssVariableEntryParserTest {
             listOf(
                 ParsedCssVariableEntry(
                     "--bg",
-                    ".dark, [data-theme=\"dark\"]",
+                    ".dark, [data-theme=dark]",
                     "black",
                     "",
                     line = 2
@@ -368,8 +369,8 @@ class CssVariableEntryParserTest {
 
         assertEquals(
             listOf(
-                ParsedCssVariableEntry("--bg", "[data-theme=\"dark\"]", "black", "", line = 1),
-                ParsedCssVariableEntry("--fg", "[data-theme=\"dark\"]", "white", "", line = 1)
+                ParsedCssVariableEntry("--bg", "[data-theme=dark]", "black", "", line = 1),
+                ParsedCssVariableEntry("--fg", "[data-theme=dark]", "white", "", line = 1)
             ),
             entries
         )

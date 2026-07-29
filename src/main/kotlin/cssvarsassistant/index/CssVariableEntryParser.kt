@@ -48,31 +48,20 @@ internal object CssVariableEntryParser {
     // Long comma-separated selector lists get truncated with an ellipsis.
     private const val MAX_SELECTOR_LABEL = 60
 
-    // Internal separator between a root-like sub-selector and the accompanying
-    // theme sub-selector when a single declaration lives inside a selector list
-    // that contains BOTH shapes (e.g. `:root, [data-theme=light]`). The parser
-    // splits such declarations into two `ParsedCssVariableEntry` records with
-    // this token as the interior representation — the emission loop unpacks it
-    // back into a `default` entry plus a theme entry with the same value, so
-    // downstream `distinctBy` / collapse-by-value merges them into a single
-    // `Default/<Theme>` row in the popup. The token is `U+0001` so it can
-    // never appear inside a real CSS selector.
-    private const val ROOT_THEME_SEPARATOR = "\u0001"
-
     // Issue #29 — attribute-equals selector canonicalisation. `[a="b"]`,
     // `[a='b']`, and `[a=b]` are semantically identical in CSS but were
     // stored as three distinct context strings, causing duplicate merged
     // labels in the hover popup. Strip the quotes at parse time so the
     // index sees one canonical shape per value.
     private val attributeEqualsRegex =
-        Regex("""\[\s*([\w-]+)(?:\|[\w-]+)?\s*([~|^$*]?=)\s*['"]?([\w-]+)['"]?\s*]""")
+        Regex("""\[\s*((?:[\w-]+\|)?[\w-]+)\s*([~|^$*]?=)\s*['"]?([\w-]+)['"]?\s*]""")
 
     // Generalised from the 1.7.x `MediaContext`: any block that contributes a
     // label to the current context stack. Media queries push `(min-width: ...)`,
     // non-root selectors push `.dark`, `[data-theme="dark"]`, etc. Nested pushes
     // combine labels by space.
     private data class BlockContext(
-        val label: String,
+        val alternatives: List<String>,
         val depthAfterOpen: Int
     )
 
@@ -80,13 +69,13 @@ internal object CssVariableEntryParser {
         val entries = mutableListOf<ParsedCssVariableEntry>()
         val blockContexts = ArrayDeque<BlockContext>()
         var braceDepth = 0
-        var pendingBlockContext: String? = null
+        var pendingBlockContextAlternatives: List<String>? = null
 
         var lastComment: String? = null
         var inBlockComment = false
         val blockComment = StringBuilder()
         var pendingVariableName: String? = null
-        var pendingVariableContext: String? = null
+        var pendingVariableContexts: List<String>? = null
         var pendingVariableComment: String? = null
         var pendingVariableLine: Int = -1
         val pendingVariableValue = StringBuilder()
@@ -147,27 +136,28 @@ internal object CssVariableEntryParser {
 
             val mediaContext = extractMediaContext(line)
             if (mediaContext != null) {
-                pendingBlockContext = mediaContext
+                pendingBlockContextAlternatives = listOf(mediaContext)
             } else {
-                val selectorContext = extractSelectorContext(line)
-                if (selectorContext != null) {
-                    pendingBlockContext = selectorContext
+                val selectorContexts = extractSelectorContexts(line)
+                if (selectorContexts != null) {
+                    pendingBlockContextAlternatives = selectorContexts
                 }
             }
 
             val openingBraces = line.count { it == '{' }
             val closingBraces = line.count { it == '}' }
 
-            if (pendingBlockContext != null && openingBraces > 0) {
-                blockContexts.addLast(BlockContext(pendingBlockContext!!, braceDepth + 1))
-                pendingBlockContext = null
+            if (pendingBlockContextAlternatives != null && openingBraces > 0) {
+                blockContexts.addLast(
+                    BlockContext(
+                        alternatives = requireNotNull(pendingBlockContextAlternatives),
+                        depthAfterOpen = braceDepth + 1
+                    )
+                )
+                pendingBlockContextAlternatives = null
             }
 
-            val currentContext = if (blockContexts.isEmpty()) {
-                DEFAULT_CONTEXT
-            } else {
-                blockContexts.joinToString(" ") { it.label }
-            }
+            val currentContexts = buildCurrentContexts(blockContexts)
             if (pendingVariableName != null) {
                 val endIndex = line.indexOf(';')
                 if (endIndex >= 0) {
@@ -176,15 +166,10 @@ internal object CssVariableEntryParser {
                     }
                     pendingVariableValue.append(line.substring(0, endIndex).trim())
                     val pendingName = requireNotNull(pendingVariableName)
-                    val pendingCtx = requireNotNull(pendingVariableContext)
+                    val pendingContexts = requireNotNull(pendingVariableContexts)
                     val pendingValue = normalizeValue(pendingVariableValue.toString())
                     val pendingCommentText = pendingVariableComment.orEmpty()
-                    // Issue #29: a selector-list that mixes root-like + theme
-                    // selectors is stored as `default<SEP>theme` internally.
-                    // Explode it back into two records with the same value so
-                    // the popup's collapse-by-value merges them into a single
-                    // `Default/<Theme>` row.
-                    for (ctx in explodeContextForEmission(pendingCtx)) {
+                    for (ctx in pendingContexts) {
                         entries += ParsedCssVariableEntry(
                             name = pendingName,
                             context = ctx,
@@ -197,7 +182,7 @@ internal object CssVariableEntryParser {
                         )
                     }
                     pendingVariableName = null
-                    pendingVariableContext = null
+                    pendingVariableContexts = null
                     pendingVariableComment = null
                     pendingVariableLine = -1
                     pendingVariableValue.clear()
@@ -211,16 +196,11 @@ internal object CssVariableEntryParser {
             } else {
                 val matches = variableDeclarationRegex.findAll(line).toList()
 
-                // Issue #29: root-like + theme selector-list contexts are
-                // stored as `default<SEP>theme` internally. Explode into
-                // one record per canonical context so downstream collapse
-                // can merge them by value into `Default/<Theme>`.
-                val emitContexts = explodeContextForEmission(currentContext)
                 matches.forEachIndexed { index, match ->
                     val emittedName = match.groupValues[1]
                     val emittedValue = match.groupValues[2].trim()
                     val emittedComment = if (index == 0) lastComment ?: "" else ""
-                    for (ctx in emitContexts) {
+                    for (ctx in currentContexts) {
                         entries += ParsedCssVariableEntry(
                             name = emittedName,
                             context = ctx,
@@ -237,7 +217,7 @@ internal object CssVariableEntryParser {
                     val multilineMatch = variableDeclarationStartRegex.find(line)
                     if (multilineMatch != null && ';' !in multilineMatch.groupValues[2]) {
                         pendingVariableName = multilineMatch.groupValues[1]
-                        pendingVariableContext = currentContext
+                        pendingVariableContexts = currentContexts
                         pendingVariableComment = lastComment
                         pendingVariableLine = currentLineNumber
                         pendingVariableValue.clear()
@@ -320,6 +300,22 @@ internal object CssVariableEntryParser {
             .ifEmpty { "media" }
     }
 
+    private fun buildCurrentContexts(blockContexts: ArrayDeque<BlockContext>): List<String> {
+        var contexts = listOf("")
+        for (blockContext in blockContexts) {
+            contexts = contexts.flatMap { prefix ->
+                blockContext.alternatives.map { alternative ->
+                    listOf(prefix, alternative)
+                        .filter { it.isNotBlank() }
+                        .joinToString(" ")
+                }
+            }
+        }
+        return contexts
+            .map { it.ifBlank { DEFAULT_CONTEXT } }
+            .distinct()
+    }
+
     // Phase 8a / issue #19: detect non-root selector blocks as contexts so
     // `[data-theme="dark"] { --bg: black }` shows up as its own row in the
     // hover popup instead of silently overwriting the default value.
@@ -329,17 +325,16 @@ internal object CssVariableEntryParser {
     // quoting is normalised, and duplicates are removed. Depending on the
     // shape of the resulting list this function returns one of:
     //
-    //   - `null`  → all elements are root-like; declarations fall through
-    //               into the ambient default context (unchanged behaviour).
-    //   - "<theme-list>" → only non-root elements; the canonicalised list is
-    //                      used as the block context (unchanged behaviour).
-    //   - "default<SEP><theme-list>" → the list contained BOTH root-like AND
-    //                                  non-root elements. The emission loop
-    //                                  splits this marker back into a
-    //                                  `default` entry AND a theme entry so
-    //                                  the popup's collapse-by-value renders
-    //                                  the merged row as "Default/<Theme>".
-    internal fun extractSelectorContext(line: String): String? {
+    //   - `null` → all elements are root-like; declarations fall through into
+    //              the ambient context (or `default` at top level).
+    //   - `listOf("<selector-list>")` → no root-like element; preserve the
+    //                                  canonicalised selector-list context.
+    //   - `listOf("", "<theme>", ...)` → the list contains root-like and
+    //                                    non-root elements. The empty
+    //                                    alternative preserves the ambient
+    //                                    context while each theme alternative
+    //                                    adds its selector context.
+    private fun extractSelectorContexts(line: String): List<String>? {
         val openIdx = line.indexOf('{')
         if (openIdx < 0) return null
         val prefix = line.substring(0, openIdx).trim()
@@ -364,12 +359,10 @@ internal object CssVariableEntryParser {
             return null
         }
 
-        val themeLabel = truncateSelectorLabel(themeLike.joinToString(", "))
         return if (rootLike.isEmpty()) {
-            themeLabel
+            listOf(truncateSelectorLabel(themeLike.joinToString(", ")))
         } else {
-            // Marker consumed by the emission loop below.
-            DEFAULT_CONTEXT + ROOT_THEME_SEPARATOR + themeLabel
+            listOf("") + themeLike.map(::truncateSelectorLabel)
         }
     }
 
@@ -382,13 +375,24 @@ internal object CssVariableEntryParser {
         var depth = 0
         var inSingleQuote = false
         var inDoubleQuote = false
+        var escaped = false
         for (ch in prefix) {
             when {
                 inSingleQuote -> {
-                    current.append(ch); if (ch == '\'') inSingleQuote = false
+                    current.append(ch)
+                    when {
+                        escaped -> escaped = false
+                        ch == '\\' -> escaped = true
+                        ch == '\'' -> inSingleQuote = false
+                    }
                 }
                 inDoubleQuote -> {
-                    current.append(ch); if (ch == '"') inDoubleQuote = false
+                    current.append(ch)
+                    when {
+                        escaped -> escaped = false
+                        ch == '\\' -> escaped = true
+                        ch == '"' -> inDoubleQuote = false
+                    }
                 }
                 ch == '\'' -> { current.append(ch); inSingleQuote = true }
                 ch == '"' -> { current.append(ch); inDoubleQuote = true }
@@ -415,22 +419,6 @@ internal object CssVariableEntryParser {
         return attributeEqualsRegex.replace(collapsed) { match ->
             "[${match.groupValues[1]}${match.groupValues[2]}${match.groupValues[3]}]"
         }
-    }
-
-    // Split a possibly-marked context string emitted by `extractSelectorContext`
-    // into the concrete list of contexts to store on the index. A plain
-    // context returns a single-element list; a "default<SEP><theme>" marker
-    // returns [default, theme] so the emission loop writes two records with
-    // the same value.
-    private fun explodeContextForEmission(context: String): List<String> {
-        val sepIdx = context.indexOf(ROOT_THEME_SEPARATOR)
-        if (sepIdx < 0) return listOf(context)
-        val head = context.substring(0, sepIdx)
-        val tail = context.substring(sepIdx + ROOT_THEME_SEPARATOR.length)
-        // Only the `default+theme` shape is meaningful today; guard against
-        // any future accidental use of the separator in a non-default head.
-        if (head != DEFAULT_CONTEXT) return listOf(context)
-        return listOf(DEFAULT_CONTEXT, tail)
     }
 
     private fun truncateSelectorLabel(label: String): String =

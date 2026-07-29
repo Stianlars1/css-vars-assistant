@@ -23,27 +23,46 @@ internal fun <T> collapseRowsByValue(
     label: (T) -> String,
     merge: (T, String) -> T,
     maxLabelLength: Int = 80
+): List<T> = collapseRowsByValue(
+    rows = rows,
+    value = value,
+    label = label,
+    merge = merge,
+    combineWithDefault = { false },
+    maxLabelLength = maxLabelLength
+)
+
+internal fun <T> collapseRowsByValue(
+    rows: List<T>,
+    value: (T) -> String,
+    label: (T) -> String,
+    merge: (T, String) -> T,
+    combineWithDefault: (T) -> Boolean,
+    maxLabelLength: Int = 80
 ): List<T> {
     if (rows.isEmpty()) return rows
 
-    val firstByValue = linkedMapOf<String, T>()
-    val labelsByValue = linkedMapOf<String, MutableList<String>>()
-
+    val rowsByValue = linkedMapOf<String, MutableList<T>>()
     rows.forEach { row ->
-        val v = value(row)
-        if (v !in firstByValue) firstByValue[v] = row
-        labelsByValue.getOrPut(v) { mutableListOf() }.add(label(row))
+        rowsByValue.getOrPut(value(row)) { mutableListOf() }.add(row)
     }
 
-    return firstByValue.map { (v, first) ->
-        val canonicalLabels = canonicalizeContextLabels(labelsByValue[v]!!.distinct())
+    return rowsByValue.values.map { groupedRows ->
+        val first = groupedRows.first()
+        val labels = groupedRows.map(label).distinct()
+        val defaultCombinableLabels = groupedRows
+            .filter(combineWithDefault)
+            .map(label)
+            .distinct()
+            .toSet()
+        val canonicalLabels = canonicalizeContextLabels(labels, defaultCombinableLabels)
         val joined = canonicalLabels.joinToString(", ")
-        val label = if (joined.length <= maxLabelLength) {
+        val mergedLabel = if (joined.length <= maxLabelLength) {
             joined
         } else {
             joined.take(maxLabelLength - 1).trimEnd().trimEnd(',') + "…"
         }
-        merge(first, label)
+        merge(first, mergedLabel)
     }
 }
 
@@ -56,16 +75,18 @@ internal fun <T> collapseRowsByValue(
 // Rules:
 //   - If the merged group already contains a `Default/<Theme>` label,
 //     drop any standalone `Default` — it adds no information.
-//   - If the group contains a `Default` label AND at least one theme label
-//     that looks like a plain theme name (no commas / colons / parens,
-//     not `<x> mode`), fuse them: replace the pair with `Default/<Theme>`
-//     at the position of the original `Default`. Subsequent theme labels
-//     stay in their original order and join with `, ` per the existing
-//     collapse contract.
+//   - If the group contains a `Default` label AND at least one label whose
+//     source row the caller identified as an explicit theme selector, fuse
+//     that pair into `Default/<Theme>`. This semantic predicate prevents
+//     unrelated equal-value contexts such as Print or Reduced motion from
+//     being mislabeled as themes.
 //   - Anything else — no `Default`, or no theme candidate — passes through
 //     unchanged so the 1.8.3 "many themes share the same value" merge
 //     behaviour is preserved.
-private fun canonicalizeContextLabels(labels: List<String>): List<String> {
+private fun canonicalizeContextLabels(
+    labels: List<String>,
+    defaultCombinableLabels: Set<String>
+): List<String> {
     if (labels.isEmpty()) return labels
     val normalized = labels.toMutableList()
 
@@ -76,29 +97,15 @@ private fun canonicalizeContextLabels(labels: List<String>): List<String> {
 
     val defaultIndex = normalized.indexOf("Default")
     if (defaultIndex >= 0) {
-        val themeIndex = normalized.indexOfFirst { label ->
-            label != "Default" &&
-                !label.startsWith("Default/") &&
-                isThemeLabelCandidate(label)
-        }
+        val themeIndex = normalized.indexOfFirst { it in defaultCombinableLabels }
         if (themeIndex >= 0) {
             val theme = normalized[themeIndex]
+            val insertIndex = minOf(defaultIndex, themeIndex)
             normalized.removeAt(themeIndex)
             normalized.remove("Default")
-            normalized.add(0, "Default/$theme")
+            normalized.add(insertIndex.coerceAtMost(normalized.size), "Default/$theme")
         }
     }
 
     return normalized.distinct()
-}
-
-private fun isThemeLabelCandidate(label: String): Boolean {
-    if (label.isBlank()) return false
-    if (label.contains(",")) return false
-    if (label.contains(":")) return false
-    if (label.contains("(") || label.contains(")")) return false
-    // Existing prettified media-query labels — `Light mode`, `Dark mode`, …
-    // aren't theme selectors; keep them as separate rows.
-    if (label.contains(" mode", ignoreCase = true)) return false
-    return true
 }

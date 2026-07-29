@@ -119,6 +119,55 @@ class PreprocessorVariableIndexTest : CssVarsAssistantPlatformTestCase() {
         assertEquals(listOf("#7f80ff"), readIndexedPreprocessorValues("\$vendor-brand"))
     }
 
+    fun testPackageCssFallbackKeepsSassEntrypointVariablesIndexed() {
+        updateSettings {
+            indexingScope = CssVarsAssistantSettings.IndexingScope.PROJECT_WITH_IMPORTS
+            maxImportDepth = 5
+        }
+        addProjectStylesheet(
+            "node_modules/@vendor/design/_index.scss",
+            """
+            ${'$'}vendor-brand: var(--brand-primary);
+            @mixin core() {
+              color: ${'$'}vendor-brand;
+            }
+            """
+        )
+        addProjectStylesheet(
+            "node_modules/@vendor/design/dist/tokens.css",
+            """
+            :root {
+              --brand-primary: #7f80ff;
+            }
+            """
+        )
+        addProjectStylesheet(
+            "node_modules/@vendor/design/package.json",
+            """
+            {
+              "name": "@vendor/design",
+              "sass": "./_index.scss",
+              "style": "./dist/tokens.css"
+            }
+            """
+        )
+        addProjectStylesheet(
+            "styles/app.scss",
+            """
+            @use "@vendor/design" as design;
+            """
+        )
+
+        assertEquals(
+            listOf("var(--brand-primary)"),
+            readIndexedPreprocessorValues("\$vendor-brand")
+        )
+        assertContainsElements(
+            readIndexedCssEntries("--brand-primary").map { it.value },
+            "#7f80ff"
+        )
+    }
+
     fun testProjectOnlyDoesNotIndexImportedNodeModulesPreprocessorVariables() {
         updateSettings {
             indexingScope = CssVarsAssistantSettings.IndexingScope.PROJECT_ONLY

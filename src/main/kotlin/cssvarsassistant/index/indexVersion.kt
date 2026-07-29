@@ -1,6 +1,6 @@
 package cssvarsassistant.index
 
-// Bump when either stylesheet index payload changes. 1047 preserves
-// preprocessor syntax in keys (`$token` vs `@token`) and indexes imported
-// preprocessor variables through importing project files.
-const val INDEX_VERSION = 1047
+// Bump when either stylesheet index payload or import-resolution semantics
+// change. 1048 rebuilds cached selector contexts and import closures for
+// issues #28/#29 (`@use`/`@forward` and root/theme canonicalisation).
+const val INDEX_VERSION = 1048

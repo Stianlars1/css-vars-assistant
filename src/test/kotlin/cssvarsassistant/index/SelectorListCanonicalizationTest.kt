@@ -215,4 +215,69 @@ class SelectorListCanonicalizationTest {
             entries
         )
     }
+
+    @Test
+    fun `root plus multiple themes emits one context per selector alternative`() {
+        val entries = CssVariableEntryParser.parse(
+            """
+            :root, [data-theme="light"], [data-theme="sepia"] {
+              --foo: beige;
+            }
+            """.trimIndent()
+        )
+
+        assertEquals(
+            listOf(
+                ParsedCssVariableEntry("--foo", "default", "beige", "", line = 2),
+                ParsedCssVariableEntry("--foo", "[data-theme=light]", "beige", "", line = 2),
+                ParsedCssVariableEntry("--foo", "[data-theme=sepia]", "beige", "", line = 2)
+            ),
+            entries
+        )
+    }
+
+    @Test
+    fun `root plus theme alternatives compose with an outer media context`() {
+        val entries = CssVariableEntryParser.parse(
+            """
+            @media (min-width: 768px) {
+              :root, [data-theme="light"] {
+                --foo: blue;
+              }
+            }
+            """.trimIndent()
+        )
+
+        assertEquals(
+            listOf(
+                ParsedCssVariableEntry("--foo", "(min-width: 768px)", "blue", "", line = 3),
+                ParsedCssVariableEntry(
+                    "--foo",
+                    "(min-width: 768px) [data-theme=light]",
+                    "blue",
+                    "",
+                    line = 3
+                )
+            ),
+            entries
+        )
+    }
+
+    @Test
+    fun `attribute namespace survives quote canonicalisation`() {
+        val entries = CssVariableEntryParser.parse(
+            """
+            [svg|data-theme="light"] {
+              --foo: blue;
+            }
+            """.trimIndent()
+        )
+
+        assertEquals(
+            listOf(
+                ParsedCssVariableEntry("--foo", "[svg|data-theme=light]", "blue", "", line = 2)
+            ),
+            entries
+        )
+    }
 }

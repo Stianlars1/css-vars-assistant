@@ -215,14 +215,14 @@ class ImportResolverTest : CssVarsAssistantPlatformTestCase() {
             maxImportDepth = 5
         }
 
-        myFixture.addFileToProject(
+        val sassEntrypoint = myFixture.addFileToProject(
             "node_modules/@vendor/design/_index.scss",
             """
             @mixin core() {
               @include reset;
             }
             """.trimIndent()
-        )
+        ).virtualFile
         val cssEntrypoint = myFixture.addFileToProject(
             "node_modules/@vendor/design/dist/css/core.css",
             """
@@ -257,8 +257,7 @@ class ImportResolverTest : CssVarsAssistantPlatformTestCase() {
 
         val importedFiles = ImportResolver.collectProjectImports(project, CssVarsAssistantSettings.getInstance().maxImportDepth)
 
-        assertContainsElements(importedFiles, cssEntrypoint)
-        assertTrue(importedFiles.none { it.path.endsWith("/_index.scss") })
+        assertContainsElements(importedFiles, sassEntrypoint, cssEntrypoint)
     }
 
     fun testCollectProjectImportsKeepsSassEntrypointWhenItDefinesCustomProperties() {

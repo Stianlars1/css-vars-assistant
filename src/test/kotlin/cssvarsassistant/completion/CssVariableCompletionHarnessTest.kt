@@ -789,6 +789,132 @@ class CssVariableCompletionHarnessTest : CssVarsAssistantPlatformTestCase() {
         assertTrue(html, html.contains("24px"))
     }
 
+    fun testCssVariableDocumentationCanonicalizesRootAndLightSelectorVariants() {
+        configureProjectFile(
+            "app.css",
+            """
+            :root, [data-theme=light] {
+              --foo: blue;
+            }
+
+            :root, [data-theme="light"] {
+              --foo: blue;
+            }
+
+            [data-theme='dark'] {
+              --foo: green;
+            }
+
+            .test {
+              border-color: var(--foo<caret>);
+            }
+            """
+        )
+
+        val variableElement = requireNotNull(myFixture.file.findElementAt(myFixture.caretOffset - 1))
+        val html = requireNotNull(
+            CssVariableDocumentationService.generateDocumentation(variableElement, "--foo")
+        )
+
+        assertTrue(html, html.contains("Default/Light"))
+        assertTrue(html, html.contains("Dark"))
+        assertFalse(html, html.contains(":root, [data-theme=light]"))
+        assertFalse(html, html.contains(":root, [data-theme=&quot;light&quot;]"))
+    }
+
+    fun testCssVariableDocumentationCanonicalizesSelectorListPlusRootToDefaultLight() {
+        configureProjectFile(
+            "app.css",
+            """
+            :root, [data-theme=light] {
+              --foo: blue;
+            }
+
+            :root {
+              --foo: blue;
+            }
+
+            [data-theme='dark'] {
+              --foo: green;
+            }
+
+            .test {
+              border-color: var(--foo<caret>);
+            }
+            """
+        )
+
+        val variableElement = requireNotNull(myFixture.file.findElementAt(myFixture.caretOffset - 1))
+        val html = requireNotNull(
+            CssVariableDocumentationService.generateDocumentation(variableElement, "--foo")
+        )
+
+        assertTrue(html, html.contains("Default/Light"))
+        assertTrue(html, html.contains("Dark"))
+        assertFalse(html, html.contains("Light mode"))
+        assertFalse(html, html.contains(":root, [data-theme=light]"))
+    }
+
+    fun testCssVariableDocumentationUsesDefaultForRootOnlyBaseline() {
+        configureProjectFile(
+            "app.css",
+            """
+            :root {
+              --foo: blue;
+            }
+
+            [data-theme='dark'] {
+              --foo: green;
+            }
+
+            .test {
+              border-color: var(--foo<caret>);
+            }
+            """
+        )
+
+        val variableElement = requireNotNull(myFixture.file.findElementAt(myFixture.caretOffset - 1))
+        val html = requireNotNull(
+            CssVariableDocumentationService.generateDocumentation(variableElement, "--foo")
+        )
+
+        assertTrue(html, html.contains("Default"))
+        assertTrue(html, html.contains("Dark"))
+        assertFalse(html, html.contains("Light mode"))
+    }
+
+    fun testCssVariableDocumentationCanonicalizesRootAndExplicitLightSelectorsToDefaultLight() {
+        configureProjectFile(
+            "app.css",
+            """
+            :root {
+              --foo: blue;
+            }
+
+            [data-theme="light"] {
+              --foo: blue;
+            }
+
+            [data-theme='dark'] {
+              --foo: green;
+            }
+
+            .test {
+              border-color: var(--foo<caret>);
+            }
+            """
+        )
+
+        val variableElement = requireNotNull(myFixture.file.findElementAt(myFixture.caretOffset - 1))
+        val html = requireNotNull(
+            CssVariableDocumentationService.generateDocumentation(variableElement, "--foo")
+        )
+
+        assertTrue(html, html.contains("Default/Light"))
+        assertTrue(html, html.contains("Dark"))
+        assertFalse(html, html.contains("Default, Light"))
+    }
+
     fun testCssVariableDocumentationResolvesImportedSassPreprocessorAliasChain() {
         updateSettings {
             indexingScope = CssVarsAssistantSettings.IndexingScope.PROJECT_WITH_IMPORTS

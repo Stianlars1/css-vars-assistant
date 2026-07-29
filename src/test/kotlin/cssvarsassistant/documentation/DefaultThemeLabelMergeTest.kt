@@ -16,7 +16,11 @@ import kotlin.test.assertEquals
  */
 class DefaultThemeLabelMergeTest {
 
-    private data class Row(val context: String, val value: String)
+    private data class Row(
+        val context: String,
+        val value: String,
+        val combinesWithDefault: Boolean = false
+    )
 
     private fun collapse(rows: List<Row>, maxLabelLength: Int = 80): List<Row> =
         collapseRowsByValue(
@@ -24,6 +28,7 @@ class DefaultThemeLabelMergeTest {
             value = { it.value },
             label = { it.context },
             merge = { first, mergedLabel -> first.copy(context = mergedLabel) },
+            combineWithDefault = { it.combinesWithDefault },
             maxLabelLength = maxLabelLength
         )
 
@@ -32,7 +37,7 @@ class DefaultThemeLabelMergeTest {
     fun `default plus single theme joins with slash`() {
         val rows = listOf(
             Row("Default", "blue"),
-            Row("Light", "blue"),
+            Row("Light", "blue", combinesWithDefault = true),
             Row("Dark", "green")
         )
 
@@ -52,7 +57,7 @@ class DefaultThemeLabelMergeTest {
         val rows = listOf(
             Row("Default", "blue"),
             Row("Default", "blue"),
-            Row("Light", "blue"),
+            Row("Light", "blue", combinesWithDefault = true),
             Row("Dark", "green")
         )
 
@@ -82,7 +87,7 @@ class DefaultThemeLabelMergeTest {
     fun `default combined with an arbitrary theme keeps its name`() {
         val rows = listOf(
             Row("Default", "#fafafa"),
-            Row("Nova Light", "#fafafa")
+            Row("Nova Light", "#fafafa", combinesWithDefault = true)
         )
 
         assertEquals(
@@ -97,9 +102,9 @@ class DefaultThemeLabelMergeTest {
     fun `default plus multiple themes joins with slash then commas`() {
         val rows = listOf(
             Row("Default", "#fff"),
-            Row("Light", "#fff"),
-            Row("Nova Light", "#fff"),
-            Row("Sepia", "#fff")
+            Row("Light", "#fff", combinesWithDefault = true),
+            Row("Nova Light", "#fff", combinesWithDefault = true),
+            Row("Sepia", "#fff", combinesWithDefault = true)
         )
 
         assertEquals(
@@ -120,6 +125,20 @@ class DefaultThemeLabelMergeTest {
 
         assertEquals(
             listOf(Row("Light mode, Catppuccin, Sepia", "#fff")),
+            collapse(rows)
+        )
+    }
+
+    @Test
+    fun `default does not slash-join unrelated equal-value contexts`() {
+        val rows = listOf(
+            Row("Default", "#fff"),
+            Row("Print", "#fff"),
+            Row("Reduced motion", "#fff")
+        )
+
+        assertEquals(
+            listOf(Row("Default, Print, Reduced motion", "#fff")),
             collapse(rows)
         )
     }
