@@ -1,5 +1,31 @@
 # Daily GitHub Issues Scan — 2026-07-23
 
+## Release verification update — 2026-07-29
+
+The July 23 report below records an intermediate scheduled-task snapshot, not
+the final release candidate. Its claims that PR #30 was adopted verbatim, that
+the parser still used an internal separator, and that Gradle tests had not run
+are superseded by the maintainer verification completed on July 29.
+
+- The package-root resolver was hardened beyond PR #30: conventional
+  `index.scss` / `_index.scss` roots work without package metadata, and a
+  mixin-only Sass API remains indexed alongside its compiled CSS fallback so
+  imported Sass variables are not lost.
+- Root/theme selector alternatives are represented structurally and compose
+  correctly inside outer media contexts; the temporary separator approach was
+  removed.
+- Default/theme label merging is restricted to explicit theme-selector rows,
+  preventing unrelated equal-value contexts such as Print or Reduced motion
+  from being rendered as `Default/<Context>`.
+- The focused regression suite passed 138 tests. The full `./gradlew check`
+  gate passed all 299 repository tests, and `buildPlugin`,
+  `verifyPluginStructure`, and `verifyPluginProjectConfiguration` succeeded.
+- The signed 1.9.2 artifact passed JetBrains Plugin Verifier for GoLand,
+  IntelliJ IDEA Ultimate, PhpStorm, PyCharm Professional, RubyMine, and
+  WebStorm 2025.1. Every verdict is `Compatible`; the eight experimental API
+  usages are unchanged from the already-published 1.9.1 release.
+- Final hardening commit: `56fc772`.
+
 ## TL;DR
 
 - **Breaking the stalemate.** After eight consecutive scans with zero repo

@@ -81,7 +81,7 @@ intellijPlatform {
 <h2>The fastest way to work with CSS custom properties &amp; design tokens in JetBrains IDEs</h2>
 
 <p>
-  <b>CSS Variables Assistant</b> turns <code>var(--my-token)</code> into a first-class citizen in WebStorm, IntelliJ IDEA Ultimate, PhpStorm, PyCharm Professional, GoLand and RubyMine. Get instant autocomplete, rich inline documentation with colour swatches and pixel equivalents, and full resolution of design-token <code>@import</code> chains across your project and <code>node_modules</code>.
+  <b>CSS Variables Assistant</b> turns <code>var(--my-token)</code> into a first-class citizen in WebStorm, IntelliJ IDEA Ultimate, PhpStorm, PyCharm Professional, GoLand and RubyMine. Get instant autocomplete, rich inline documentation with colour swatches and pixel equivalents, and full resolution of design-token <code>@import</code>, <code>@use</code>, and <code>@forward</code> chains across your project and <code>node_modules</code>.
 </p>
 
 <p>
@@ -93,7 +93,7 @@ intellijPlatform {
   <li><b>Smart autocomplete inside <code>var(--…)</code></b> – your entire token catalog surfaces the moment you open a <code>var()</code> call. Works in CSS, SCSS, SASS and LESS files.</li>
   <li><b>Direct SCSS/Sass/LESS variable completion</b> – complete <code>&#36;brand-primary</code> in SCSS/Sass and <code>@brand-primary</code> in LESS outside <code>var(...)</code>, with the same resolved-value preview, colour icons and quick documentation used for CSS custom properties.</li>
   <li><b>Instant in-place documentation</b> – hover any <code>--token</code> for a rich popup showing the resolved value, colour swatch, HSB / hex, pixel equivalent for <code>rem</code> / <code>em</code> / <code>%</code> / <code>vh</code> / <code>vw</code>, WCAG AA / AAA contrast ratio, and the full <code>@import</code> resolution chain.</li>
-  <li><b>Follows <code>@import</code> chains automatically</b> – indexes variables defined in design-token packages inside <code>node_modules</code>, with configurable depth and scope controls so you only pay for the resolution you need.</li>
+  <li><b>Follows stylesheet module chains automatically</b> – resolves legacy <code>@import</code> plus modern Sass <code>@use</code> / <code>@forward</code>, including design-token packages inside <code>node_modules</code>, with configurable depth and scope controls.</li>
   <li><b>Understands media-query context</b> – tokens redefined under <code>@media (prefers-color-scheme: dark)</code>, <code>min-width</code> breakpoints or any other context are shown side-by-side so you can compare values at a glance.</li>
   <li><b>Three-option sort order (new in 1.8.0)</b> – sort completions <i>by value ascending</i>, <i>by value descending</i>, or <i>alphabetically</i>. Applies consistently whether the popup opens at <code>var(--|)</code> or mid-prefix.</li>
   <li><b>JSDoc-style comments</b> – parse <code>@name</code>, <code>@description</code>, <code>@example</code> from block comments above your tokens and render them in the popup.</li>
@@ -105,7 +105,7 @@ intellijPlatform {
 
 <h3>Keywords</h3>
 <p>
-  CSS variables, CSS custom properties, design tokens, <code>var(--token)</code>, <code>var()</code> autocomplete, Tailwind CSS, shadcn/ui, Radix UI, Radix Themes, Material Design tokens, MUI, Open Props, CSS cascade, <code>:root</code>, <code>calc()</code>, nested CSS variables, recursive variable resolution, dark mode tokens, theme variables, WebStorm CSS plugin, IntelliJ IDEA CSS autocomplete, JetBrains plugin design tokens, SCSS variables, Sass variables, LESS variables, <code>@import</code> resolution, JSDoc CSS, WCAG contrast checker, px equivalent, rem to px converter, hex to HSL, colour swatch, CSS-in-JS bridge.
+  CSS variables, CSS custom properties, design tokens, <code>var(--token)</code>, <code>var()</code> autocomplete, Tailwind CSS, shadcn/ui, Radix UI, Radix Themes, Material Design tokens, MUI, Open Props, CSS cascade, <code>:root</code>, <code>calc()</code>, nested CSS variables, recursive variable resolution, dark mode tokens, theme variables, WebStorm CSS plugin, IntelliJ IDEA CSS autocomplete, JetBrains plugin design tokens, SCSS variables, Sass variables, LESS variables, <code>@import</code> resolution, Sass <code>@use</code>, Sass <code>@forward</code>, JSDoc CSS, WCAG contrast checker, px equivalent, rem to px converter, hex to HSL, colour swatch, CSS-in-JS bridge.
 </p>
 
 <h3>✨ New in 1.9.2</h3>
@@ -232,7 +232,7 @@ intellijPlatform {
 """.trimIndent()
 
         changeNotes = """
-<h2>1.9.2 – 2026-07-23</h2>
+<h2>1.9.2 – 2026-07-29</h2>
 <h3>Fixed</h3>
 <ul>
   <li><b>Sass module imports (<code>@use</code> / <code>@forward</code>) are indexed (issue <a href="https://github.com/Stianlars1/css-vars-assistant/issues/28">#28</a>, PR <a href="https://github.com/Stianlars1/css-vars-assistant/pull/30">#30</a>, reported by @caseyjhol):</b> the import scanner now recognises <code>@use "..."</code> and <code>@forward "..."</code> in addition to legacy <code>@import</code>. Tokens declared in <code>@use</code>d partials — including package-root imports (<code>@use "@vendor/design" as *</code>), namespaced aliases (<code>@use "..." as ns</code>), and <code>_index.scss</code> partial resolution — feed hover, docs, and completion.</li>
@@ -243,8 +243,8 @@ intellijPlatform {
 </ul>
 <h3>Testing</h3>
 <ul>
-  <li>New parser coverage in <code>SelectorListCanonicalizationTest</code> for all five #29 cases plus edge cases (all-root-like list, theme-only list dedup across quoting, mixed class + attribute list).</li>
-  <li>New label-merge coverage in <code>DefaultThemeLabelMergeTest</code> for single-theme, duplicate-default, multi-theme, arbitrary theme-name, theme-only, and Default-alone.</li>
+  <li>New parser coverage in <code>SelectorListCanonicalizationTest</code> for all five #29 cases plus multiple theme alternatives, escaped quoting, namespaced attributes, and selector alternatives nested inside media contexts.</li>
+  <li>New label-merge coverage in <code>DefaultThemeLabelMergeTest</code> for single-theme, duplicate-default, multi-theme, arbitrary theme-name, theme-only, and Default-alone, including a guard that Print and Reduced motion contexts are never mislabeled as themes.</li>
   <li>New Sass-module import coverage in <code>SassModuleImportTest</code> and additional <code>ImportResolverTest</code> cases for <code>@use</code>, <code>@forward</code>, <code>_index.scss</code> partials, <code>package.json</code> field precedence, and the CSS-fallback path.</li>
   <li>New end-to-end completion-harness fixtures for <code>@use</code>-chain hover documentation (both direct-Sass and CSS-fallback flavours).</li>
 </ul>

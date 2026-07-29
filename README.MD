@@ -32,6 +32,8 @@ Bug-fix release closing [issue #28](https://github.com/Stianlars1/css-vars-assis
 | **Arbitrary theme names supported** | The theme name in `Default/<Theme>` comes from the actual selector, not a hardcoded `Light`. `[data-theme="nova-light"]` merges as `Default/Nova Light`, `.theme-sepia` as `Default/Theme sepia`, etc. |
 | **Baseline `Default` is called `Default`** | Plain `:root { --foo: … }` is labelled `Default` regardless of whether the value is a colour. Previously colour-valued baselines were labelled `Light mode`, misrepresenting them as an explicit Light colour-scheme theme. |
 
+Upgrading to 1.9.2 triggers a one-time index rebuild so existing projects receive the new Sass import closure and canonical theme contexts without manual cache invalidation.
+
 [Full Changelog →](https://github.com/Stianlars1/css-vars-assistant/blob/main/CHANGELOG.MD)
 
 ---

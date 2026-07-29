@@ -3,7 +3,7 @@
 All notable changes to this project will be documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/) and semantic-versioning.
 
-## [1.9.2] – 2026-07-23
+## [1.9.2] – 2026-07-29
 
 Bug-fix release closing issues [#28](https://github.com/Stianlars1/css-vars-assistant/issues/28) and [#29](https://github.com/Stianlars1/css-vars-assistant/issues/29), both reported with follow-up PRs ([#30](https://github.com/Stianlars1/css-vars-assistant/pull/30), [#31](https://github.com/Stianlars1/css-vars-assistant/pull/31)) by [@caseyjhol](https://github.com/caseyjhol).
 
@@ -29,6 +29,7 @@ Bug-fix release closing issues [#28](https://github.com/Stianlars1/css-vars-assi
 - New Sass-module import coverage in `SassModuleImportTest` and additional cases in `ImportResolverTest` for `@use "@vendor/design"`, `@use "..." as ns`, `@forward "..."`, `_index.scss` partial resolution, `package.json` `exports` / `sass` / `style` / `css` field precedence, and the CSS-fallback path when Sass roots are mixin-only.
 - New completion-harness fixtures in `CssVariableCompletionHarnessTest` for end-to-end hover documentation through a `@use` chain (both direct-Sass and CSS-fallback flavours).
 - `PrettifySelectorTest` extended to lock in `contextLabel("default", isColor = true) == "Default"`.
+- Release verification passed all 299 repository tests, signed-artifact and plugin-structure checks, and the full 2025.1 compatibility matrix for GoLand, IntelliJ IDEA Ultimate, PhpStorm, PyCharm Professional, RubyMine, and WebStorm. Every verifier verdict is `Compatible`; the eight reported experimental-API usages are unchanged from 1.9.1.
 
 ## [1.9.1] – 2026-06-30
 
