@@ -29,7 +29,8 @@ Bug-fix release closing issues [#28](https://github.com/Stianlars1/css-vars-assi
 - New Sass-module import coverage in `SassModuleImportTest` and additional cases in `ImportResolverTest` for `@use "@vendor/design"`, `@use "..." as ns`, `@forward "..."`, `_index.scss` partial resolution, `package.json` `exports` / `sass` / `style` / `css` field precedence, and the CSS-fallback path when Sass roots are mixin-only.
 - New completion-harness fixtures in `CssVariableCompletionHarnessTest` for end-to-end hover documentation through a `@use` chain (both direct-Sass and CSS-fallback flavours).
 - `PrettifySelectorTest` extended to lock in `contextLabel("default", isColor = true) == "Default"`.
-- Release verification passed all 299 repository tests, signed-artifact and plugin-structure checks, and the full 2025.1 compatibility matrix for GoLand, IntelliJ IDEA Ultimate, PhpStorm, PyCharm Professional, RubyMine, and WebStorm. Every verifier verdict is `Compatible`; the eight reported experimental-API usages are unchanged from 1.9.1.
+- Release verification passed all 300 repository tests, signed-artifact and plugin-structure checks, and the full 2025.1 compatibility matrix for GoLand, IntelliJ IDEA Ultimate, PhpStorm, PyCharm Professional, RubyMine, and WebStorm. Every verifier verdict is `Compatible`; the eight reported experimental-API usages are unchanged from 1.9.1.
+- Clean release builds now use the Kotlin standard library bundled with IntelliJ Platform instead of packaging a duplicate copy; a metadata regression test protects this release constraint.
 
 ## [1.9.1] – 2026-06-30
 
