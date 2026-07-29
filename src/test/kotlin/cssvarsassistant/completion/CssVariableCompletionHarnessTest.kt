@@ -684,6 +684,237 @@ class CssVariableCompletionHarnessTest : CssVarsAssistantPlatformTestCase() {
         assertTrue(html, html.contains("8px"))
     }
 
+    fun testCssVariableDocumentationResolvesImportedScssPackageViaUseEntrypoint() {
+        updateSettings {
+            indexingScope = CssVarsAssistantSettings.IndexingScope.PROJECT_WITH_IMPORTS
+            maxImportDepth = 5
+        }
+        addProjectStylesheet(
+            "node_modules/@vendor/design/package.json",
+            """
+            {
+              "name": "@vendor/design",
+              "sass": "./src/tokens.scss"
+            }
+            """.trimIndent()
+        )
+        addProjectStylesheet(
+            "node_modules/@vendor/design/src/tokens.scss",
+            """
+            :root {
+              --spacing-lg: 24px;
+            }
+            """
+        )
+        configureProjectFile(
+            "styles/app.scss",
+            """
+            @use "@vendor/design" as *;
+
+            .card {
+              padding: var(--spacing-lg<caret>);
+            }
+            """
+        )
+
+        val variableElement = requireNotNull(myFixture.file.findElementAt(myFixture.caretOffset - 1))
+
+        val hint = CssVariableDocumentationService.generateHint(variableElement, "--spacing-lg")
+        assertEquals("--spacing-lg → 24px", hint)
+
+        val html = CssVariableDocumentationService.generateDocumentation(variableElement, "--spacing-lg")
+        requireNotNull(html)
+        assertTrue(html, html.contains("--spacing-lg"))
+        assertTrue(html, html.contains("24px"))
+    }
+
+    fun testCssVariableDocumentationResolvesPackageRootUseViaCssFallbackWhenSassIsMixinOnly() {
+        updateSettings {
+            indexingScope = CssVarsAssistantSettings.IndexingScope.PROJECT_WITH_IMPORTS
+            maxImportDepth = 5
+        }
+        addProjectStylesheet(
+            "node_modules/@vendor/design/package.json",
+            """
+            {
+              "name": "@vendor/design",
+              "exports": {
+                ".": {
+                  "sass": "./_index.scss",
+                  "css": "./dist/css/core.css",
+                  "style": "./dist/css/core.css"
+                },
+                "./css": "./dist/css/core.css"
+              },
+              "style": "./dist/css/core.css",
+              "sass": "./_index.scss"
+            }
+            """.trimIndent()
+        )
+        addProjectStylesheet(
+            "node_modules/@vendor/design/_index.scss",
+            """
+            @mixin core() {
+              @include reset;
+            }
+            """.trimIndent()
+        )
+        addProjectStylesheet(
+            "node_modules/@vendor/design/dist/css/core.css",
+            """
+            :root {
+              --spacing-lg: 24px;
+            }
+            """
+        )
+        configureProjectFile(
+            "styles/app.scss",
+            """
+            @use "@vendor/design" as *;
+
+            .card {
+              padding: var(--spacing-lg<caret>);
+            }
+            """
+        )
+
+        val variableElement = requireNotNull(myFixture.file.findElementAt(myFixture.caretOffset - 1))
+
+        val hint = CssVariableDocumentationService.generateHint(variableElement, "--spacing-lg")
+        assertEquals("--spacing-lg → 24px", hint)
+
+        val html = CssVariableDocumentationService.generateDocumentation(variableElement, "--spacing-lg")
+        requireNotNull(html)
+        assertTrue(html, html.contains("--spacing-lg"))
+        assertTrue(html, html.contains("24px"))
+    }
+
+    fun testCssVariableDocumentationCanonicalizesRootAndLightSelectorVariants() {
+        configureProjectFile(
+            "app.css",
+            """
+            :root, [data-theme=light] {
+              --foo: blue;
+            }
+
+            :root, [data-theme="light"] {
+              --foo: blue;
+            }
+
+            [data-theme='dark'] {
+              --foo: green;
+            }
+
+            .test {
+              border-color: var(--foo<caret>);
+            }
+            """
+        )
+
+        val variableElement = requireNotNull(myFixture.file.findElementAt(myFixture.caretOffset - 1))
+        val html = requireNotNull(
+            CssVariableDocumentationService.generateDocumentation(variableElement, "--foo")
+        )
+
+        assertTrue(html, html.contains("Default/Light"))
+        assertTrue(html, html.contains("Dark"))
+        assertFalse(html, html.contains(":root, [data-theme=light]"))
+        assertFalse(html, html.contains(":root, [data-theme=&quot;light&quot;]"))
+    }
+
+    fun testCssVariableDocumentationCanonicalizesSelectorListPlusRootToDefaultLight() {
+        configureProjectFile(
+            "app.css",
+            """
+            :root, [data-theme=light] {
+              --foo: blue;
+            }
+
+            :root {
+              --foo: blue;
+            }
+
+            [data-theme='dark'] {
+              --foo: green;
+            }
+
+            .test {
+              border-color: var(--foo<caret>);
+            }
+            """
+        )
+
+        val variableElement = requireNotNull(myFixture.file.findElementAt(myFixture.caretOffset - 1))
+        val html = requireNotNull(
+            CssVariableDocumentationService.generateDocumentation(variableElement, "--foo")
+        )
+
+        assertTrue(html, html.contains("Default/Light"))
+        assertTrue(html, html.contains("Dark"))
+        assertFalse(html, html.contains("Light mode"))
+        assertFalse(html, html.contains(":root, [data-theme=light]"))
+    }
+
+    fun testCssVariableDocumentationUsesDefaultForRootOnlyBaseline() {
+        configureProjectFile(
+            "app.css",
+            """
+            :root {
+              --foo: blue;
+            }
+
+            [data-theme='dark'] {
+              --foo: green;
+            }
+
+            .test {
+              border-color: var(--foo<caret>);
+            }
+            """
+        )
+
+        val variableElement = requireNotNull(myFixture.file.findElementAt(myFixture.caretOffset - 1))
+        val html = requireNotNull(
+            CssVariableDocumentationService.generateDocumentation(variableElement, "--foo")
+        )
+
+        assertTrue(html, html.contains("Default"))
+        assertTrue(html, html.contains("Dark"))
+        assertFalse(html, html.contains("Light mode"))
+    }
+
+    fun testCssVariableDocumentationCanonicalizesRootAndExplicitLightSelectorsToDefaultLight() {
+        configureProjectFile(
+            "app.css",
+            """
+            :root {
+              --foo: blue;
+            }
+
+            [data-theme="light"] {
+              --foo: blue;
+            }
+
+            [data-theme='dark'] {
+              --foo: green;
+            }
+
+            .test {
+              border-color: var(--foo<caret>);
+            }
+            """
+        )
+
+        val variableElement = requireNotNull(myFixture.file.findElementAt(myFixture.caretOffset - 1))
+        val html = requireNotNull(
+            CssVariableDocumentationService.generateDocumentation(variableElement, "--foo")
+        )
+
+        assertTrue(html, html.contains("Default/Light"))
+        assertTrue(html, html.contains("Dark"))
+        assertFalse(html, html.contains("Default, Light"))
+    }
+
     fun testCssVariableDocumentationResolvesImportedSassPreprocessorAliasChain() {
         updateSettings {
             indexingScope = CssVarsAssistantSettings.IndexingScope.PROJECT_WITH_IMPORTS

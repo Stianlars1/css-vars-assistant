@@ -112,6 +112,17 @@ class PrettifySelectorTest {
         assertEquals(".parent > .child", contextLabel(".parent > .child", isColor = false))
     }
 
+    // Issue #29 — the baseline `:root` context is labelled `Default`
+    // regardless of whether the value happens to be a colour. Prior to
+    // 1.9.2 colours got a "Light mode" label, which misrepresented the
+    // baseline as a Light colour-scheme theme even in files that had no
+    // explicit Light theme at all (see Case 4 of #29).
+    @Test
+    fun `contextLabel renders default as Default even for colour values`() {
+        assertEquals("Default", contextLabel("default", isColor = true))
+        assertEquals("Default", contextLabel("default", isColor = false))
+    }
+
     // 1.8.3 setting: `prettifyTheme = false` keeps the raw selector so
     // developers who prefer paste-back-to-CSS fidelity (or clearer
     // class-vs-attribute distinction at a glance) can opt out of humanisation.

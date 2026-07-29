@@ -6,7 +6,7 @@
 
 If you find CSS Variables Assistant helpful, please consider rating it on [JetBrains Marketplace](https://plugins.jetbrains.com/plugin/27392-css-variables-assistant/reviews) ★★★★★ 🙏.
 
-**Version:** 1.9.1<br/>
+**Version:** 1.9.2<br/>
 **Compatible IDEs:** JetBrains IDEs with bundled JavaScript + CSS support — IntelliJ IDEA Ultimate, WebStorm, GoLand, PhpStorm, PyCharm Professional, and RubyMine.  
 **Author:** Stian Larsen  
 **Repo:** [github.com/Stianlars1/css-vars-assistant](https://github.com/Stianlars1/css-vars-assistant)
@@ -18,6 +18,24 @@ If you find CSS Variables Assistant helpful, please consider rating it on [JetBr
 
 
 Supercharge your CSS custom properties and preprocessor variables in JetBrains IDEs with advanced autocomplete, documentation, and debugging tools.
+---
+
+## ✨ What's new in 1.9.2
+
+Bug-fix release closing [issue #28](https://github.com/Stianlars1/css-vars-assistant/issues/28) and [issue #29](https://github.com/Stianlars1/css-vars-assistant/issues/29), both reported with follow-up PRs ([#30](https://github.com/Stianlars1/css-vars-assistant/pull/30), [#31](https://github.com/Stianlars1/css-vars-assistant/pull/31)) by [@caseyjhol](https://github.com/caseyjhol).
+
+| Category | Highlights |
+|---|---|
+| **Sass module imports (`@use` / `@forward`)** | Modern Sass syntax is now indexed. Hover / docs / completion see tokens declared in `@use`d partials, including package-root imports (`@use "@vendor/design" as *`), namespaced aliases (`@use "..." as ns`), and `_index.scss` partial resolution. |
+| **Package-root CSS-entrypoint fallback** | When a package's Sass entrypoint is mixin-only (no concrete `--*` declarations), the resolver indexes the `css` / `style` entrypoint declared in `package.json` alongside the Sass API. Compiled custom properties become discoverable without dropping imported Sass variables. |
+| **Canonical `Default/<Theme>` hover labels** | `:root, [data-theme="light"] { --foo: blue }` no longer renders as `` `:root, [data-theme=light]` `` — it collapses to a single `Default/Light` row. Attribute quoting (`[data-theme=light]` vs `[data-theme="light"]`) is normalised, so semantically-identical selector lists no longer produce duplicate merged rows. |
+| **Arbitrary theme names supported** | The theme name in `Default/<Theme>` comes from the actual selector, not a hardcoded `Light`. `[data-theme="nova-light"]` merges as `Default/Nova Light`, `.theme-sepia` as `Default/Theme sepia`, etc. |
+| **Baseline `Default` is called `Default`** | Plain `:root { --foo: … }` is labelled `Default` regardless of whether the value is a colour. Previously colour-valued baselines were labelled `Light mode`, misrepresenting them as an explicit Light colour-scheme theme. |
+
+Upgrading to 1.9.2 triggers a one-time index rebuild so existing projects receive the new Sass import closure and canonical theme contexts without manual cache invalidation.
+
+[Full Changelog →](https://github.com/Stianlars1/css-vars-assistant/blob/main/CHANGELOG.MD)
+
 ---
 
 ## ✨ What's new in 1.9.1
