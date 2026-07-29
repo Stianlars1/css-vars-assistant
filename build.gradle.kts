@@ -451,9 +451,4 @@ tasks {
             events("passed", "skipped", "failed")
         }
     }
-    buildPlugin {
-        from(fileTree("lib")) {
-            exclude("kotlin-stdlib*.jar")
-        }
-    }
 }

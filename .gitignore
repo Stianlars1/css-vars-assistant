@@ -49,8 +49,7 @@ bin/
 Thumbs.db
 # Logs
 *.log
-# Secret properties
-gradle.properties
+# Local secrets belong in environment variables or ~/.gradle/gradle.properties.
 # IntelliJ sandbox & distr
 sandbox/
 build/distributions/

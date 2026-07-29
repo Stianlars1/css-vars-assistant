@@ -84,4 +84,14 @@ class MarketplaceCompatibilityMetadataTest {
         assertTrue("IntelliJPlatformType.RubyMine" in buildScript)
         assertFalse("dependsOn(autoIncrementVersion)" in buildScript)
     }
+
+    @Test
+    fun `release build uses the Kotlin stdlib bundled with the platform`() {
+        val gradleProperties = Files.readString(projectRoot.resolve("gradle.properties"))
+            .lineSequence()
+            .map(String::trim)
+            .toSet()
+
+        assertTrue("kotlin.stdlib.default.dependency=false" in gradleProperties)
+    }
 }
