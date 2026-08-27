@@ -30,6 +30,7 @@ dependencies {
         bundledPlugin("com.intellij.css")
         bundledPlugin("org.jetbrains.plugins.sass")
         bundledPlugin("org.jetbrains.plugins.less")
+        testBundledPlugin("com.intellij.java")
         testFramework(TestFrameworkType.Platform)
 
         // Add verification tools (instrumentationTools() is deprecated and removed)

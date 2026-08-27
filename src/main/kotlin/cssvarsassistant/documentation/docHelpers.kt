@@ -1,5 +1,6 @@
 package cssvarsassistant.documentation
 
+import com.intellij.lang.css.CssLanguageProperties
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.progress.ProgressManager
@@ -129,9 +130,13 @@ fun findPreprocessorVariableValue(
 
 /* ────────────────────── ** extractor ──────────────────────── */
 
+private fun PsiElement.isCssLanguageContext(): Boolean =
+    language is CssLanguageProperties || containingFile?.language is CssLanguageProperties
+
 fun extractCssVariableName(element: PsiElement): String? {
     // Always check element validity first
     if (!element.isValid) return null
+    if (!element.isCssLanguageContext()) return null
 
     // Safe handling of potentially null text
     val elementText = element.text

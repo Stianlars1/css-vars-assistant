@@ -1,5 +1,10 @@
 package cssvarsassistant.documentation
 
+import com.intellij.lang.documentation.ide.IdeDocumentationTargetProvider
+import com.intellij.psi.PsiField
+import com.intellij.psi.util.PsiTreeUtil
+import cssvarsassistant.documentation.v2.CssVariableDocumentationTarget
+import cssvarsassistant.documentation.v2.CssVariablePsiDocumentationTargetProvider
 import cssvarsassistant.testing.CssVarsAssistantPlatformTestCase
 
 class DocHelpersTest : CssVarsAssistantPlatformTestCase() {
@@ -50,6 +55,65 @@ class DocHelpersTest : CssVarsAssistantPlatformTestCase() {
         val element = requireNotNull(myFixture.file.findElementAt(myFixture.caretOffset - 1))
 
         assertEquals("@spacing-lg", extractCssVariableName(element))
+    }
+
+    fun testProviderLeavesTypeAnnotatedJavaFieldToPlatformDocumentation() {
+        assertProviderLeavesJavaFieldToPlatform(
+            """
+            class Sample {
+                /**
+                 * Hello, world.
+                 */
+                private @Nullable String <caret>test = "test";
+            }
+            """
+        )
+    }
+
+    fun testProviderLeavesDeclarationAnnotatedJavaFieldToPlatformDocumentation() {
+        assertProviderLeavesJavaFieldToPlatform(
+            """
+            class Sample {
+                /**
+                 * Hello, world.
+                 */
+                @Deprecated
+                private String <caret>test = "test";
+            }
+            """
+        )
+    }
+
+    fun testQuickDocumentationFallsThroughForJavaMethodWithJavadocTags() {
+        configureProjectFile(
+            "Sample.java",
+            """
+            class Sample {
+                /**
+                 * Returns the supplied value.
+                 * @param value the value to return
+                 * @return the supplied value
+                 */
+                String <caret>echo(String value) {
+                    return value;
+                }
+            }
+            """
+        )
+
+        val targets = IdeDocumentationTargetProvider.getInstance(project)
+            .documentationTargets(myFixture.editor, myFixture.file, myFixture.caretOffset)
+
+        assertTrue(targets.isNotEmpty())
+        assertFalse(targets.any { it is CssVariableDocumentationTarget })
+    }
+
+    private fun assertProviderLeavesJavaFieldToPlatform(source: String) {
+        configureProjectFile("Sample.java", source)
+        val leaf = requireNotNull(myFixture.file.findElementAt(myFixture.caretOffset))
+        val field = requireNotNull(PsiTreeUtil.getParentOfType(leaf, PsiField::class.java))
+
+        assertNull(CssVariablePsiDocumentationTargetProvider().documentationTarget(field, leaf))
     }
 
     // Regression for issue #18 Bug A: `lastLocalValueInFile` searched the raw
