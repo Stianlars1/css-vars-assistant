@@ -6,7 +6,7 @@
 
 If you find CSS Variables Assistant helpful, please consider rating it on [JetBrains Marketplace](https://plugins.jetbrains.com/plugin/27392-css-variables-assistant/reviews) ★★★★★ 🙏.
 
-**Version:** 1.9.2<br/>
+**Version:** 1.9.3<br/>
 **Compatible IDEs:** JetBrains IDEs with bundled JavaScript + CSS support — IntelliJ IDEA Ultimate, WebStorm, GoLand, PhpStorm, PyCharm Professional, and RubyMine.  
 **Author:** Stian Larsen  
 **Repo:** [github.com/Stianlars1/css-vars-assistant](https://github.com/Stianlars1/css-vars-assistant)
@@ -18,6 +18,22 @@ If you find CSS Variables Assistant helpful, please consider rating it on [JetBr
 
 
 Supercharge your CSS custom properties and preprocessor variables in JetBrains IDEs with advanced autocomplete, documentation, and debugging tools.
+---
+
+## ✨ What's new in 1.9.3
+
+Urgent bug-fix release for [issue #35](https://github.com/Stianlars1/css-vars-assistant/issues/35), originally reported by [@markwoon](https://github.com/markwoon) in [JetBrains YouTrack IJPL-252456](https://youtrack.jetbrains.com/issue/IJPL-252456).
+
+| Category | Highlights |
+|---|---|
+| **Java Quick Documentation restored** | Annotations such as `@Nullable` and `@Deprecated`, plus Javadoc tags such as `@param` and `@return`, are no longer mistaken for LESS variables. IntelliJ's native documentation provider receives non-stylesheet PSI normally. |
+| **Strict stylesheet boundary** | The plugin documentation extractor now runs only for IntelliJ CSS-family PSI. CSS custom properties, SCSS/Sass variables, LESS variables, PostCSS, and injected CSS remain supported without hardcoded filename-extension guesses. |
+| **Regression coverage** | Real Java PSI tests cover both annotation placements and Javadoc-only tags. The full 303-test suite passes, including existing CSS, SCSS, Sass, LESS, completion, indexing, imports, themes, and documentation behavior. |
+
+No settings change or index rebuild is required.
+
+[Full Changelog →](https://github.com/Stianlars1/css-vars-assistant/blob/main/CHANGELOG.MD)
+
 ---
 
 ## ✨ What's new in 1.9.2

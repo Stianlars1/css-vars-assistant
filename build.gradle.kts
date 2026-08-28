@@ -14,7 +14,7 @@ plugins {
 }
 
 group = "com.stianlarsen"
-version = "1.9.2"
+version = "1.9.3"
 
 repositories {
     mavenCentral()
@@ -109,7 +109,18 @@ intellijPlatform {
   CSS variables, CSS custom properties, design tokens, <code>var(--token)</code>, <code>var()</code> autocomplete, Tailwind CSS, shadcn/ui, Radix UI, Radix Themes, Material Design tokens, MUI, Open Props, CSS cascade, <code>:root</code>, <code>calc()</code>, nested CSS variables, recursive variable resolution, dark mode tokens, theme variables, WebStorm CSS plugin, IntelliJ IDEA CSS autocomplete, JetBrains plugin design tokens, SCSS variables, Sass variables, LESS variables, <code>@import</code> resolution, Sass <code>@use</code>, Sass <code>@forward</code>, JSDoc CSS, WCAG contrast checker, px equivalent, rem to px converter, hex to HSL, colour swatch, CSS-in-JS bridge.
 </p>
 
-<h3>✨ New in 1.9.2</h3>
+<h3>✨ New in 1.9.3</h3>
+<p>
+  Urgent bug-fix release for <a href="https://github.com/Stianlars1/css-vars-assistant/issues/35">issue #35</a>, originally reported by <a href="https://github.com/markwoon">@markwoon</a> in <a href="https://youtrack.jetbrains.com/issue/IJPL-252456">JetBrains YouTrack IJPL-252456</a>. CSS Variables Assistant no longer interferes with Quick Documentation for Java or other non-stylesheet code.
+</p>
+<ul>
+  <li><b>Java Quick Documentation restored:</b> annotations such as <code>@Nullable</code> and <code>@Deprecated</code>, plus Javadoc tags such as <code>@param</code> and <code>@return</code>, are left to the IDE's own documentation providers instead of being misread as LESS variables.</li>
+  <li><b>Strict stylesheet boundary:</b> the documentation extractor now runs only for PSI whose language implements the IntelliJ Platform's CSS-language contract. CSS, SCSS, Sass, LESS, PostCSS, and injected CSS remain supported without relying on hardcoded filename extensions.</li>
+  <li><b>Core features preserved:</b> CSS custom-property documentation, direct Sass/SCSS/LESS variable documentation, completion, import resolution, indexing, theme rows, colour previews, and alias chains are unchanged.</li>
+  <li><b>Regression verified:</b> real Java PSI tests cover both annotation placements and Javadoc-only tags; the complete 303-test suite and the reported IntelliJ IDEA 2026.2.1 build pass.</li>
+</ul>
+
+<h3>Previously in 1.9.2</h3>
 <p>
   Bug-fix release closing <a href="https://github.com/Stianlars1/css-vars-assistant/issues/28">issue #28</a> and <a href="https://github.com/Stianlars1/css-vars-assistant/issues/29">issue #29</a>, both reported with follow-up PRs (<a href="https://github.com/Stianlars1/css-vars-assistant/pull/30">#30</a>, <a href="https://github.com/Stianlars1/css-vars-assistant/pull/31">#31</a>) by <a href="https://github.com/caseyjhol">@caseyjhol</a>. Modern Sass module imports are now indexed, and root + theme selector-list hover contexts are canonicalised.
 </p>
@@ -233,6 +244,21 @@ intellijPlatform {
 """.trimIndent()
 
         changeNotes = """
+<h2>1.9.3 – 2026-08-28</h2>
+<h3>Fixed</h3>
+<ul>
+  <li><b>Quick Documentation for Java and other non-stylesheet languages (issue <a href="https://github.com/Stianlars1/css-vars-assistant/issues/35">#35</a>, <a href="https://youtrack.jetbrains.com/issue/IJPL-252456">IJPL-252456</a>, reported by @markwoon):</b> annotations such as <code>@Nullable</code> and <code>@Deprecated</code>, and Javadoc tags such as <code>@param</code>, no longer get mistaken for LESS variables. The plugin now returns no documentation target outside CSS-family PSI, allowing IntelliJ's native Java documentation provider to run normally.</li>
+  <li><b>CSS-family documentation remains intact:</b> the guard uses the platform CSS-language contract, preserving CSS custom properties, SCSS/Sass variables, LESS variables, PostCSS, and injected CSS while avoiding hardcoded language IDs and file extensions.</li>
+</ul>
+<h3>Testing</h3>
+<ul>
+  <li>Added real Java PSI regression coverage for type-use and declaration annotations plus an end-to-end platform target-selection test for Javadoc tags.</li>
+  <li>All 303 repository tests pass. Plugin structure, project configuration, the release artifact, the six-product 2025.1 verifier matrix, WebStorm 2026.1.2, and IntelliJ IDEA 2026.2.1 build IU-262.9437.185 are verified compatible.</li>
+</ul>
+<h3>Notes</h3>
+<ul>
+  <li>No settings change or index rebuild is required.</li>
+</ul>
 <h2>1.9.2 – 2026-07-29</h2>
 <h3>Fixed</h3>
 <ul>

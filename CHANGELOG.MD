@@ -3,6 +3,28 @@
 All notable changes to this project will be documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/) and semantic-versioning.
 
+## [1.9.3] – 2026-08-28
+
+Urgent bug-fix release closing [issue #35](https://github.com/Stianlars1/css-vars-assistant/issues/35), originally reported by [@markwoon](https://github.com/markwoon) in [JetBrains YouTrack IJPL-252456](https://youtrack.jetbrains.com/issue/IJPL-252456).
+
+### Fixed
+- **Quick Documentation works again for Java and other non-stylesheet languages:** The plugin's global `PsiDocumentationTargetProvider` could claim Java fields and methods when their PSI range contained an annotation such as `@Nullable` / `@Deprecated` or a Javadoc tag such as `@param`. The preprocessor extractor interpreted those `@...` tokens as LESS variables, returned a CSS documentation target, and prevented IntelliJ's native Java provider from running. Non-stylesheet PSI is now rejected before variable extraction, restoring the platform fallback chain.
+- **The complete false-positive family is covered:** The same boundary also prevents `$...`, `--...`, and `var(--...)` text in Java, Kotlin, JavaScript, TypeScript, Markdown, XML, or plain text from creating foreign CSS documentation targets.
+
+### How the fix works
+- **Platform-native CSS boundary:** `extractCssVariableName` now accepts only PSI whose element language or containing-file language implements IntelliJ's `CssLanguageProperties` contract. This covers CSS, SCSS, Sass, LESS, PostCSS, and injected CSS without a hardcoded language-ID or file-extension list.
+- **Core services remain unchanged:** CSS custom-property docs, direct SCSS/Sass/LESS variable docs, completion, indexes, import resolution, theme contexts, colour previews, source attribution, and alias chains continue through the existing code paths.
+
+### Testing
+- Added real Java PSI regression tests for the reporter's type-use annotation placement (`private @Nullable String test`), declaration annotations (`@Deprecated`), and an end-to-end platform target-selection case containing only Javadoc `@param` / `@return` tags.
+- Verified RED before the guard: each affected Java case returned `CssVariableDocumentationTarget`; verified GREEN after the guard: all fall through to IntelliJ's native documentation target.
+- All 303 repository tests pass, including existing CSS, SCSS, Sass, LESS, completion, indexing, import, theming, colour, and documentation coverage.
+- Plugin structure/project configuration pass. Plugin Verifier reports compatibility for the six-product 2025.1 matrix, installed WebStorm 2026.1.2, and the exact reported IntelliJ IDEA 2026.2.1 build `IU-262.9437.185`.
+
+### Notes
+- No settings change or index rebuild is required.
+- No feature has been removed or disabled; the change is confined to documentation-target selection.
+
 ## [1.9.2] – 2026-07-29
 
 Bug-fix release closing issues [#28](https://github.com/Stianlars1/css-vars-assistant/issues/28) and [#29](https://github.com/Stianlars1/css-vars-assistant/issues/29), both reported with follow-up PRs ([#30](https://github.com/Stianlars1/css-vars-assistant/pull/30), [#31](https://github.com/Stianlars1/css-vars-assistant/pull/31)) by [@caseyjhol](https://github.com/caseyjhol).
