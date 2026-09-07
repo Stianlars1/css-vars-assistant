@@ -1,0 +1,12 @@
+{
+  "source_commit": "d916068",
+  "platform": "IntelliJ IDEA 2026.2.2 (262.10315.125)",
+  "tooling": "temporary Gradle plugin 2.18.1 / Kotlin 2.4.10",
+  "note": "Before consolidated final-review fixes; final run required. Metadata tests inspect actual release checkout.",
+  "counts": {
+    "tests": 414,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  }
+}

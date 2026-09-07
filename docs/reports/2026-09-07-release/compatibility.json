@@ -1,0 +1,38 @@
+{
+  "source_commit": "6419a657d69ae060d88e0d1ca27de27225d1c0be",
+  "verifier": "1.410",
+  "results": [
+    {
+      "ide": "WS-251.29188.71",
+      "verdict": "Compatible. 8 usages of experimental API"
+    },
+    {
+      "ide": "IU-251.29188.72",
+      "verdict": "Compatible. 8 usages of experimental API"
+    },
+    {
+      "ide": "RM-251.29188.59",
+      "verdict": "Compatible. 8 usages of experimental API"
+    },
+    {
+      "ide": "GO-251.29188.80",
+      "verdict": "Compatible. 8 usages of experimental API"
+    },
+    {
+      "ide": "PY-251.29188.66",
+      "verdict": "Compatible. 8 usages of experimental API"
+    },
+    {
+      "ide": "PS-251.29188.73",
+      "verdict": "Compatible. 8 usages of experimental API"
+    },
+    {
+      "ide": "IU-262.10315.125",
+      "verdict": "Compatible. 1 usage of experimental API"
+    },
+    {
+      "ide": "IU-262.9437.185",
+      "verdict": "Compatible. 1 usage of experimental API"
+    }
+  ]
+}

@@ -1,0 +1,285 @@
+{
+  "source_commit": "6419a657d69ae060d88e0d1ca27de27225d1c0be",
+  "platform": "IntelliJ IDEA Ultimate 2025.1",
+  "counts": {
+    "tests": 454,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "suites": [
+    {
+      "name": "cssvarsassistant.index.StylesheetSnapshotsTest",
+      "tests": "4",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "cssvarsassistant.documentation.DocHelpersTest",
+      "tests": "9",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "cssvarsassistant.documentation.PrettifySelectorTest",
+      "tests": "15",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "cssvarsassistant.completion.PreprocessorCompletionContextTest",
+      "tests": "8",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "cssvarsassistant.documentation.HoverRowSortTest",
+      "tests": "4",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "cssvarsassistant.documentation.RankingTest",
+      "tests": "4",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "cssvarsassistant.util.ValueUtilTest",
+      "tests": "25",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "cssvarsassistant.index.SassModuleImportTest",
+      "tests": "6",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "cssvarsassistant.completion.CssVarSortOrderWeigherTest",
+      "tests": "7",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "cssvarsassistant.documentation.HoverRowCollapseTest",
+      "tests": "7",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "cssvarsassistant.index.CssVariableEntryParserTest",
+      "tests": "18",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "cssvarsassistant.index.SourceAwareLookupTest",
+      "tests": "12",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "cssvarsassistant.audit.ValueEdgeCaseAuditTest",
+      "tests": "12",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "cssvarsassistant.audit.ParserEdgeCaseAuditTest",
+      "tests": "18",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "cssvarsassistant.util.ScopeUtilTest",
+      "tests": "2",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "cssvarsassistant.completion.CssVariableCompletionBehaviorTest",
+      "tests": "3",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "cssvarsassistant.completion.CssVarQueryMatcherTest",
+      "tests": "20",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "cssvarsassistant.index.ReleaseReviewRegressionTest",
+      "tests": "36",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "cssvarsassistant.documentation.FormatSourceCellTest",
+      "tests": "7",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "cssvarsassistant.index.CssVariableIndexValueCodecTest",
+      "tests": "4",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "cssvarsassistant.documentation.DefaultThemeLabelMergeTest",
+      "tests": "7",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "cssvarsassistant.audit.ImportEdgeCaseAuditTest",
+      "tests": "9",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "cssvarsassistant.index.ImportResolverTest",
+      "tests": "11",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "cssvarsassistant.documentation.ColorParserTest",
+      "tests": "28",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "cssvarsassistant.audit.CompletionScalingAuditTest",
+      "tests": "1",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "cssvarsassistant.index.ImportParsingTest",
+      "tests": "14",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "cssvarsassistant.documentation.VariablePsiContextTest",
+      "tests": "10",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "cssvarsassistant.completion.CssVariableCompletionSortTest",
+      "tests": "4",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "cssvarsassistant.documentation.DocHelpersResolveVarValueTest",
+      "tests": "15",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "cssvarsassistant.completion.CssVariableCompletionHarnessTest",
+      "tests": "71",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "cssvarsassistant.index.SelectorListCanonicalizationTest",
+      "tests": "11",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "cssvarsassistant.audit.ResolutionEdgeCaseAuditTest",
+      "tests": "10",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "cssvarsassistant.metadata.MarketplaceCompatibilityMetadataTest",
+      "tests": "4",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "cssvarsassistant.documentation.IconUtilTest",
+      "tests": "1",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "cssvarsassistant.audit.EditorBehaviorAuditTest",
+      "tests": "12",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "cssvarsassistant.completion.CssVarCascadeUtilTest",
+      "tests": "2",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "cssvarsassistant.documentation.VariableValuePositionTest",
+      "tests": "8",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "cssvarsassistant.index.PreprocessorVariableIndexTest",
+      "tests": "10",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "cssvarsassistant.audit.CacheLifecycleAuditTest",
+      "tests": "5",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    }
+  ]
+}

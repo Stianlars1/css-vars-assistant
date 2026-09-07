@@ -1,0 +1,8 @@
+{
+  "version": "1.9.4",
+  "source_commit": "6419a657d69ae060d88e0d1ca27de27225d1c0be",
+  "signed_zip": "cssvarsassistant-1.9.4-signed.zip",
+  "bytes": 380063,
+  "sha256": "8c5db4349d89f1adab5bc13a158e7f040a991bcc0e57ef888f8cd2fe664b2861",
+  "signature_verification": "JetBrains ZIP Signer 0.1.43 verify with existing publisher certificate: exit 0"
+}
