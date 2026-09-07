@@ -10,6 +10,7 @@ import cssvarsassistant.settings.CssVarsAssistantSettings
 internal class PreprocessorLookup(private val project: Project, private val scope: GlobalSearchScope) {
     private val imports = mutableMapOf<VirtualFile, List<ImportResolver.ResolvedImport>>()
     private val depthLimit = CssVarsAssistantSettings.getInstance().maxImportDepth
+    private val nullChecks = mutableSetOf<Pair<VirtualFile, Int>>()
 
     fun find(name: String, location: VariableLocation?): SourcedPreprocessorValue? = find(name, location, true)
 
@@ -64,7 +65,7 @@ internal class PreprocessorLookup(private val project: Project, private val scop
                 if (defaultOnly && selected == null && level > 0) {
                     selected = findInFile(file, name, bindingOffset, namespace, path, depth, level - 1)
                 }
-                if (!defaultOnly || selected == null || selected?.declaration?.value == "null") selected = candidate
+                if (!defaultOnly || selected == null || selected?.let { isNull(it) } == true) selected = candidate
             }
             for (binding in bindings.sortedBy { it.offset }) {
                 binding.declaration?.let { declaration ->
@@ -85,6 +86,22 @@ internal class PreprocessorLookup(private val project: Project, private val scop
             if (selected != null) return selected
         }
         return null
+    }
+
+    private fun isNull(source: SourcedPreprocessorValue, allowProjectDiscovery: Boolean = true): Boolean {
+        ProgressManager.checkCanceled()
+        val value = source.declaration.value
+        if (value == "null") return true
+        if (!value.startsWith('$') && !value.contains(".$")) return false
+        val key = source.file to source.declaration.offset
+        if (nullChecks.size >= depthLimit || !nullChecks.add(key)) return false
+        try {
+            val discovery = allowProjectDiscovery && !source.isModuleMember
+            val alias = find(value, VariableLocation(source.file, source.declaration.offset), discovery) ?: return false
+            return isNull(alias, discovery)
+        } finally {
+            nullChecks.remove(key)
+        }
     }
 
     private data class Binding(

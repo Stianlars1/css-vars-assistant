@@ -199,6 +199,29 @@ class ReleaseReviewRegressionTest : CssVarsAssistantPlatformTestCase() {
         assertResolution("app.scss", text, "${'$'}alias", "${'$'}alias")
     }
 
+    fun testScssLocalDefaultReplacesOuterAliasToNull() {
+        val text = "${'$'}nil: null; ${'$'}brand: ${'$'}nil; .local { ${'$'}brand: blue !default; color: ${'$'}brand; }"
+        assertResolution("app.scss", text, "${'$'}brand", "blue")
+    }
+
+    fun testScssLocalDefaultPreservesOuterAliasToNonNullValue() {
+        val text = "${'$'}base: red; ${'$'}brand: ${'$'}base; .local { ${'$'}brand: blue !default; color: ${'$'}brand; }"
+        assertResolution("app.scss", text, "${'$'}brand", "red")
+    }
+
+    fun testScssLocalDefaultReplacesImportedAliasToNull() {
+        addProjectStylesheet("_tokens.scss", "${'$'}nil: null; ${'$'}brand: ${'$'}nil;")
+        val text = "@import './tokens'; .local { ${'$'}brand: blue !default; color: ${'$'}brand; }"
+        assertResolution("app.scss", text, "${'$'}brand", "blue")
+    }
+
+    fun testScssLocalDefaultDoesNotTreatAliasCycleAsNull() {
+        addProjectStylesheet("first.scss", "${'$'}brand: ${'$'}base;")
+        addProjectStylesheet("second.scss", "${'$'}base: ${'$'}brand;")
+        val text = "@import './first.scss'; .local { ${'$'}brand: blue !default; color: ${'$'}brand; }"
+        assertResolution("app.scss", text, "${'$'}brand", "${'$'}brand")
+    }
+
     private fun assertResolution(path: String, text: String, reference: String, expected: String) {
         val file = myFixture.addFileToProject(path, text).virtualFile
         val location = VariableLocation(file, text.indexOf("color:") + 8, cssContext = "default")
