@@ -4,7 +4,7 @@ Grunnlag: gjennomgang av main/v1.9.3 og 65 nye tester. Produksjonskode er ennå 
 
 Målet er korrekte oppslag i CSS, SCSS, Sass og LESS, trygg oppførsel under redigering og lavere kostnad per completion. Behold eksisterende rangering og brukerfunksjoner mens de dokumenterte feilene rettes i avgrensede endringer.
 
-## 1. Stans feil som avbryter eller overtar IDE-funksjoner
+## Task 1: Stans feil som avbryter eller overtar IDE-funksjoner
 
 **F01, F04 og unntaket i F11.** Gjør dette som en liten, separat retting før større refaktorering.
 
@@ -15,7 +15,7 @@ Målet er korrekte oppslag i CSS, SCSS, Sass og LESS, trygg oppførsel under red
 
 **Ferdig når:** syklustesten, provider-testene og den ugyldige fargetesten er grønne, de eksisterende Java-testene fra #35 fortsatt passerer, og ordinær CSS/SCSS/LESS-dokumentasjon fungerer.
 
-## 2. Rett indeksens eierskap og cache-gyldighet
+## Task 2: Rett indeksens eierskap og cache-gyldighet
 
 **F02, F03 og F12s serialisering.** Dette er den viktigste strukturelle forbedringen.
 
@@ -28,7 +28,7 @@ Målet er korrekte oppslag i CSS, SCSS, Sass og LESS, trygg oppførsel under red
 
 **Ferdig når:** red → blue oppdateres uten restart/re-index-knapp, source viser den reelle avhengighetsfilen, importgrafen følger filendringene og cachetestene passerer. En endring i avhengighetsfilen skal ikke kreve at alle importører manuelt reindekseres.
 
-## 3. Samle trygg parsing og rett importvariantene
+## Task 3: Samle trygg parsing og rett importvariantene
 
 **F05, F06, F08 og deler av F07/F09.** Lag ikke enda en parallell regex-parser.
 
@@ -41,7 +41,7 @@ Målet er korrekte oppslag i CSS, SCSS, Sass og LESS, trygg oppførsel under red
 
 **Ferdig når:** parser- og importtestene passerer, minifisert CSS og innrykket Sass beholder riktige kontekster, og ingen eksisterende #28/#29-regresjoner brytes.
 
-## 4. Gjør verdioppslag bevisst på språk og brukssted
+## Task 4: Gjør verdioppslag bevisst på språk og brukssted
 
 **F07 og F09.** Dette bør deles i små endringer per språkregel.
 
@@ -56,7 +56,7 @@ Målet er korrekte oppslag i CSS, SCSS, Sass og LESS, trygg oppførsel under red
 
 Videre testmatrise: @use as *, @forward hide/show/as, modulkonfigurasjon with, !global, null med !default, Sass/LESS-interpolasjon og like navn i ulike filer. Dette er videre dekning, ikke funksjonalitet som er verifisert i dagens audit.
 
-## 5. Rett editorpresentasjon og farge-/størrelsesverdier
+## Task 5: Rett editorpresentasjon og farge-/størrelsesverdier
 
 **F10, resten av F11 og visningsdelen av F12.**
 
@@ -68,7 +68,7 @@ Videre testmatrise: @use as *, @forward hide/show/as, modulkonfigurasjon with, !
 
 **Ferdig når:** gjeldende editor- og verditester passerer, valgt completion settes riktig inn med Enter/Tab, og dokumentasjonen visuelt viser riktige råverdier i lys og mørk IDE-modus.
 
-## 6. Optimaliser målt arbeid og gjennomfør DRY/KISS-opprydding
+## Task 6: Optimaliser målt arbeid og gjennomfør DRY/KISS-opprydding
 
 **F13 og F14.** Ikke legg en ny cache over ukorrekte data.
 
@@ -82,7 +82,7 @@ Videre testmatrise: @use as *, @forward hide/show/as, modulkonfigurasjon with, !
 
 **Ferdig når:** den dokumenterte gjentatte filskanningen er borte, målingene viser forbedring og alle korrekthetstester fortsatt passerer. Påstanden om completion under 100 ms må enten dokumenteres med avgrenset testmiljø eller presiseres i produktteksten.
 
-## 7. Samlet verifikasjon og kontrollert utgivelse
+## Task 7: Samlet verifikasjon og kontrollert utgivelse
 
 - [ ] Gjør alle 368 nåværende tester grønne og legg til de relevante tilleggstilfellene over. Behold forventninger som uttrykker korrekt språkoppførsel; ikke ignorer røde tester for å få grønt bygg.
 - [ ] Kjør full suite, pluginstruktur og konfigurasjonskontroll.

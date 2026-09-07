@@ -11,8 +11,6 @@ import com.intellij.openapi.project.ProjectManager
 import com.intellij.util.ui.JBUI
 import cssvarsassistant.index.CssVariableIndexRebuilder
 import cssvarsassistant.index.ImportCache
-import cssvarsassistant.util.PreprocessorUtil
-import cssvarsassistant.util.ScopeUtil
 import java.awt.GridBagConstraints
 import java.awt.GridBagLayout
 import java.awt.event.ActionListener
@@ -169,10 +167,6 @@ class CssVarsAssistantConfigurable : Configurable, Disposable {
 
                         step("Clearing import cache…", 0.10) {
                             ImportCache.get(project).clear()      // ← ingen argument
-                        }
-                        step("Clearing pre-processor cache…", 0.30) {
-                            PreprocessorUtil.clearCache(project)
-                            ScopeUtil.clearCache(project)
                         }
                         step("Requesting index rebuild…", 0.70) {
                             CssVariableIndexRebuilder.forceRebuild()

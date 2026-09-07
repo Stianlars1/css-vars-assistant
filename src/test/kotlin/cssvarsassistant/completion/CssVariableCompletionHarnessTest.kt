@@ -40,7 +40,7 @@ class CssVariableCompletionHarnessTest : CssVarsAssistantPlatformTestCase() {
             """
         )
 
-        val entries = readIndexedCssEntries("--space-sm")
+        val entries = readCssEntries("--space-sm")
 
         assertEquals(1, entries.size)
         assertEquals("default", entries.single().context)
@@ -1309,7 +1309,7 @@ class CssVariableCompletionHarnessTest : CssVarsAssistantPlatformTestCase() {
             """
         )
 
-        val indexedValues = readIndexedCssEntries("--panel-gap").map { it.value }
+        val indexedValues = readCssEntries("--panel-gap").map { it.value }
         assertContainsElements(indexedValues, "8px", "16px")
 
         val variableElement = requireNotNull(myFixture.file.findElementAt(myFixture.caretOffset - 1))
@@ -1338,7 +1338,7 @@ class CssVariableCompletionHarnessTest : CssVarsAssistantPlatformTestCase() {
             """
         )
 
-        val entries = readIndexedCssEntries("--layout-gap")
+        val entries = readCssEntries("--layout-gap")
 
         assertContainsElements(entries.map { it.context }, "(min-width: 768px)")
     }
@@ -1571,7 +1571,7 @@ class CssVariableCompletionHarnessTest : CssVarsAssistantPlatformTestCase() {
             """
         )
 
-        val entries = readIndexedCssEntries("--surface-accent")
+        val entries = readCssEntries("--surface-accent")
 
         assertContainsElements(
             entries.map { it.context },

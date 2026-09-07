@@ -48,7 +48,7 @@ class EditorBehaviorAuditTest : CssVarsAssistantPlatformTestCase() {
 
     fun testDirectPreprocessorThemeOverrideIsNotDiscardedByIndex() {
         addProjectStylesheet("tokens.less", "@night: black;\n:root { --bg: white; }\n.dark { --bg: @night; }")
-        assertContainsElements(readIndexedCssEntries("--bg").map { it.context to it.value }, ".dark" to "@night")
+        assertContainsElements(readCssEntries("--bg").map { it.context to it.value }, ".dark" to "@night")
     }
 
     fun testNamespacedScssCompletionUsesSelectedModule() {

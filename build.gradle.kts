@@ -14,7 +14,7 @@ plugins {
 }
 
 group = "com.stianlarsen"
-version = "1.9.3"
+version = "1.9.4"
 
 repositories {
     mavenCentral()
@@ -101,13 +101,23 @@ intellijPlatform {
   <li><b>Derived-variable marker</b> – alias / recursive completions get a <code>↗</code> badge so you know at a glance which values were resolved through references.</li>
   <li><b>Debug import chain</b> – a dedicated context-menu action prints the full import resolution tree for any CSS file. Answers "where does this token actually come from?" in one click.</li>
   <li><b>Customizable documentation columns</b> – show or hide <i>Context</i>, <i>Color Swatch</i>, <i>Value</i>, <i>Type</i>, <i>Source</i>, <i>Pixel Equivalent</i>, <i>Hex</i>, <i>WCAG Contrast</i> independently.</li>
-  <li><b>Fast in large projects</b> – dedicated file-based index, weak-keyed caches, and scope-aware resolution keep completion under 100 ms even on monorepos with thousands of variables.</li>
+  <li><b>Fast in large projects</b> – file-local indexing, document-aware snapshots, and one local declaration scan per request reduce repeated work in large token catalogs.</li>
 </ul>
 
 <h3>Keywords</h3>
 <p>
   CSS variables, CSS custom properties, design tokens, <code>var(--token)</code>, <code>var()</code> autocomplete, Tailwind CSS, shadcn/ui, Radix UI, Radix Themes, Material Design tokens, MUI, Open Props, CSS cascade, <code>:root</code>, <code>calc()</code>, nested CSS variables, recursive variable resolution, dark mode tokens, theme variables, WebStorm CSS plugin, IntelliJ IDEA CSS autocomplete, JetBrains plugin design tokens, SCSS variables, Sass variables, LESS variables, <code>@import</code> resolution, Sass <code>@use</code>, Sass <code>@forward</code>, JSDoc CSS, WCAG contrast checker, px equivalent, rem to px converter, hex to HSL, colour swatch, CSS-in-JS bridge.
 </p>
+
+<h3>New in 1.9.4</h3>
+<ul>
+  <li>Imported values refresh after saved and unsaved edits and point to the actual declaration file.</li>
+  <li>Safer CSS/SCSS/Sass/LESS parsing preserves URLs, quoted values, Unicode names and theme contexts.</li>
+  <li>Alias cycles terminate safely; namespace, scope, declaration-order and import-fallback fixes improve token resolution.</li>
+  <li>Completion and documentation respect code-token boundaries, leaving comments, strings and at-rules to the IDE.</li>
+  <li>HSL alpha, hue normalization and signed CSS lengths are corrected. Completion avoids repeated local-file scans.</li>
+  <li>The variable index rebuilds once after upgrade; no settings change is needed.</li>
+</ul>
 
 <h3>✨ New in 1.9.3</h3>
 <p>
@@ -244,6 +254,16 @@ intellijPlatform {
 """.trimIndent()
 
         changeNotes = """
+<h2>1.9.4 – 2026-09-07</h2>
+<ul>
+  <li>Imported values refresh after saved and unsaved edits and point to the actual declaration file.</li>
+  <li>Safer CSS/SCSS/Sass/LESS parsing preserves URLs, quoted values, Unicode names and theme contexts.</li>
+  <li>Alias cycles terminate safely; namespace, scope, declaration-order and import-fallback fixes improve token resolution.</li>
+  <li>Completion and documentation respect code-token boundaries, leaving comments, strings and at-rules to the IDE.</li>
+  <li>HSL alpha, hue normalization and signed CSS lengths are corrected. Completion avoids repeated local-file scans.</li>
+  <li>The variable index rebuilds once after upgrade; no settings change is needed.</li>
+</ul>
+
 <h2>1.9.3 – 2026-08-28</h2>
 <h3>Fixed</h3>
 <ul>

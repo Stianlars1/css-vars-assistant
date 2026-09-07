@@ -50,10 +50,7 @@
 
     </extensions>
 
-    <applicationListeners>
-        <listener class="cssvarsassistant.lifecycle.DynamicPluginCleanup"
-                  topic="com.intellij.ide.plugins.DynamicPluginListener"/>
-    </applicationListeners>
+
 
     <actions>
         <!-- Debug CSS Import Resolution Action -->

@@ -95,7 +95,7 @@ class ImportResolverTest : CssVarsAssistantPlatformTestCase() {
         assertContainsElements(importedFiles, tokensImport, foundationImport)
     }
 
-    fun testCssIndexImportResolutionDoesNotPopulateImportCache() {
+    fun testCssIndexContainsOnlyItsOwnFileWhileQueriesIncludeImports() {
         updateSettings {
             indexingScope = CssVarsAssistantSettings.IndexingScope.PROJECT_WITH_IMPORTS
             maxImportDepth = 5
@@ -116,10 +116,16 @@ class ImportResolverTest : CssVarsAssistantPlatformTestCase() {
             """.trimIndent()
         )
 
-        val entries = readIndexedCssEntries("--accent-1")
-
-        assertContainsElements(entries.map { it.value }, "#111111")
+        val importer = requireNotNull(myFixture.findFileInTempDir("styles/app.css"))
+        val raw = com.intellij.util.indexing.FileBasedIndex.getInstance().getValues(
+            CSS_VARIABLE_INDEXER_NAME, "--accent-1", com.intellij.psi.search.GlobalSearchScope.fileScope(project, importer)
+        )
+        assertTrue(raw.isEmpty())
         assertTrue(ImportCache.get(project).get().isEmpty())
+        val entries = VariableLookup.cssValues(project, "--accent-1", cssvarsassistant.util.ScopeUtil.effectiveCssIndexingScope(project, CssVarsAssistantSettings.getInstance()))
+        assertEquals(listOf("#111111"), entries.map { it.value.value })
+        assertTrue(entries.all { it.file.path.endsWith("node_modules/vendor/tokens.css") })
+
     }
 
     fun testCollectProjectImportsResolvesUseFromNodeModules() {

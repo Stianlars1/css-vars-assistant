@@ -24,10 +24,10 @@ class CacheLifecycleAuditTest : CssVarsAssistantPlatformTestCase() {
         addProjectStylesheet("first.css", ":root { --first: red; }")
         val scope = GlobalSearchScope.projectScope(project)
         val cache = CssVarKeyCache.get(project)
-        assertFalse(readIndexedCssEntries("--first").isEmpty())
+        assertFalse(readCssEntries("--first").isEmpty())
         assertContainsElements(cache.keys(scope), "--first")
         addProjectStylesheet("second.css", ":root { --second: blue; }")
-        assertFalse(readIndexedCssEntries("--second").isEmpty())
+        assertFalse(readCssEntries("--second").isEmpty())
         assertContainsElements(cache.keys(scope), "--second")
     }
 
@@ -36,7 +36,7 @@ class CacheLifecycleAuditTest : CssVarsAssistantPlatformTestCase() {
         val scope = GlobalSearchScope.projectScope(project)
         assertEquals("red", PreprocessorUtil.resolveVariable(project, "@brand", scope))
         saveText(file, "@brand: blue;")
-        assertEquals(listOf("blue"), readIndexedPreprocessorValues("@brand"))
+        assertEquals(listOf("blue"), readPreprocessorValues("@brand"))
         assertEquals("blue", PreprocessorUtil.resolveVariable(project, "@brand", scope))
     }
 
@@ -54,9 +54,9 @@ class CacheLifecycleAuditTest : CssVarsAssistantPlatformTestCase() {
         updateSettings { indexingScope = CssVarsAssistantSettings.IndexingScope.PROJECT_WITH_IMPORTS }
         val tokens = myFixture.addFileToProject("node_modules/vendor/tokens.css", ":root { --brand: red; }").virtualFile
         myFixture.addFileToProject("app.css", "@import 'vendor/tokens.css';")
-        assertEquals(listOf("red"), readIndexedCssEntries("--brand").map { it.value })
+        assertEquals(listOf("red"), readCssEntries("--brand").map { it.value })
         saveText(tokens, ":root { --brand: blue; }")
-        assertEquals(listOf("blue"), readIndexedCssEntries("--brand").map { it.value })
+        assertEquals(listOf("blue"), readCssEntries("--brand").map { it.value })
     }
 
     private fun saveText(file: VirtualFile, text: String) {

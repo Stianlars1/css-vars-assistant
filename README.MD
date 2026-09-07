@@ -6,7 +6,7 @@
 
 If you find CSS Variables Assistant helpful, please consider rating it on [JetBrains Marketplace](https://plugins.jetbrains.com/plugin/27392-css-variables-assistant/reviews) ★★★★★ 🙏.
 
-**Version:** 1.9.3<br/>
+**Version:** 1.9.4<br/>
 **Compatible IDEs:** JetBrains IDEs with bundled JavaScript + CSS support — IntelliJ IDEA Ultimate, WebStorm, GoLand, PhpStorm, PyCharm Professional, and RubyMine.  
 **Author:** Stian Larsen  
 **Repo:** [github.com/Stianlars1/css-vars-assistant](https://github.com/Stianlars1/css-vars-assistant)
@@ -18,6 +18,18 @@ If you find CSS Variables Assistant helpful, please consider rating it on [JetBr
 
 
 Supercharge your CSS custom properties and preprocessor variables in JetBrains IDEs with advanced autocomplete, documentation, and debugging tools.
+---
+
+## What's new in 1.9.4
+
+This maintenance release fixes stale imported values, language-specific parsing and scope mistakes, unsafe alias cycles and completion in the wrong contexts. URLs, quoted values, Sass/LESS imports and theme alternatives retain their source information. HSL transparency and signed CSS lengths are handled correctly.
+
+Local declarations are parsed once per completion request. Existing exact-match ranking, insertion behavior and sorting settings are preserved. The variable index rebuilds once after upgrade; no settings change is needed.
+
+The plugin provides static token insight. It does not execute a Sass/LESS program or simulate the browser's full CSS cascade. Relative pixel values are estimates; complex expressions may remain literal. The [behavior contract](docs/PLUGIN-CONTRACT.md) describes the implementation boundaries.
+
+[Full changelog](CHANGELOG.MD)
+
 ---
 
 ## ✨ What's new in 1.9.3
@@ -217,7 +229,7 @@ Biggest quality release to date — closes issue [#18](https://github.com/Stianl
     - Context labels (Default, Dark, min-width, etc.)
     - Color swatches and contrast info
     - Dynamic columns: *px Eq.*, *Hex*, *WCAG* appear only when relevant
-    - **CSS cascade compliance:** Shows the actual winning value first, following proper CSS cascade rules
+    - **Declaration context:** Shows local/default declarations and theme alternatives with their sources; the browser also considers selector matching and stylesheet order
     - **Legend for derived variables:** Explains the ↗ symbol for variables resolved through imports
 - **JSDoc-style comments:** Auto-parsing and display of `@name`, `@description`, and `@example`.
 - **Advanced import resolution:** Follows and indexes imports across `CSS`, `SCSS`, `SASS` & `LESS`, including imported design-system packages and Sass partials.

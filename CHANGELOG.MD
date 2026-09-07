@@ -1,3 +1,22 @@
+## 1.9.4 — 2026-09-07
+
+### Fixed
+- Terminate mixed CSS/preprocessor alias cycles safely and preserve repeated sibling references and literal strings.
+- Refresh imported tokens after saved or unsaved edits, creation and deletion; attribute values to their actual source file and line.
+- Preserve URLs, quoted semicolons, Unicode custom-property names, multiline values, minified theme blocks and indented Sass contexts.
+- Respect SCSS declaration order, basic Sass namespaces, local LESS scopes and default assignments around legacy imports.
+- Handle LESS import options, Sass import lists and explicit partial extensions; retain CSS fallbacks for conditional package subpath exports.
+- Leave stylesheet at-rules, comments and literal strings to the IDE; keep variable completion available in multiline values and interpolation.
+- Preserve HSL alpha, normalize hue, tolerate malformed color input and recognize signed/leading-decimal sizes.
+- Preserve case-sensitive values and safely serialize literal index separators.
+
+### Performance and maintenance
+- Parse local declarations once per completion request; share resolution and source lookup between completion, documentation and hints.
+- Keep indexes file-local and read external imports through document/VFS-aware snapshots. Remove cross-request resolved-value caches, per-completion INFO token dumps and forced GC/index rebuilds on unload.
+- An index rebuild runs once after upgrade. No settings change is required.
+
+---
+
 # CSS Variables Assistant **(--)** Changelog
 
 All notable changes to this project will be documented in this file.

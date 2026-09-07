@@ -9,6 +9,7 @@ import cssvarsassistant.completion.CssVarKeyCache
 import cssvarsassistant.index.CSS_VARIABLE_INDEXER_NAME
 import cssvarsassistant.index.CssVariableIndexValueCodec
 import cssvarsassistant.index.ImportCache
+import cssvarsassistant.index.VariableLookup
 import cssvarsassistant.index.PREPROCESSOR_VARIABLE_INDEX_NAME
 import cssvarsassistant.settings.CssVarsAssistantSettings
 import cssvarsassistant.util.PreprocessorUtil
@@ -77,13 +78,11 @@ abstract class CssVarsAssistantPlatformTestCase : BasePlatformTestCase() {
         }
     }
 
-    protected fun readIndexedCssEntries(
+    protected fun readCssEntries(
         variableName: String,
-        scope: GlobalSearchScope = GlobalSearchScope.projectScope(project)
+        scope: GlobalSearchScope = ScopeUtil.effectiveCssIndexingScope(project, CssVarsAssistantSettings.getInstance())
     ): List<IndexedCssEntry> {
-        return FileBasedIndex.getInstance()
-            .getValues(CSS_VARIABLE_INDEXER_NAME, variableName, scope)
-            .let(CssVariableIndexValueCodec::decode)
+        return VariableLookup.cssValues(project, variableName, scope).map { it.value }
             .map { entry ->
                 IndexedCssEntry(
                     context = entry.context,
@@ -93,12 +92,11 @@ abstract class CssVarsAssistantPlatformTestCase : BasePlatformTestCase() {
             }
     }
 
-    protected fun readIndexedPreprocessorValues(
+    protected fun readPreprocessorValues(
         variableName: String,
-        scope: GlobalSearchScope = GlobalSearchScope.projectScope(project)
+        scope: GlobalSearchScope = ScopeUtil.effectiveCssIndexingScope(project, CssVarsAssistantSettings.getInstance())
     ): List<String> {
-        return FileBasedIndex.getInstance()
-            .getValues(PREPROCESSOR_VARIABLE_INDEX_NAME, variableName, scope)
+        return VariableLookup.preprocessorValues(project, variableName, scope).map { it.declaration.value }.distinct()
     }
 
     private fun renderLookup(element: LookupElement): RenderedLookup {
@@ -115,7 +113,5 @@ abstract class CssVarsAssistantPlatformTestCase : BasePlatformTestCase() {
     private fun clearPluginCaches() {
         CssVarKeyCache.get(project).clear()
         ImportCache.get(project).clear()
-        PreprocessorUtil.clearCache(project)
-        ScopeUtil.clearCache(project)
     }
 }

@@ -5,20 +5,16 @@ import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.project.DumbService
-import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiElement
-import com.intellij.psi.search.GlobalSearchScope
-import com.intellij.util.indexing.FileBasedIndex
 import cssvarsassistant.completion.CssVariableCompletion
-import cssvarsassistant.index.CSS_VARIABLE_INDEXER_NAME
-import cssvarsassistant.index.CssVariableIndexValueCodec
 import cssvarsassistant.index.IndexedCssVariableValue
-import cssvarsassistant.index.PREPROCESSOR_VARIABLE_INDEX_NAME
+import cssvarsassistant.index.VariableLookup
+import cssvarsassistant.index.VariableLocation
+import cssvarsassistant.index.PreprocessorLookup
+import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.psi.PsiFile
 import cssvarsassistant.model.DocParser
 import cssvarsassistant.settings.CssVarsAssistantSettings
-import cssvarsassistant.util.CssTextUtil
-import cssvarsassistant.util.PreprocessorUtil
-import cssvarsassistant.util.RankUtil.rank
 import cssvarsassistant.util.ScopeUtil
 import cssvarsassistant.util.ValueUtil
 import kotlin.math.roundToInt
@@ -64,38 +60,25 @@ object CssVariableDocumentationService {
             // mapping. The plan explicitly rejects `getContainingFiles` + a
             // follow-up re-query; that's O(files × keys) and duplicates work
             // the index has already done.
-            val rawEntries = mutableListOf<RawEntryWithFile>()
-            FileBasedIndex.getInstance().processValues(
-                CSS_VARIABLE_INDEXER_NAME,
-                lookupName,
-                null,
-                { file, packed ->
-                    CssVariableIndexValueCodec.decodePacked(packed).forEach { decoded ->
-                        rawEntries += RawEntryWithFile(decoded, file.name)
-                    }
-                    true
-                },
-                cssScope
-            )
+            val rawEntries = VariableLookup.cssValues(project, lookupName, cssScope)
+                .map { RawEntryWithFile(it.value, it.file.name, it.file) }
+            val resolver = VariableResolver(project)
 
             if (rawEntries.isEmpty()) return null
 
             val parsed = rawEntries.map { withFile ->
                 val entry = withFile.value
-                val resInfo = resolveVarValue(project, entry.value)
+                val resInfo = resolver.resolve(entry.value, VariableLocation(withFile.file, entry.offset.takeIf { it >= 0 } ?: Int.MAX_VALUE, cssContext = entry.context))
                 ParsedEntry(
                     context = entry.context,
                     rawValue = entry.value,
                     resInfo = resInfo,
                     comment = entry.comment,
                     sourceFile = withFile.sourceFile,
-                    sourceLine = entry.line
+                    sourceLine = entry.line,
+                    file = withFile.file
                 )
             }
-
-            // Get local file text and find local values
-            val activeText = element.containingFile.text
-            val localValues = extractLocalValues(activeText, lookupName)
 
             // Mark entries as local or imported
             val enrichedEntries = parsed.map { entry ->
@@ -106,7 +89,7 @@ object CssVariableDocumentationService {
                     comment = entry.comment,
                     sourceFile = entry.sourceFile,
                     sourceLine = entry.sourceLine,
-                    isLocal = isLocalDeclaration(entry.rawValue, localValues)
+                    isLocal = entry.file == element.containingFile.virtualFile
                 )
             }
 
@@ -210,95 +193,34 @@ object CssVariableDocumentationService {
         val resInfo: ResolutionInfo,
         val comment: String,
         val sourceFile: String?,
-        val sourceLine: Int?
+        val sourceLine: Int?,
+        val file: VirtualFile
     )
 
     private data class RawEntryWithFile(
         val value: IndexedCssVariableValue,
-        val sourceFile: String
+        val sourceFile: String,
+        val file: VirtualFile
     )
 
-    private data class RawPreprocessorEntry(
-        val value: String,
-        val sourceFile: String?
+    private fun location(element: PsiElement): VariableLocation = VariableLocation(
+        element.containingFile.virtualFile,
+        if (element is PsiFile) Int.MAX_VALUE else element.textRange.endOffset
     )
 
     private fun generatePreprocessorDocumentation(element: PsiElement, varName: String): String? {
         val project = element.project
         val scope = ScopeUtil.currentPreprocessorScope(project)
-        val rawEntries = mutableListOf<RawPreprocessorEntry>()
-
-        FileBasedIndex.getInstance().processValues(
-            PREPROCESSOR_VARIABLE_INDEX_NAME,
-            varName,
-            null,
-            { file, rawValue ->
-                rawEntries += RawPreprocessorEntry(rawValue, file.name)
-                true
-            },
-            scope
-        )
-
-        if (rawEntries.isEmpty()) return null
-
-        findCssAliasForPreprocessor(
-            project = project,
-            varName = varName,
-            scope = scope,
-            rawValues = rawEntries.map { it.value }
-        )?.let { cssVarName ->
-            generateCssVarDocumentation(
-                element,
-                displayName = "$varName → var($cssVarName)",
-                lookupName = cssVarName
-            )?.let { return it }
+        val location = location(element)
+        val source = PreprocessorLookup(project, scope).find(varName, location) ?: return null
+        val resolver = VariableResolver(project, scope)
+        val preprocessorOnly = resolver.resolve(varName, location, expandCss = false)
+        extractCssVarAlias(preprocessorOnly.resolved)?.let { alias ->
+            generateCssVarDocumentation(element, "$varName → var($alias)", alias)?.let { return it }
         }
-
-        val resolution = findPreprocessorVariableValue(project, varName) ?: ResolutionInfo(varName, varName)
-        val rows = listOf(
-            HoverRow(
-                context = "default",
-                resInfo = resolution,
-                comment = "",
-                sourceFile = rawEntries.firstOrNull()?.sourceFile,
-                sourceLine = null
-            )
-        )
-        val doc = DocParser.parse("", resolution.resolved)
-
-        return buildHtmlDocument(
-            varName = varName,
-            doc = doc,
-            sorted = rows,
-            showPixelCol = shouldShowPixelColumn(rows),
-            winnerIndex = 0
-        )
-    }
-
-    private fun findCssAliasForPreprocessor(
-        project: Project,
-        varName: String,
-        scope: GlobalSearchScope,
-        rawValues: Iterable<String>
-    ): String? {
-        rawValues.firstNotNullOfOrNull { extractCssVarAlias(it) }?.let { return it }
-
-        val preprocessorOnlyResolution = PreprocessorUtil.resolveVariableWithSteps(project, varName, scope)
-        return extractCssVarAlias(preprocessorOnlyResolution.resolved)
-    }
-
-    private fun extractLocalValues(fileText: String, varName: String): Set<String> {
-        // Issue #18 Bug A mirror: the same comment-leak that affected completion
-        // also affected the "is this a local declaration?" check here, causing
-        // commented-out example declarations to be counted as local.
-        return Regex("""\Q$varName\E\s*:\s*([^;]+);""")
-            .findAll(CssTextUtil.stripCssComments(fileText))
-            .map { it.groupValues[1].trim() }
-            .toSet()
-    }
-
-    private fun isLocalDeclaration(rawValue: String, localValues: Set<String>): Boolean {
-        return localValues.contains(rawValue)
+        val resolution = resolver.resolve(varName, location)
+        val rows = listOf(HoverRow("default", resolution, "", source.file.name, source.declaration.line))
+        return buildHtmlDocument(varName, DocParser.parse("", resolution.resolved), rows, shouldShowPixelColumn(rows), 0)
     }
 
     private fun findCascadeWinner(sorted: List<EntryWithSource>): Int {
@@ -325,100 +247,29 @@ object CssVariableDocumentationService {
 
     fun generateHint(element: PsiElement, varName: String): String? {
         val project = element.project
-        val settings = CssVarsAssistantSettings.getInstance()
-        if (isPreprocessorVariable(varName)) {
-            return generatePreprocessorHint(project, varName)
-        }
-
-        val scope = ScopeUtil.effectiveCssIndexingScope(project, settings)
-
-        return try {
-            val rawEntries = CssVariableIndexValueCodec.decode(
-                FileBasedIndex.getInstance().getValues(CSS_VARIABLE_INDEXER_NAME, varName, scope)
-            )
-
-            // Use same cascade logic for hint generation
-            val activeText = element.containingFile.text
-            val localWinner = lastLocalValueInFile(activeText, varName)
-
-            val resolutionInfo = if (localWinner != null) {
-                // Local declaration - resolve it to get steps
-                resolveVarValue(project, localWinner)
-            } else {
-                // Fallback to indexed values
-                rawEntries.let { list ->
-                    val rawValue = list.find { it.context == "default" }?.value ?: list.firstOrNull()?.value
-                    rawValue?.let { resolveVarValue(project, it) }
-                }
-            }
-
-            // Return resolution steps if they exist, otherwise just the final value
-            resolutionInfo?.let { info ->
-                val result = if (info.steps.isNotEmpty() && info.original != info.resolved) {
-                    "Resolution: ${info.steps.joinToString(" → ")} → ${info.resolved}"
-                } else {
-                    "$varName → ${info.resolved}"
-                }
-                result
-            }
-        } catch (e: Exception) {
-            logger.warn("Failed to generate hint for $varName", e)
-            null
-        }
-    }
-
-    private fun generatePreprocessorHint(project: com.intellij.openapi.project.Project, varName: String): String? {
-        val scope = ScopeUtil.currentPreprocessorScope(project)
-        val values = FileBasedIndex.getInstance()
-            .getValues(PREPROCESSOR_VARIABLE_INDEX_NAME, varName, scope)
-        if (values.isEmpty()) return null
-
-        generateCssAliasHint(project, varName, scope, values)?.let { return it }
-
-        val resolutionInfo = findPreprocessorVariableValue(project, varName)
-            ?: ResolutionInfo(varName, varName)
-        return if (resolutionInfo.steps.isNotEmpty() && resolutionInfo.original != resolutionInfo.resolved) {
-            "Resolution: ${resolutionInfo.steps.joinToString(" → ")} → ${resolutionInfo.resolved}"
+        if (DumbService.isDumb(project)) return null
+        ProgressManager.checkCanceled()
+        val resolver = VariableResolver(project)
+        val location = location(element)
+        val resolution = if (isPreprocessorVariable(varName)) {
+            val scope = ScopeUtil.currentPreprocessorScope(project)
+            if (PreprocessorLookup(project, scope).find(varName, location) == null) return null
+            resolver.resolve(varName, location)
         } else {
-            "$varName → ${resolutionInfo.resolved}"
+            val scope = ScopeUtil.effectiveCssIndexingScope(project, CssVarsAssistantSettings.getInstance())
+            val entries = VariableLookup.cssValues(project, varName, scope)
+            val local = lastLocalValueInFile(element.containingFile.text, varName)
+            val value = local ?: entries.lastOrNull { it.value.context == "default" }?.value?.value
+                ?: entries.firstOrNull()?.value?.value ?: return null
+            resolver.resolve(value, location)
         }
-    }
-
-    private fun generateCssAliasHint(
-        project: Project,
-        varName: String,
-        scope: GlobalSearchScope,
-        rawValues: Iterable<String>
-    ): String? {
-        val preprocessorOnlyResolution = PreprocessorUtil.resolveVariableWithSteps(project, varName, scope)
-        val cssVarName = rawValues.firstNotNullOfOrNull { extractCssVarAlias(it) }
-            ?: extractCssVarAlias(preprocessorOnlyResolution.resolved)
-            ?: return null
-
-        val cssScope = ScopeUtil.effectiveCssIndexingScope(
-            project,
-            CssVarsAssistantSettings.getInstance()
-        )
-        val rawEntries = CssVariableIndexValueCodec.decode(
-            FileBasedIndex.getInstance().getValues(CSS_VARIABLE_INDEXER_NAME, cssVarName, cssScope)
-        )
-        if (rawEntries.isEmpty()) return null
-
-        val rawValue = rawEntries.find { it.context == "default" }?.value
-            ?: rawEntries.first().value
-        val cssInfo = resolveVarValue(project, rawValue)
-        val prefixSteps = preprocessorOnlyResolution.steps.ifEmpty { listOf(varName) }
-        val cssSteps = if (cssInfo.steps.isNotEmpty() && cssInfo.original != cssInfo.resolved) {
-            cssInfo.steps + cssInfo.resolved
-        } else {
-            listOf(cssInfo.resolved)
-        }
-
-        return "Resolution: ${(prefixSteps + "var($cssVarName)" + cssSteps).joinToString(" → ")}"
+        return if (resolution.steps.isNotEmpty() && resolution.original != resolution.resolved) {
+            "Resolution: ${resolution.steps.joinToString(" → ")} → ${resolution.resolved}"
+        } else "$varName → ${resolution.resolved}"
     }
 
     private fun isPreprocessorVariable(varName: String): Boolean =
-        varName.startsWith("$") || varName.startsWith("@")
+        varName.startsWith("$") || varName.startsWith("@") || varName.contains(".$")
 
     private fun shouldShowPixelColumn(rows: List<HoverRow>): Boolean =
         rows.any { entry ->

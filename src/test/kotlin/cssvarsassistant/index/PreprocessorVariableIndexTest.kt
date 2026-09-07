@@ -14,9 +14,9 @@ class PreprocessorVariableIndexTest : CssVarsAssistantPlatformTestCase() {
             """
         )
 
-        assertEquals(listOf("#7f80ff"), readIndexedPreprocessorValues("\$brand-primary"))
-        assertEquals(listOf("1rem"), readIndexedPreprocessorValues("\$space-md"))
-        assertTrue(readIndexedPreprocessorValues("brand-primary").isEmpty())
+        assertEquals(listOf("#7f80ff"), readPreprocessorValues("\$brand-primary"))
+        assertEquals(listOf("1rem"), readPreprocessorValues("\$space-md"))
+        assertTrue(readPreprocessorValues("brand-primary").isEmpty())
     }
 
     fun testSassIndentedVariablesWithoutSemicolonAreIndexed() {
@@ -28,8 +28,8 @@ class PreprocessorVariableIndexTest : CssVarsAssistantPlatformTestCase() {
             """
         )
 
-        assertEquals(listOf("#7f80ff"), readIndexedPreprocessorValues("\$brand-primary"))
-        assertEquals(listOf("1rem"), readIndexedPreprocessorValues("\$space-md"))
+        assertEquals(listOf("#7f80ff"), readPreprocessorValues("\$brand-primary"))
+        assertEquals(listOf("1rem"), readPreprocessorValues("\$space-md"))
     }
 
     fun testLessVariablesKeepAtPrefix() {
@@ -41,9 +41,9 @@ class PreprocessorVariableIndexTest : CssVarsAssistantPlatformTestCase() {
             """
         )
 
-        assertEquals(listOf("#7f80ff"), readIndexedPreprocessorValues("@brand-primary"))
-        assertEquals(listOf("1rem"), readIndexedPreprocessorValues("@space-md"))
-        assertTrue(readIndexedPreprocessorValues("brand-primary").isEmpty())
+        assertEquals(listOf("#7f80ff"), readPreprocessorValues("@brand-primary"))
+        assertEquals(listOf("1rem"), readPreprocessorValues("@space-md"))
+        assertTrue(readPreprocessorValues("brand-primary").isEmpty())
     }
 
     fun testDollarAndAtVariablesWithSameNameStaySeparate() {
@@ -60,8 +60,8 @@ class PreprocessorVariableIndexTest : CssVarsAssistantPlatformTestCase() {
             """
         )
 
-        assertEquals(listOf("#111111"), readIndexedPreprocessorValues("\$brand-primary"))
-        assertEquals(listOf("#222222"), readIndexedPreprocessorValues("@brand-primary"))
+        assertEquals(listOf("#111111"), readPreprocessorValues("\$brand-primary"))
+        assertEquals(listOf("#222222"), readPreprocessorValues("@brand-primary"))
     }
 
     fun testScssComplexMapValueIsKeptRaw() {
@@ -75,7 +75,7 @@ class PreprocessorVariableIndexTest : CssVarsAssistantPlatformTestCase() {
             """
         )
 
-        val value = readIndexedPreprocessorValues("\$palette").single()
+        val value = readPreprocessorValues("\$palette").single()
         assertTrue(value, value.startsWith("("))
         assertTrue(value, value.contains("primary: #ffffff"))
         assertTrue(value, value.contains("secondary: #000000"))
@@ -93,9 +93,9 @@ class PreprocessorVariableIndexTest : CssVarsAssistantPlatformTestCase() {
             """
         )
 
-        assertTrue(readIndexedPreprocessorValues("\$commented-block").isEmpty())
-        assertTrue(readIndexedPreprocessorValues("\$commented-line").isEmpty())
-        assertEquals(listOf("green"), readIndexedPreprocessorValues("\$real-token"))
+        assertTrue(readPreprocessorValues("\$commented-block").isEmpty())
+        assertTrue(readPreprocessorValues("\$commented-line").isEmpty())
+        assertEquals(listOf("green"), readPreprocessorValues("\$real-token"))
     }
 
     fun testProjectWithImportsIndexesImportedScssPartialVariablesThroughImportingFile() {
@@ -116,7 +116,7 @@ class PreprocessorVariableIndexTest : CssVarsAssistantPlatformTestCase() {
             """
         )
 
-        assertEquals(listOf("#7f80ff"), readIndexedPreprocessorValues("\$vendor-brand"))
+        assertEquals(listOf("#7f80ff"), readPreprocessorValues("\$vendor-brand"))
     }
 
     fun testPackageCssFallbackKeepsSassEntrypointVariablesIndexed() {
@@ -160,10 +160,10 @@ class PreprocessorVariableIndexTest : CssVarsAssistantPlatformTestCase() {
 
         assertEquals(
             listOf("var(--brand-primary)"),
-            readIndexedPreprocessorValues("\$vendor-brand")
+            readPreprocessorValues("\$vendor-brand")
         )
         assertContainsElements(
-            readIndexedCssEntries("--brand-primary").map { it.value },
+            readCssEntries("--brand-primary").map { it.value },
             "#7f80ff"
         )
     }
@@ -185,7 +185,7 @@ class PreprocessorVariableIndexTest : CssVarsAssistantPlatformTestCase() {
             """
         )
 
-        assertTrue(readIndexedPreprocessorValues("\$vendor-brand").isEmpty())
+        assertTrue(readPreprocessorValues("\$vendor-brand").isEmpty())
     }
 
     fun testGlobalInputFilterAllowsNodeModulesPreprocessorFiles() {

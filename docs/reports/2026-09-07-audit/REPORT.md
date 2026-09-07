@@ -1,5 +1,7 @@
 # Teknisk gjennomgang av CSS Variables Assistant
 
+> Historical audit before implementation. Fixes and release verification are tracked separately; the red-test results below preserve the original evidence.
+
 Dato: 7. september 2026. Undersøkt kode: **main / v1.9.3**, commit **1c9ea8e4478d69fd4e3121cc1b378f7d0fcf37f3**.
 
 **Konklusjon:** Pluginen har nyttig funksjonalitet og en eksisterende testsuite som passerer, men testene dekker ikke flere viktige forskjeller mellom CSS, SCSS, Sass og LESS. Undersøkelsen bekrefter feil i rekursjon, indeksoppdatering, cache, språkforståelse og editorintegrasjon. Jeg anbefaler målrettede feilrettinger først, deretter en avgrenset omlegging av indeksering og verdioppslag.

@@ -179,7 +179,7 @@ fun buildHtmlDocument(
             val tooltipText = buildTooltipText(resInfo, rawValue)
 
             sb.append("<td $rowStyle title='${StringUtil.escapeXmlEntities(tooltipText)}'><nobr>")
-                .append(StringUtil.escapeXmlEntities(rawValue).lowercase())
+                .append(StringUtil.escapeXmlEntities(rawValue))
 
             // Mark overridden values
             if (isOverridden) {

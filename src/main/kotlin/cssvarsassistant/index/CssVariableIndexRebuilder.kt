@@ -5,8 +5,6 @@ import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.project.ProjectManager
 import com.intellij.util.indexing.FileBasedIndex
 import cssvarsassistant.completion.CssVarKeyCache
-import cssvarsassistant.util.PreprocessorUtil
-import cssvarsassistant.util.ScopeUtil
 
 object CssVariableIndexRebuilder {
     private val LOG = Logger.getInstance(CssVariableIndexRebuilder::class.java)
@@ -28,7 +26,6 @@ object CssVariableIndexRebuilder {
                     if (!project.isDisposed) {
                         CssVarKeyCache.get(project).clear()
                         ImportCache.get(project).clear()
-                        ScopeUtil.clearCache(project)
                     }
                 } catch (e: Exception) {
                     LOG.warn("Error clearing caches for project ${project.name}", e)
@@ -36,8 +33,6 @@ object CssVariableIndexRebuilder {
             }
 
             // Clear static caches
-            PreprocessorUtil.clearCache()
-            ScopeUtil.clearAll()
 
             LOG.info("✅ Comprehensive index rebuild completed")
 

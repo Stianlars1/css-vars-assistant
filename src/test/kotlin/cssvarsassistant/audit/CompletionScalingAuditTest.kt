@@ -13,7 +13,7 @@ class CompletionScalingAuditTest : CssVarsAssistantPlatformTestCase() {
                 append("}\n.a { padding: var(--audit-$count-<caret>); }")
             }
             configureProjectFile("tokens$count.css", source)
-            assertFalse(readIndexedCssEntries("--audit-$count-0").isEmpty())
+            assertFalse(readCssEntries("--audit-$count-0").isEmpty())
             repeat(3) { run ->
                 var itemCount = 0
                 val elapsed = measureNanoTime {

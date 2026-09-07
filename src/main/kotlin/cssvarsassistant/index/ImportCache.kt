@@ -6,22 +6,25 @@ import com.intellij.openapi.components.Service
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
-import cssvarsassistant.util.PreprocessorUtil
-import cssvarsassistant.util.ScopeUtil
-import java.util.concurrent.ConcurrentHashMap
+import cssvarsassistant.settings.CssVarsAssistantSettings
 
 @Service(Service.Level.PROJECT)
 class ImportCache(private val project: Project) : Disposable {
     private val LOG = Logger.getInstance(ImportCache::class.java)
-    private val importedFiles = ConcurrentHashMap.newKeySet<VirtualFile>()
+    private val importedFiles = linkedSetOf<VirtualFile>()
     @Volatile
     private var initialized = false
+    private var builtAt = -1L
+    private var builtDepth = -1
 
 
     @Synchronized
     fun getOrBuild(maxDepth: Int): Set<VirtualFile> {
-        if (!initialized) {
+        val revision = StylesheetChanges.stamp(project)
+        if (!initialized || builtAt != revision || builtDepth != maxDepth) {
             replaceInternal(ImportResolver.collectProjectImports(project, maxDepth))
+            builtAt = revision
+            builtDepth = maxDepth
             initialized = true
         }
         return importedFiles.toSet()
@@ -30,19 +33,25 @@ class ImportCache(private val project: Project) : Disposable {
     @Synchronized
     fun add(files: Collection<VirtualFile>) {
         initialized = true
-        if (files.any { importedFiles.add(it) }) {
+        builtAt = StylesheetChanges.stamp(project)
+        builtDepth = CssVarsAssistantSettings.getInstance().maxImportDepth
+        if (importedFiles.addAll(files)) {
             invalidateDependentCaches()
         }
     }
 
+    @Synchronized
     fun get(): Set<VirtualFile> = importedFiles.toSet()
 
     @Synchronized
     fun replace(files: Collection<VirtualFile>) {
         initialized = true
+        builtAt = StylesheetChanges.stamp(project)
+        builtDepth = CssVarsAssistantSettings.getInstance().maxImportDepth
         replaceInternal(files)
     }
 
+    @Synchronized
     fun clear() {
         try {
             initialized = false
@@ -53,14 +62,8 @@ class ImportCache(private val project: Project) : Disposable {
         }
     }
 
-    override fun dispose() {
-        try {
-            clear()
-            LOG.debug("ImportCache disposed for project: ${project.name}")
-        } catch (e: Exception) {
-            LOG.warn("Error disposing ImportCache", e)
-        }
-    }
+    @Synchronized
+    override fun dispose() = importedFiles.clear()
 
     companion object {
         @JvmStatic
@@ -80,7 +83,6 @@ class ImportCache(private val project: Project) : Disposable {
     }
 
     private fun invalidateDependentCaches() {
-        PreprocessorUtil.clearCache(project)
-        ScopeUtil.clearCache(project)
+        cssvarsassistant.completion.CssVarKeyCache.get(project).clear()
     }
 }

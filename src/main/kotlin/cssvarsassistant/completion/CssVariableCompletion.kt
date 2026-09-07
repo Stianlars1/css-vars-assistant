@@ -7,21 +7,21 @@ import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.project.DumbService
-import com.intellij.openapi.project.Project
 import com.intellij.patterns.PlatformPatterns
 import com.intellij.psi.css.CssFunction
 import com.intellij.psi.util.PsiTreeUtil
 import com.intellij.util.ProcessingContext
-import com.intellij.util.indexing.FileBasedIndex
 import com.intellij.util.ui.ColorIcon
 import cssvarsassistant.documentation.ColorParser
-import cssvarsassistant.documentation.findPreprocessorVariableValue
-import cssvarsassistant.documentation.lastLocalValueInFile
-import cssvarsassistant.documentation.resolveVarValue
+import cssvarsassistant.documentation.VariableResolver
+import cssvarsassistant.documentation.VariablePsiContext
+import cssvarsassistant.index.VariableLookup
+import cssvarsassistant.index.VariableLocation
+import cssvarsassistant.index.PreprocessorLookup
+import cssvarsassistant.index.CssVariableEntryParser
+import cssvarsassistant.index.IndexedCssVariableValue
+import cssvarsassistant.index.SourcedCssValue
 import cssvarsassistant.feedback.RatePromptService
-import cssvarsassistant.index.CSS_VARIABLE_INDEXER_NAME
-import cssvarsassistant.index.CssVariableIndexValueCodec
-import cssvarsassistant.index.PREPROCESSOR_VARIABLE_INDEX_NAME
 import cssvarsassistant.model.DocParser
 import cssvarsassistant.settings.CssVarsAssistantSettings
 import cssvarsassistant.util.CssTextUtil
@@ -61,7 +61,7 @@ internal fun extractPreprocessorCompletionQuery(
     val symbolOffset = nameStart - 1
     val symbol = text[symbolOffset]
     if (!isAllowedPreprocessorSymbol(ext, symbol)) return null
-    if (isPreprocessorDeclarationLeftHandSide(text, symbolOffset)) return null
+    if (!VariablePsiContext.isPreprocessorValuePosition(ext, text, symbolOffset)) return null
 
     return PreprocessorCompletionQuery(
         symbol = symbol,
@@ -79,14 +79,6 @@ private fun isAllowedPreprocessorSymbol(extension: String, symbol: Char): Boolea
         "less" -> symbol == '@'
         else -> false
     }
-
-private fun isPreprocessorDeclarationLeftHandSide(text: String, symbolOffset: Int): Boolean {
-    val lineStart = maxOf(
-        text.lastIndexOf('\n', startIndex = (symbolOffset - 1).coerceAtLeast(0)),
-        text.lastIndexOf('\r', startIndex = (symbolOffset - 1).coerceAtLeast(0))
-    ) + 1
-    return text.substring(lineStart, symbolOffset).isBlank()
-}
 
 internal class PreprocessorPrefixMatcher(prefix: String) : PrefixMatcher(prefix) {
     override fun prefixMatches(name: String): Boolean {
@@ -207,38 +199,34 @@ class CssVariableCompletion : CompletionContributor() {
                         // caret. Strip it before it reaches the cascade regex so local-override
                         // detection can't mis-read the dummy as part of a value.
                         val activeFileText = CssTextUtil.stripCompletionDummy(params.originalFile.text)
+                        val activeFile = params.originalFile.viewProvider.virtualFile
+                        val localEntries = CssVariableEntryParser.declarations(activeFileText, stylesheetExtension(params)).groupBy { it.entry.name }
+                        val resolver = VariableResolver(project)
 
-                        keyCache.keys(cssScope).forEach { rawName ->
+                        (keyCache.keys(cssScope) + localEntries.keys).distinct().forEach { rawName ->
                             ProgressManager.checkCanceled()
-
                             val display = rawName.removePrefix("--")
                             val match = CssVarQueryMatcher.bestMatch(display, activeQuery) ?: return@forEach
 
-                            /* ---- hent alle values -------------------------- */
-                            val allVals = CssVariableIndexValueCodec.decode(
-                                FileBasedIndex.getInstance().getValues(CSS_VARIABLE_INDEXER_NAME, rawName, cssScope)
-                            ).distinct()
-
-                            if (allVals.isEmpty()) return@forEach
-
-                            /* ---- map til (context, resolved) --------------- */
-                            var didResolve = false
-
-                            val valuePairs = allVals.mapNotNull {
-                                val resolved = resolveVarValue(project, it.value).resolved
-                                if (resolved != it.value) didResolve = true
-                                it.context to resolved
+                            val sourceValues = VariableLookup.cssValues(project, rawName, cssScope).filter { it.file != activeFile }.toMutableList()
+                            localEntries[rawName].orEmpty().forEach {
+                                val entry = it.entry
+                                sourceValues += SourcedCssValue(activeFile, IndexedCssVariableValue(entry.context, entry.value, entry.comment, entry.line, it.offset))
                             }
-
-
-                            val uniquePairs = valuePairs
-                                .asReversed()
-                                .distinctBy { it.first to it.second }     // beholder én rad per (context,value)
-                                .asReversed()
-
-                            /* --- finn cascade-vinner --- */
-                            val mainValue = CssVarCascadeUtil.selectMainValue(rawName, activeFileText, uniquePairs)
-
+                            val allVals = sourceValues.map { it.value }.distinct()
+                            if (allVals.isEmpty()) return@forEach
+                            var didResolve = false
+                            val valuePairs = sourceValues.map {
+                                val value = it.value
+                                val resolved = resolver.resolve(value.value, VariableLocation(it.file, value.offset.takeIf { offset -> offset >= 0 } ?: Int.MAX_VALUE, cssContext = value.context)).resolved
+                                if (resolved != value.value) didResolve = true
+                                value.context to resolved
+                            }
+                            val uniquePairs = valuePairs.distinct()
+                            val local = localEntries[rawName]?.lastOrNull()
+                            val mainValue = if (local != null) {
+                                resolver.resolve(local.entry.value, VariableLocation(activeFile, local.offset, cssContext = local.entry.context)).resolved
+                            } else uniquePairs.lastOrNull { it.first == "default" }?.second ?: uniquePairs.last().second
 
                             val docEntry = allVals.firstOrNull { it.comment.isNotBlank() } ?: allVals.first()
                             val commentTxt = docEntry.comment
@@ -398,18 +386,7 @@ class CssVariableCompletion : CompletionContributor() {
                             RatePromptService.getInstance().recordUsage()
                         }
 
-                        // Phase 7f: log activeQuery + returned names so that a
-                        // future "why didn't --foo show up?" report can be
-                        // answered from idea.log without another rebuild cycle.
-                        // If the name is in this list but not in the popup, the
-                        // arranger/UI filtered it; if it's missing here, our
-                        // contributor never offered it.
-                        logger.info(
-                            "CSS var completion: ${System.currentTimeMillis() - startTime}ms, " +
-                                "query=raw='${activeQuery.rawPrefix}' norm='${activeQuery.normalizedPrefix}', " +
-                                "returned ${strongestEntries.size}: " +
-                                strongestEntries.joinToString(",") { it.rawName }
-                        )
+                        logger.debug("CSS variable completion: ${System.currentTimeMillis() - startTime}ms, ${strongestEntries.size} candidates")
 
                     } catch (e: ProcessCanceledException) {
                         throw e
@@ -437,44 +414,40 @@ class CssVariableCompletion : CompletionContributor() {
         )
         val completionResult = result.withPrefixMatcher(PreprocessorPrefixMatcher(query.rawPrefix))
 
-        val entries = FileBasedIndex.getInstance()
-            .getAllKeys(PREPROCESSOR_VARIABLE_INDEX_NAME, project)
+        val text = params.editor.document.text
+        val symbolOffset = params.editor.caretModel.offset - query.rawPrefix.length
+        var namespaceStart = symbolOffset - 1
+        val namespace = if (namespaceStart >= 0 && text[namespaceStart] == '.') {
+            while (namespaceStart > 0 && isPreprocessorNameChar(text[namespaceStart - 1])) namespaceStart--
+            text.substring(namespaceStart, symbolOffset - 1).takeIf(String::isNotEmpty)
+        } else null
+        val location = VariableLocation(params.originalFile.viewProvider.virtualFile, params.editor.caretModel.offset, namespace)
+        val lookup = PreprocessorLookup(project, scope)
+        val resolver = VariableResolver(project, scope)
+        val localKeys = cssvarsassistant.index.PreprocessorVariableEntryParser.declarations(text, stylesheetExtension(params)).declarations.map { it.name }
+        val entries = (VariableLookup.preprocessorKeys(project, scope) + localKeys)
+            .distinct()
             .asSequence()
             .filter { key ->
                 key.firstOrNull() == query.symbol &&
-                        key.removePrefix(query.symbol.toString())
-                            .startsWith(query.normalizedPrefix, ignoreCase = true)
+                    key.drop(1).replace('_', '-').startsWith(query.normalizedPrefix.replace('_', '-'), ignoreCase = true)
             }
-            .filter { key ->
-                FileBasedIndex.getInstance()
-                    .getValues(PREPROCESSOR_VARIABLE_INDEX_NAME, key, scope)
-                    .isNotEmpty()
-            }
-            .distinct()
             .mapNotNull { key ->
                 ProgressManager.checkCanceled()
-                val rawValues = FileBasedIndex.getInstance()
-                    .getValues(PREPROCESSOR_VARIABLE_INDEX_NAME, key, scope)
-                    .distinct()
-                if (rawValues.isEmpty()) return@mapNotNull null
-
-                val resolution = findPreprocessorVariableValue(project, key)
-                    ?: return@mapNotNull null
+                val source = lookup.find(key, location) ?: return@mapNotNull null
+                val resolution = resolver.resolve(key, location)
                 val mainValue = resolution.resolved.trim()
-                val didResolve = rawValues.none { it.trim() == mainValue }
                 Entry(
                     rawName = key,
-                    display = key.removePrefix(query.symbol.toString()),
+                    display = key.drop(1),
                     mainValue = mainValue,
                     allValues = listOf("default" to mainValue),
                     doc = "",
                     isAllColor = ColorParser.parseCssColor(mainValue) != null,
-                    derived = didResolve,
-                    matchPriority = 0,
+                    derived = source.declaration.value != mainValue,
                     matchedQuery = query.normalizedPrefix
                 )
-            }
-            .toMutableList()
+            }.toMutableList()
 
         entries.sortWith(createSmartComparator(settings.sortingOrder, query.normalizedPrefix))
 
@@ -509,12 +482,9 @@ class CssVariableCompletion : CompletionContributor() {
             RatePromptService.getInstance().recordUsage()
         }
 
-        logger.info(
-            "Preprocessor var completion: ${System.currentTimeMillis() - startTime}ms, " +
-                    "query='${query.rawPrefix}', returned ${entries.size}: " +
-                    entries.joinToString(",") { it.rawName }
-        )
+        logger.debug("Preprocessor completion: ${System.currentTimeMillis() - startTime}ms, ${entries.size} candidates")
     }
+
 
     private fun stylesheetExtension(params: CompletionParameters): String? =
         params.originalFile.virtualFile?.extension?.lowercase()
@@ -691,6 +661,11 @@ class CssVariableCompletion : CompletionContributor() {
      */
     private fun isInsideVarFunction(params: CompletionParameters): Boolean {
         val offset = params.offset
+        val source = params.editor.document.text
+        val masked = CssTextUtil.maskComments(source, maskStrings = true).text
+        var probe = (params.editor.caretModel.offset - 1).coerceAtMost(source.lastIndex)
+        while (probe >= 0 && source[probe].isWhitespace()) probe--
+        if (probe >= 0 && source[probe] != masked[probe]) return false
 
         // 1. PSI-first, the authoritative answer when available.
         try {
@@ -710,7 +685,7 @@ class CssVariableCompletion : CompletionContributor() {
         // 2. Textual fallback — used in dumb mode, non-indexed files, and the
         //    SCSS/LESS contexts where the CSS PSI sometimes does not see var.
         return try {
-            val text = params.editor.document.text
+            val text = masked
             val searchStart = maxOf(0, offset - 200)
             val searchText = text.substring(searchStart, offset)
             val cursorInSearch = offset - searchStart

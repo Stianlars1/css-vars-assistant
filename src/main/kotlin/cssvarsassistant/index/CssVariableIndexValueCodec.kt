@@ -1,50 +1,62 @@
 package cssvarsassistant.index
 
-// ASCII unit-separator (0x1F). Invisible in editors but safe: nothing in
-// valid CSS values, comments, or context labels uses this control character.
-const val DELIMITER = ""
+import java.io.ByteArrayInputStream
+import java.io.ByteArrayOutputStream
+import java.io.DataInputStream
+import java.io.DataOutputStream
+import java.util.Base64
+
+const val DELIMITER = "\u001f"
 const val ENTRY_SEPARATOR = "|||"
 
-data class IndexedCssVariableValue(
-    val context: String,
-    val value: String,
-    val comment: String,
-    // 1-based source line of the declaration, or `-1` if unknown (legacy
-    // 3-part cache records from 1.8.0 and earlier).
-    val line: Int
-)
+data class IndexedCssVariableValue @JvmOverloads constructor(val context: String, val value: String, val comment: String, val line: Int, val offset: Int = -1)
 
 object CssVariableIndexValueCodec {
+    private const val PREFIX = "CVA2:"
 
-    fun encode(context: String, value: String, comment: String, line: Int): String =
-        "$context$DELIMITER$value$DELIMITER$comment$DELIMITER$line"
+    fun encode(context: String, value: String, comment: String, line: Int): String = encode(context, value, comment, line, -1)
 
-    fun decode(entries: Collection<String>): List<IndexedCssVariableValue> =
-        entries.asSequence()
-            .flatMap { decodePacked(it).asSequence() }
-            .toList()
+    fun encode(context: String, value: String, comment: String, line: Int, offset: Int): String {
+        val bytes = ByteArrayOutputStream()
+        DataOutputStream(bytes).use { output ->
+            output.writeInt(line)
+            output.writeInt(offset)
+            for (field in listOf(context, value, comment)) {
+                val encoded = field.toByteArray(Charsets.UTF_8)
+                output.writeInt(encoded.size)
+                output.write(encoded)
+            }
+        }
+        return PREFIX + Base64.getEncoder().encodeToString(bytes.toByteArray())
+    }
+
+    fun decode(entries: Collection<String>): List<IndexedCssVariableValue> = entries.flatMap(::decodePacked)
 
     fun decodePacked(packedEntries: String): List<IndexedCssVariableValue> =
-        packedEntries
-            .split(ENTRY_SEPARATOR)
-            .filter { it.isNotBlank() }
-            .mapNotNull(::decodeSingle)
+        packedEntries.split(ENTRY_SEPARATOR).filter(String::isNotBlank).mapNotNull(::decodeSingle)
 
     private fun decodeSingle(packedEntry: String): IndexedCssVariableValue? {
-        // Split with limit = 4 so a value or comment that somehow contains
-        // our internal delimiter cannot overflow into the line field.
-        val parts = packedEntry.split(DELIMITER, limit = 4)
-        if (parts.size < 2) {
-            return null
+        if (!packedEntry.startsWith(PREFIX)) {
+            val parts = packedEntry.split(DELIMITER, limit = 4)
+            if (parts.size < 2) return null
+            return IndexedCssVariableValue(parts[0], parts[1], parts.getOrElse(2) { "" }, parts.getOrNull(3)?.toIntOrNull() ?: -1)
         }
-
-        return IndexedCssVariableValue(
-            context = parts[0],
-            value = parts[1],
-            comment = parts.getOrElse(2) { "" },
-            // Legacy 3-part records decode with line = -1 so renderers can
-            // fall back to the existing "first resolution step" behaviour.
-            line = parts.getOrNull(3)?.toIntOrNull() ?: -1
-        )
+        return try {
+            DataInputStream(ByteArrayInputStream(Base64.getDecoder().decode(packedEntry.removePrefix(PREFIX)))).use { input ->
+                val line = input.readInt()
+                val offset = input.readInt()
+                val fields = (0 until 3).map {
+                    val length = input.readInt()
+                    if (length < 0 || length > input.available()) return null
+                    ByteArray(length).also(input::readFully).toString(Charsets.UTF_8)
+                }
+                if (input.available() != 0) return null
+                IndexedCssVariableValue(fields[0], fields[1], fields[2], line, offset)
+            }
+        } catch (_: IllegalArgumentException) {
+            null
+        } catch (_: java.io.IOException) {
+            null
+        }
     }
 }
