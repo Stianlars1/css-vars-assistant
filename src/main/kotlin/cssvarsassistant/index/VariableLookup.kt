@@ -15,7 +15,11 @@ data class VariableLocation(
 )
 
 internal data class SourcedCssValue(val file: VirtualFile, val value: IndexedCssVariableValue)
-internal data class SourcedPreprocessorValue(val file: VirtualFile, val declaration: PreprocessorDeclaration)
+internal data class SourcedPreprocessorValue(
+    val file: VirtualFile,
+    val declaration: PreprocessorDeclaration,
+    val isModuleMember: Boolean = false
+)
 
 /** Combines file-local indexes with explicitly imported files outside the indexable roots. */
 internal object VariableLookup {

@@ -19,7 +19,12 @@ internal class VariableResolver(
     private val project: Project,
     preprocessorScope: GlobalSearchScope = ScopeUtil.currentPreprocessorScope(project)
 ) {
-    private data class Value(val text: String, val steps: List<String> = emptyList(), val cyclic: Boolean = false)
+    private data class Value(
+        val text: String,
+        val steps: List<String> = emptyList(),
+        val cyclic: Boolean = false,
+        val unresolvedPreprocessor: Boolean = false
+    )
     private val settings = CssVarsAssistantSettings.getInstance()
     private val cssScope = ScopeUtil.effectiveCssIndexingScope(project, settings)
     private val preprocessor = PreprocessorLookup(project, preprocessorScope)
@@ -40,21 +45,48 @@ internal class VariableResolver(
         return if (value.cyclic) ResolutionInfo(raw, raw, steps) else ResolutionInfo(raw, value.text, steps + value.steps)
     }
 
-    private fun evaluate(raw: String, location: VariableLocation?, path: Set<String>, depth: Int, expandCss: Boolean): Value {
+    fun resolveCssVariable(name: String, location: VariableLocation?): ResolutionInfo? {
+        val selected = select(cssEntries(name), location) ?: return null
+        return resolve(selected.value.value, cssLocation(selected, location))
+    }
+
+    private fun cssEntries(name: String): List<SourcedCssValue> =
+        cssValues.getOrPut(name) { VariableLookup.cssValues(project, name, cssScope) }
+
+    private fun cssLocation(source: SourcedCssValue, caller: VariableLocation?): VariableLocation = VariableLocation(
+        source.file,
+        source.value.offset.takeIf { it >= 0 } ?: Int.MAX_VALUE,
+        cssContext = caller?.cssContext ?: source.value.context
+    )
+
+    private fun evaluate(
+        raw: String,
+        location: VariableLocation?,
+        path: Set<String>,
+        depth: Int,
+        expandCss: Boolean,
+        allowProjectDiscovery: Boolean = true
+    ): Value {
         ProgressManager.checkCanceled()
         if (depth > settings.maxImportDepth || ++operations > MAX_OPERATIONS || raw.length > MAX_VALUE_LENGTH) return Value(raw)
         val trimmed = raw.trim()
         if (PREPROCESSOR.matches(trimmed)) {
-            val declaration = preprocessor.find(trimmed, location) ?: return Value(raw)
+            val declaration = preprocessor.find(trimmed, location, allowProjectDiscovery)
+                ?: return Value(raw, unresolvedPreprocessor = true)
             val entry = declaration.declaration
             val key = "pp:${declaration.file.url}:${entry.offset}:${entry.name}"
             if (key in path || trimmed in path) return Value(raw, cyclic = true)
             val expandAlias = expandCss && (extractCssVarAlias(entry.value) != null || PREPROCESSOR.matches(entry.value.trim()))
-            val nested = evaluate(entry.value, VariableLocation(declaration.file, entry.offset, cssContext = location?.cssContext), path + key, depth + 1, expandAlias)
+            val less = declaration.file.extension.equals("less", true)
+            val definition = VariableLocation(declaration.file, entry.offset, cssContext = location?.cssContext)
+            val evaluation = if (less && location?.file != null) location else definition
+            val discoverAliases = allowProjectDiscovery && !declaration.isModuleMember
+            val nested = evaluate(entry.value, evaluation, path + key, depth + 1, expandAlias, discoverAliases)
+            if (nested.unresolvedPreprocessor) return Value(raw, unresolvedPreprocessor = true)
             return Value(nested.text, listOf(entry.name) + nested.steps, nested.cyclic)
         }
         PreprocessorUtil.parseArithmetic(trimmed)?.let { expression ->
-            val base = evaluate(expression.reference, location, path, depth + 1, expandCss)
+            val base = evaluate(expression.reference, location, path, depth + 1, expandCss, allowProjectDiscovery)
             PreprocessorUtil.compute(base.text, expression.operator, expression.rhs)?.let { value ->
                 return Value(value, base.steps + "(${base.text} ${expression.operator} ${expression.rhs ?: ""}) = $value")
             }
@@ -87,14 +119,14 @@ internal class VariableResolver(
             val nameEnd = if (comma >= 0) comma else end - 1
             val name = raw.substring(open + 1, nameEnd).trim()
             val original = raw.substring(match.range.first, end)
-            val entries = if (CSS_NAME.matches(name)) cssValues.getOrPut(name) { VariableLookup.cssValues(project, name, cssScope) } else emptyList()
+            val entries = if (CSS_NAME.matches(name)) cssEntries(name) else emptyList()
             val selected = select(entries, location)
             val key = "css:$name:${location?.cssContext.orEmpty()}"
             val replacement = when {
                 key in path || name in path -> Value(original, cyclic = true)
                 selected != null -> {
                     val value = selected.value
-                    val nested = evaluate(value.value, VariableLocation(selected.file, value.offset.takeIf { it >= 0 } ?: Int.MAX_VALUE, cssContext = location?.cssContext ?: value.context), path + key, depth + 1, true)
+                    val nested = evaluate(value.value, cssLocation(selected, location), path + key, depth + 1, true)
                     Value(nested.text, listOf("var($name)") + nested.steps, nested.cyclic)
                 }
                 entries.isEmpty() && CSS_NAME.matches(name) && comma >= 0 ->
@@ -113,18 +145,20 @@ internal class VariableResolver(
 
     private fun select(entries: List<SourcedCssValue>, location: VariableLocation?): SourcedCssValue? {
         if (entries.isEmpty()) return null
-        val contextual = location?.cssContext?.let { context -> entries.filter { it.value.context == context } }.orEmpty()
-        val defaults = entries.filter { it.value.context == "default" }
-        val candidates = contextual.ifEmpty { defaults }.ifEmpty {
-            if (entries.map { it.value.value }.distinct().size > 1) return null
-            entries
-        }
         val file = location?.file
+        val order = file?.let { imports.getOrPut(it) { ImportResolver.resolveImports(it, project, settings.maxImportDepth).toList() + it } }.orEmpty()
+        val related = entries.filter { it.file in order }
+        val available = related.ifEmpty { entries }
+        val contextual = location?.cssContext?.let { context -> available.filter { it.value.context == context } }.orEmpty()
+        val defaults = available.filter { it.value.context == "default" }
+        val candidates = contextual.ifEmpty { defaults }.ifEmpty {
+            if (available.map { it.value.value }.distinct().size > 1) return null
+            available
+        }
+        if (related.isEmpty() && candidates.map { it.file }.distinct().size > 1 && candidates.map { it.value.value }.distinct().size > 1) return null
         if (file == null) {
-            if (candidates.map { it.file }.distinct().size > 1 && candidates.map { it.value.value }.distinct().size > 1) return null
             return candidates.maxByOrNull { it.value.offset.takeIf { offset -> offset >= 0 } ?: it.value.line }
         }
-        val order = imports.getOrPut(file) { ImportResolver.resolveImports(file, project, settings.maxImportDepth).toList() + file }
         return candidates.maxWithOrNull(compareBy<SourcedCssValue> { order.indexOf(it.file) }.thenBy { it.value.line }.thenBy { it.value.offset })
     }
 

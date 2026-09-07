@@ -256,12 +256,7 @@ object CssVariableDocumentationService {
             if (PreprocessorLookup(project, scope).find(varName, location) == null) return null
             resolver.resolve(varName, location)
         } else {
-            val scope = ScopeUtil.effectiveCssIndexingScope(project, CssVarsAssistantSettings.getInstance())
-            val entries = VariableLookup.cssValues(project, varName, scope)
-            val local = lastLocalValueInFile(element.containingFile.text, varName)
-            val value = local ?: entries.lastOrNull { it.value.context == "default" }?.value?.value
-                ?: entries.firstOrNull()?.value?.value ?: return null
-            resolver.resolve(value, location)
+            resolver.resolveCssVariable(varName, location) ?: return null
         }
         return if (resolution.steps.isNotEmpty() && resolution.original != resolution.resolved) {
             "Resolution: ${resolution.steps.joinToString(" → ")} → ${resolution.resolved}"
