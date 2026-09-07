@@ -103,8 +103,8 @@ class ColorParserTest {
     }
 
     @Test fun `hsl space slash syntax`() {
-        // pure blue, with 25% alpha ignored
-        assertEquals("#0000FF", ColorParser.toHexString("hsl(240 100% 50% /25%)"))
+        // pure blue, with 25% alpha preserved
+        assertEquals("#0000FF40", ColorParser.toHexString("hsl(240 100% 50% /25%)"))
     }
 
     @Test fun `hsl rem extended hue`() {

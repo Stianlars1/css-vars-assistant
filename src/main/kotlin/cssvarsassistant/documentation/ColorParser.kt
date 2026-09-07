@@ -9,10 +9,11 @@ import kotlin.math.roundToInt
 object ColorParser {
     // ---- Regexes for various CSS syntaxes ----
     private val hexRe = Regex("^#([0-9a-fA-F]{3,8})$")
-    private val rgbRe = Regex("^rgba?\\(([^)]*)\\)$")
-    private val hslRe = Regex("^hsla?\\(([^)]*)\\)$")
-    private val bareHslRe = Regex("^([\\d.]+)\\s+([\\d.]+%)\\s+([\\d.]+%)$")
-    private val hwbRe = Regex("^hwb\\(([^)]*)\\)$")
+    private val rgbRe = Regex("^rgba?\\(([^)]*)\\)$", RegexOption.IGNORE_CASE)
+    private val hslRe = Regex("^hsla?\\(([^)]*)\\)$", RegexOption.IGNORE_CASE)
+    private val cssNumber = "[+-]?(?:\\d+(?:\\.\\d+)?|\\.\\d+)"
+    private val bareHslRe = Regex("^($cssNumber)\\s+($cssNumber%)\\s+($cssNumber%)$")
+    private val hwbRe = Regex("^hwb\\(([^)]*)\\)$", RegexOption.IGNORE_CASE)
     private val namedColors = mapOf(
         "red" to Color(255, 0, 0),
         "green" to Color(0, 128, 0),
@@ -63,7 +64,10 @@ object ColorParser {
         rgbRe.matchEntire(s)?.groupValues?.get(1)?.let { return parseRgbColor(it) }
         hslRe.matchEntire(s)?.groupValues?.get(1)?.let { return parseHslColor(it) }
         bareHslRe.matchEntire(s)?.destructured?.let { (h, s2, l2) ->
-            return hslToColor(h.toFloat(), s2.removeSuffix("%").toFloat(), l2.removeSuffix("%").toFloat())
+            val hue = h.toFloatOrNull() ?: return null
+            val saturation = s2.removeSuffix("%").toFloatOrNull() ?: return null
+            val lightness = l2.removeSuffix("%").toFloatOrNull() ?: return null
+            return hslToColor(hue, saturation, lightness)
         }
         hwbRe.matchEntire(s)?.groupValues?.get(1)?.let { return parseHwbColor(it) }
 
@@ -109,20 +113,14 @@ object ColorParser {
         val cleaned = rgb.replace("/", " ")
         val parts = cleaned.split(',', ' ').map { it.trim() }.filter { it.isNotEmpty() }
         return try {
-            val (r, g, b) = parts.take(3).mapIndexed { i, v ->
+            val (r, g, b) = parts.take(3).map { v ->
                 when {
                     v.endsWith("%") -> (255 * v.removeSuffix("%").toFloat() / 100).roundToInt()
-                    else -> v.toInt()
+                    else -> v.toFloat().roundToInt()
                 }.coerceIn(0, 255)
             }
             // Alpha, if present
-            val a = parts.getOrNull(3)?.let {
-                when {
-                    it.endsWith("%") -> (255 * it.removeSuffix("%").toFloat() / 100).roundToInt().coerceIn(0, 255)
-                    it.toFloatOrNull() != null -> (it.toFloat() * 255).roundToInt().coerceIn(0, 255)
-                    else -> 255
-                }
-            } ?: 255
+            val a = parts.getOrNull(3)?.let(::parseAlpha) ?: 255
             Color(r, g, b, a)
         } catch (_: Exception) {
             null
@@ -136,31 +134,34 @@ object ColorParser {
             val h = parseHue(parts[0]) ?: return null
             val s = parts[1].removeSuffix("%").toFloat()
             val l = parts[2].removeSuffix("%").toFloat()
-            hslToColor(h, s, l)
+            val alpha = parts.getOrNull(3)?.let { parseAlpha(it) ?: return null } ?: 255
+            hslToColor(h, s, l, alpha)
         } catch (_: Exception) {
             null
         }
     }
 
     /** Converts HSL to Color. Accepts s/l as percent (0–100). */
-    private fun hslToColor(h: Float, s: Float, l: Float): Color {
+    private fun hslToColor(h: Float, s: Float, l: Float, alpha: Int = 255): Color {
+        val hue = ((h % 360f) + 360f) % 360f
         val s1 = s / 100f
         val l1 = l / 100f
         val c = (1 - abs(2 * l1 - 1)) * s1
-        val x = c * (1 - abs((h / 60f) % 2 - 1))
+        val x = c * (1 - abs((hue / 60f) % 2 - 1))
         val m = l1 - c / 2
         val (r1, g1, b1) = when {
-            h < 60 -> listOf(c, x, 0f)
-            h < 120 -> listOf(x, c, 0f)
-            h < 180 -> listOf(0f, c, x)
-            h < 240 -> listOf(0f, x, c)
-            h < 300 -> listOf(x, 0f, c)
+            hue < 60 -> listOf(c, x, 0f)
+            hue < 120 -> listOf(x, c, 0f)
+            hue < 180 -> listOf(0f, c, x)
+            hue < 240 -> listOf(0f, x, c)
+            hue < 300 -> listOf(x, 0f, c)
             else -> listOf(c, 0f, x)
         }
         return Color(
             ((r1 + m) * 255).roundToInt().coerceIn(0, 255),
             ((g1 + m) * 255).roundToInt().coerceIn(0, 255),
-            ((b1 + m) * 255).roundToInt().coerceIn(0, 255)
+            ((b1 + m) * 255).roundToInt().coerceIn(0, 255),
+            alpha
         )
     }
 
@@ -169,19 +170,16 @@ object ColorParser {
         val parts = cleaned.split(',', ' ').filter { it.isNotBlank() }
         if (parts.size < 3) return null
         return try {
-            val h = parts[0].toFloat().rem(360f)
+            val h = parseHue(parts[0]) ?: return null
             val w = parts[1].removeSuffix("%").toFloat() / 100f
             val b = parts[2].removeSuffix("%").toFloat() / 100f
-            val alpha = parts.getOrNull(3)?.let {
-                if (it.endsWith("%")) it.removeSuffix("%").toFloat() / 100f
-                else it.toFloatOrNull() ?: 1f
-            } ?: 1f
+            val alpha = parts.getOrNull(3)?.let { parseAlpha(it) ?: return null } ?: 255
 
             // Correct handling of edge cases (CSS spec):
             if ((w + b) >= 1f) {
                 val grayness = (w / (w + b)).coerceIn(0f, 1f)
                 val gray = (grayness * 255).roundToInt().coerceIn(0, 255)
-                return Color(gray, gray, gray, (alpha * 255).roundToInt().coerceIn(0, 255))
+                return Color(gray, gray, gray, alpha)
             }
 
             val c = 1f - w - b
@@ -193,7 +191,7 @@ object ColorParser {
                 (r * 255).roundToInt(),
                 (g * 255).roundToInt(),
                 (bl * 255).roundToInt(),
-                (alpha * 255).roundToInt()
+                alpha
             )
         } catch (_: Exception) {
             null
@@ -210,6 +208,14 @@ object ColorParser {
             else -> cleaned.toFloatOrNull()
         }
     }
+
+    private fun parseAlpha(value: String): Int? =
+        if (value.endsWith("%")) {
+            value.removeSuffix("%").toFloatOrNull()
+                ?.let { (it * 255 / 100).roundToInt().coerceIn(0, 255) }
+        } else {
+            value.toFloatOrNull()?.let { (it * 255).roundToInt().coerceIn(0, 255) }
+        }
 
     /**
      * Canonical hex serialisation for a parsed [Color].

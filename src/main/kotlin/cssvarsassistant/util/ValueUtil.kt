@@ -6,10 +6,12 @@ import java.awt.Color
 
 object ValueUtil {
     enum class ValueType { SIZE, COLOR, NUMBER, OTHER }
+    private const val cssNumber = "[+-]?(?:\\d+(?:\\.\\d+)?|\\.\\d+)"
     private val sizeValueRegex = Regex(
-        """^\d+(\.\d+)?(px|rem|em|%|vh|vw|vmin|vmax|svh|svw|lvh|lvw|dvh|dvw|pt|pc|ch|ex|cm|mm|in)$""",
+        """^$cssNumber(px|rem|em|%|vh|vw|vmin|vmax|svh|svw|lvh|lvw|dvh|dvw|pt|pc|ch|ex|cm|mm|in)$""",
         RegexOption.IGNORE_CASE
     )
+    private val sizePartsRegex = Regex("""^($cssNumber)([a-z%]+)$""", RegexOption.IGNORE_CASE)
 
     
     fun getValueType(value: String): ValueType {
@@ -46,7 +48,7 @@ object ValueUtil {
 
     fun convertToPixels(value: String): Double {
         val trimmed = value.trim()
-        val match = Regex("""^(\d+(?:\.\d+)?)([a-z%]+)$""", RegexOption.IGNORE_CASE).find(trimmed)
+        val match = sizePartsRegex.matchEntire(trimmed)
         val number = match?.groupValues?.get(1)?.toDoubleOrNull() ?: 0.0
         val unit = match?.groupValues?.get(2)?.lowercase().orEmpty()
 
