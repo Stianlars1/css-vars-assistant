@@ -1,0 +1,3907 @@
+{
+  "base_commit": "1c9ea8e4478d69fd4e3121cc1b378f7d0fcf37f3",
+  "summary": {
+    "original": {
+      "tests": 303,
+      "passed": 303,
+      "failed": 0,
+      "skipped": 0
+    },
+    "audit": {
+      "tests": 65,
+      "passed": 10,
+      "failed": 55,
+      "skipped": 0
+    },
+    "all": {
+      "tests": 368,
+      "passed": 313,
+      "failed": 55,
+      "skipped": 0
+    }
+  },
+  "suites": [
+    {
+      "name": "cssvarsassistant.audit.CacheLifecycleAuditTest",
+      "tests": "5",
+      "skipped": "0",
+      "failures": "5",
+      "errors": "0",
+      "timestamp": "2026-09-07T07:49:38.891Z",
+      "hostname": "Mac",
+      "time": "0.351",
+      "audit": true
+    },
+    {
+      "name": "cssvarsassistant.audit.CompletionScalingAuditTest",
+      "tests": "1",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-09-07T07:49:39.243Z",
+      "hostname": "Mac",
+      "time": "1.046",
+      "audit": true
+    },
+    {
+      "name": "cssvarsassistant.audit.EditorBehaviorAuditTest",
+      "tests": "12",
+      "skipped": "0",
+      "failures": "11",
+      "errors": "0",
+      "timestamp": "2026-09-07T07:49:34.097Z",
+      "hostname": "Mac",
+      "time": "4.793",
+      "audit": true
+    },
+    {
+      "name": "cssvarsassistant.audit.ImportEdgeCaseAuditTest",
+      "tests": "9",
+      "skipped": "0",
+      "failures": "7",
+      "errors": "0",
+      "timestamp": "2026-09-07T07:49:40.289Z",
+      "hostname": "Mac",
+      "time": "0.474",
+      "audit": true
+    },
+    {
+      "name": "cssvarsassistant.audit.ParserEdgeCaseAuditTest",
+      "tests": "18",
+      "skipped": "0",
+      "failures": "16",
+      "errors": "0",
+      "timestamp": "2026-09-07T07:49:51.281Z",
+      "hostname": "Mac",
+      "time": "0.056",
+      "audit": true
+    },
+    {
+      "name": "cssvarsassistant.audit.ResolutionEdgeCaseAuditTest",
+      "tests": "10",
+      "skipped": "0",
+      "failures": "7",
+      "errors": "0",
+      "timestamp": "2026-09-07T07:49:40.763Z",
+      "hostname": "Mac",
+      "time": "0.464",
+      "audit": true
+    },
+    {
+      "name": "cssvarsassistant.audit.ValueEdgeCaseAuditTest",
+      "tests": "10",
+      "skipped": "0",
+      "failures": "9",
+      "errors": "0",
+      "timestamp": "2026-09-07T07:49:51.338Z",
+      "hostname": "Mac",
+      "time": "0.008",
+      "audit": true
+    },
+    {
+      "name": "cssvarsassistant.completion.CssVarCascadeUtilTest",
+      "tests": "2",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-09-07T07:49:51.346Z",
+      "hostname": "Mac",
+      "time": "0.001",
+      "audit": false
+    },
+    {
+      "name": "cssvarsassistant.completion.CssVarQueryMatcherTest",
+      "tests": "20",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-09-07T07:49:51.347Z",
+      "hostname": "Mac",
+      "time": "0.006",
+      "audit": false
+    },
+    {
+      "name": "cssvarsassistant.completion.CssVarSortOrderWeigherTest",
+      "tests": "7",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-09-07T07:49:51.354Z",
+      "hostname": "Mac",
+      "time": "0.002",
+      "audit": false
+    },
+    {
+      "name": "cssvarsassistant.completion.CssVariableCompletionBehaviorTest",
+      "tests": "3",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-09-07T07:49:51.356Z",
+      "hostname": "Mac",
+      "time": "0.001",
+      "audit": false
+    },
+    {
+      "name": "cssvarsassistant.completion.CssVariableCompletionHarnessTest",
+      "tests": "71",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-09-07T07:49:41.227Z",
+      "hostname": "Mac",
+      "time": "6.295",
+      "audit": false
+    },
+    {
+      "name": "cssvarsassistant.completion.CssVariableCompletionSortTest",
+      "tests": "4",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-09-07T07:49:51.357Z",
+      "hostname": "Mac",
+      "time": "0.002",
+      "audit": false
+    },
+    {
+      "name": "cssvarsassistant.completion.PreprocessorCompletionContextTest",
+      "tests": "8",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-09-07T07:49:51.360Z",
+      "hostname": "Mac",
+      "time": "0.001",
+      "audit": false
+    },
+    {
+      "name": "cssvarsassistant.documentation.ColorParserTest",
+      "tests": "28",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-09-07T07:49:51.362Z",
+      "hostname": "Mac",
+      "time": "0.007",
+      "audit": false
+    },
+    {
+      "name": "cssvarsassistant.documentation.DefaultThemeLabelMergeTest",
+      "tests": "7",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-09-07T07:49:51.369Z",
+      "hostname": "Mac",
+      "time": "0.003",
+      "audit": false
+    },
+    {
+      "name": "cssvarsassistant.documentation.DocHelpersResolveVarValueTest",
+      "tests": "15",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-09-07T07:49:47.522Z",
+      "hostname": "Mac",
+      "time": "0.879",
+      "audit": false
+    },
+    {
+      "name": "cssvarsassistant.documentation.DocHelpersTest",
+      "tests": "9",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-09-07T07:49:48.401Z",
+      "hostname": "Mac",
+      "time": "0.697",
+      "audit": false
+    },
+    {
+      "name": "cssvarsassistant.documentation.FormatSourceCellTest",
+      "tests": "7",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-09-07T07:49:51.372Z",
+      "hostname": "Mac",
+      "time": "0.002",
+      "audit": false
+    },
+    {
+      "name": "cssvarsassistant.documentation.HoverRowCollapseTest",
+      "tests": "7",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-09-07T07:49:51.374Z",
+      "hostname": "Mac",
+      "time": "0.002",
+      "audit": false
+    },
+    {
+      "name": "cssvarsassistant.documentation.HoverRowSortTest",
+      "tests": "4",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-09-07T07:49:51.377Z",
+      "hostname": "Mac",
+      "time": "0.002",
+      "audit": false
+    },
+    {
+      "name": "cssvarsassistant.documentation.IconUtilTest",
+      "tests": "1",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-09-07T07:49:51.379Z",
+      "hostname": "Mac",
+      "time": "0.023",
+      "audit": false
+    },
+    {
+      "name": "cssvarsassistant.documentation.PrettifySelectorTest",
+      "tests": "15",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-09-07T07:49:51.403Z",
+      "hostname": "Mac",
+      "time": "0.003",
+      "audit": false
+    },
+    {
+      "name": "cssvarsassistant.documentation.RankingTest",
+      "tests": "4",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-09-07T07:49:51.407Z",
+      "hostname": "Mac",
+      "time": "0.001",
+      "audit": false
+    },
+    {
+      "name": "cssvarsassistant.index.CssVariableEntryParserTest",
+      "tests": "18",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-09-07T07:49:51.408Z",
+      "hostname": "Mac",
+      "time": "0.004",
+      "audit": false
+    },
+    {
+      "name": "cssvarsassistant.index.CssVariableIndexValueCodecTest",
+      "tests": "4",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-09-07T07:49:51.412Z",
+      "hostname": "Mac",
+      "time": "0.001",
+      "audit": false
+    },
+    {
+      "name": "cssvarsassistant.index.ImportResolverTest",
+      "tests": "11",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-09-07T07:49:49.098Z",
+      "hostname": "Mac",
+      "time": "0.999",
+      "audit": false
+    },
+    {
+      "name": "cssvarsassistant.index.PreprocessorVariableIndexTest",
+      "tests": "10",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-09-07T07:49:50.097Z",
+      "hostname": "Mac",
+      "time": "0.565",
+      "audit": false
+    },
+    {
+      "name": "cssvarsassistant.index.SassModuleImportTest",
+      "tests": "6",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-09-07T07:49:50.662Z",
+      "hostname": "Mac",
+      "time": "0.339",
+      "audit": false
+    },
+    {
+      "name": "cssvarsassistant.index.SelectorListCanonicalizationTest",
+      "tests": "11",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-09-07T07:49:51.414Z",
+      "hostname": "Mac",
+      "time": "0.002",
+      "audit": false
+    },
+    {
+      "name": "cssvarsassistant.metadata.MarketplaceCompatibilityMetadataTest",
+      "tests": "4",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-09-07T07:49:51.416Z",
+      "hostname": "Mac",
+      "time": "0.023",
+      "audit": false
+    },
+    {
+      "name": "cssvarsassistant.util.ScopeUtilTest",
+      "tests": "2",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-09-07T07:49:51.001Z",
+      "hostname": "Mac",
+      "time": "0.259",
+      "audit": false
+    },
+    {
+      "name": "cssvarsassistant.util.ValueUtilTest",
+      "tests": "25",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-09-07T07:49:51.439Z",
+      "hostname": "Mac",
+      "time": "0.007",
+      "audit": false
+    }
+  ],
+  "tests": [
+    {
+      "suite": "cssvarsassistant.audit.CacheLifecycleAuditTest",
+      "name": "testImportedCssValueRefreshesWhenOnlyDependencyChanges",
+      "status": "failed",
+      "seconds": 0.119,
+      "failure": {
+        "type": "junit.framework.AssertionFailedError",
+        "message": "junit.framework.AssertionFailedError: expected:<[blue]> but was:<[red]>",
+        "trace_head": [
+          "junit.framework.AssertionFailedError: expected:<[blue]> but was:<[red]>",
+          "\tat junit.framework.Assert.fail(Assert.java:57)",
+          "\tat junit.framework.Assert.failNotEquals(Assert.java:329)",
+          "\tat junit.framework.Assert.assertEquals(Assert.java:78)",
+          "\tat junit.framework.Assert.assertEquals(Assert.java:86)",
+          "\tat junit.framework.TestCase.assertEquals(TestCase.java:246)",
+          "\tat cssvarsassistant.audit.CacheLifecycleAuditTest.testImportedCssValueRefreshesWhenOnlyDependencyChanges(CacheLifecycleAuditTest.kt:59)",
+          "\tat java.base@21.0.6/java.lang.reflect.Method.invoke(Method.java:580)",
+          "\tat junit.framework.TestCase.runTest(TestCase.java:177)",
+          "\tat com.intellij.testFramework.UsefulTestCase.lambda$runBare$12(UsefulTestCase.java:501)",
+          "\tat com.intellij.testFramework.TestLoggerKt$recordErrorsLoggedInTheCurrentThreadAndReportThemAsFailures$2.invoke(testLogger.kt:99)",
+          "\tat com.intellij.testFramework.TestLoggerKt$recordErrorsLoggedInTheCurrentThreadAndReportThemAsFailures$2.invoke(testLogger.kt:99)"
+        ]
+      }
+    },
+    {
+      "suite": "cssvarsassistant.audit.CacheLifecycleAuditTest",
+      "name": "testImportCacheAddsAllFilesInBatch",
+      "status": "failed",
+      "seconds": 0.047,
+      "failure": {
+        "type": "junit.framework.AssertionFailedError",
+        "message": "junit.framework.AssertionFailedError: expected:<[temp:///src/first.css, temp:///src/second.css]> but was:<[temp:///src/first.css]>",
+        "trace_head": [
+          "junit.framework.AssertionFailedError: expected:<[temp:///src/first.css, temp:///src/second.css]> but was:<[temp:///src/first.css]>",
+          "\tat junit.framework.Assert.fail(Assert.java:57)",
+          "\tat junit.framework.Assert.failNotEquals(Assert.java:329)",
+          "\tat junit.framework.Assert.assertEquals(Assert.java:78)",
+          "\tat junit.framework.Assert.assertEquals(Assert.java:86)",
+          "\tat junit.framework.TestCase.assertEquals(TestCase.java:246)",
+          "\tat cssvarsassistant.audit.CacheLifecycleAuditTest.testImportCacheAddsAllFilesInBatch(CacheLifecycleAuditTest.kt:20)",
+          "\tat java.base@21.0.6/java.lang.reflect.Method.invoke(Method.java:580)",
+          "\tat junit.framework.TestCase.runTest(TestCase.java:177)",
+          "\tat com.intellij.testFramework.UsefulTestCase.lambda$runBare$12(UsefulTestCase.java:501)",
+          "\tat com.intellij.testFramework.TestLoggerKt$recordErrorsLoggedInTheCurrentThreadAndReportThemAsFailures$2.invoke(testLogger.kt:99)",
+          "\tat com.intellij.testFramework.TestLoggerKt$recordErrorsLoggedInTheCurrentThreadAndReportThemAsFailures$2.invoke(testLogger.kt:99)"
+        ]
+      }
+    },
+    {
+      "suite": "cssvarsassistant.audit.CacheLifecycleAuditTest",
+      "name": "testImportClosureRefreshesAfterSavedEdit",
+      "status": "failed",
+      "seconds": 0.058,
+      "failure": {
+        "type": "junit.framework.AssertionFailedError",
+        "message": "junit.framework.AssertionFailedError: expected:<[temp:///src/second.css]> but was:<[temp:///src/first.css]>",
+        "trace_head": [
+          "junit.framework.AssertionFailedError: expected:<[temp:///src/second.css]> but was:<[temp:///src/first.css]>",
+          "\tat junit.framework.Assert.fail(Assert.java:57)",
+          "\tat junit.framework.Assert.failNotEquals(Assert.java:329)",
+          "\tat junit.framework.Assert.assertEquals(Assert.java:78)",
+          "\tat junit.framework.Assert.assertEquals(Assert.java:86)",
+          "\tat junit.framework.TestCase.assertEquals(TestCase.java:246)",
+          "\tat cssvarsassistant.audit.CacheLifecycleAuditTest.testImportClosureRefreshesAfterSavedEdit(CacheLifecycleAuditTest.kt:50)",
+          "\tat java.base@21.0.6/java.lang.reflect.Method.invoke(Method.java:580)",
+          "\tat junit.framework.TestCase.runTest(TestCase.java:177)",
+          "\tat com.intellij.testFramework.UsefulTestCase.lambda$runBare$12(UsefulTestCase.java:501)",
+          "\tat com.intellij.testFramework.TestLoggerKt$recordErrorsLoggedInTheCurrentThreadAndReportThemAsFailures$2.invoke(testLogger.kt:99)",
+          "\tat com.intellij.testFramework.TestLoggerKt$recordErrorsLoggedInTheCurrentThreadAndReportThemAsFailures$2.invoke(testLogger.kt:99)"
+        ]
+      }
+    },
+    {
+      "suite": "cssvarsassistant.audit.CacheLifecycleAuditTest",
+      "name": "testResolvedLessValueRefreshesAfterSavedEdit",
+      "status": "failed",
+      "seconds": 0.065,
+      "failure": {
+        "type": "junit.framework.ComparisonFailure",
+        "message": "junit.framework.ComparisonFailure: expected:<[blue]> but was:<[red]>",
+        "trace_head": [
+          "junit.framework.ComparisonFailure: expected:<[blue]> but was:<[red]>",
+          "\tat junit.framework.Assert.assertEquals(Assert.java:100)",
+          "\tat junit.framework.Assert.assertEquals(Assert.java:107)",
+          "\tat junit.framework.TestCase.assertEquals(TestCase.java:260)",
+          "\tat cssvarsassistant.audit.CacheLifecycleAuditTest.testResolvedLessValueRefreshesAfterSavedEdit(CacheLifecycleAuditTest.kt:40)",
+          "\tat java.base@21.0.6/java.lang.reflect.Method.invoke(Method.java:580)",
+          "\tat junit.framework.TestCase.runTest(TestCase.java:177)",
+          "\tat com.intellij.testFramework.UsefulTestCase.lambda$runBare$12(UsefulTestCase.java:501)",
+          "\tat com.intellij.testFramework.TestLoggerKt$recordErrorsLoggedInTheCurrentThreadAndReportThemAsFailures$2.invoke(testLogger.kt:99)",
+          "\tat com.intellij.testFramework.TestLoggerKt$recordErrorsLoggedInTheCurrentThreadAndReportThemAsFailures$2.invoke(testLogger.kt:99)",
+          "\tat com.intellij.testFramework.TestLoggerKt.recordErrorsLoggedInTheCurrentThreadAndReportThemAsFailures(testLogger.kt:81)",
+          "\tat com.intellij.testFramework.TestLoggerKt.recordErrorsLoggedInTheCurrentThreadAndReportThemAsFailures(testLogger.kt:99)"
+        ]
+      }
+    },
+    {
+      "suite": "cssvarsassistant.audit.CacheLifecycleAuditTest",
+      "name": "testKeyCacheSeesNewlyIndexedVariableWithoutManualReset",
+      "status": "failed",
+      "seconds": 0.061,
+      "failure": {
+        "type": "java.lang.AssertionError",
+        "message": "java.lang.AssertionError: --first\n expected:<[--second]> but was:<[]>",
+        "trace_head": [
+          "java.lang.AssertionError: --first",
+          " expected:<[--second]> but was:<[]>",
+          "\tat org.junit.Assert.fail(Assert.java:89)",
+          "\tat org.junit.Assert.failNotEquals(Assert.java:835)",
+          "\tat org.junit.Assert.assertEquals(Assert.java:120)",
+          "\tat com.intellij.testFramework.UsefulTestCase.assertSameElements(UsefulTestCase.java:696)",
+          "\tat com.intellij.testFramework.UsefulTestCase.assertContainsElements(UsefulTestCase.java:739)",
+          "\tat com.intellij.testFramework.UsefulTestCase.assertContainsElements(UsefulTestCase.java:729)",
+          "\tat com.intellij.testFramework.UsefulTestCase.assertContainsElements(UsefulTestCase.java:724)",
+          "\tat cssvarsassistant.audit.CacheLifecycleAuditTest.testKeyCacheSeesNewlyIndexedVariableWithoutManualReset(CacheLifecycleAuditTest.kt:31)",
+          "\tat java.base/java.lang.reflect.Method.invoke(Method.java:580)",
+          "\tat junit.framework.TestCase.runTest(TestCase.java:177)"
+        ]
+      }
+    },
+    {
+      "suite": "cssvarsassistant.audit.CompletionScalingAuditTest",
+      "name": "testCompletionScalingDiagnostic",
+      "status": "passed",
+      "seconds": 1.046,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.audit.EditorBehaviorAuditTest",
+      "name": "testCssAtRuleIsNotClaimedAsLessVariableDocumentation",
+      "status": "failed",
+      "seconds": 2.844,
+      "failure": {
+        "type": "junit.framework.AssertionFailedError",
+        "message": "junit.framework.AssertionFailedError: Expected: <null> but was: cssvarsassistant.documentation.v2.CssVariableDocumentationTarget@2eeaf88a",
+        "trace_head": [
+          "junit.framework.AssertionFailedError: Expected: <null> but was: cssvarsassistant.documentation.v2.CssVariableDocumentationTarget@2eeaf88a",
+          "\tat junit.framework.Assert.fail(Assert.java:57)",
+          "\tat junit.framework.Assert.assertTrue(Assert.java:22)",
+          "\tat junit.framework.Assert.assertNull(Assert.java:277)",
+          "\tat junit.framework.Assert.assertNull(Assert.java:268)",
+          "\tat junit.framework.TestCase.assertNull(TestCase.java:410)",
+          "\tat cssvarsassistant.audit.EditorBehaviorAuditTest.testCssAtRuleIsNotClaimedAsLessVariableDocumentation(EditorBehaviorAuditTest.kt:16)",
+          "\tat java.base@21.0.6/java.lang.reflect.Method.invoke(Method.java:580)",
+          "\tat junit.framework.TestCase.runTest(TestCase.java:177)",
+          "\tat com.intellij.testFramework.UsefulTestCase.lambda$runBare$12(UsefulTestCase.java:501)",
+          "\tat com.intellij.testFramework.TestLoggerKt$recordErrorsLoggedInTheCurrentThreadAndReportThemAsFailures$2.invoke(testLogger.kt:99)",
+          "\tat com.intellij.testFramework.TestLoggerKt$recordErrorsLoggedInTheCurrentThreadAndReportThemAsFailures$2.invoke(testLogger.kt:99)"
+        ]
+      }
+    },
+    {
+      "suite": "cssvarsassistant.audit.EditorBehaviorAuditTest",
+      "name": "testLessVariableInCommentIsNotDocumentationTarget",
+      "status": "failed",
+      "seconds": 0.229,
+      "failure": {
+        "type": "junit.framework.AssertionFailedError",
+        "message": "junit.framework.AssertionFailedError: Expected: <null> but was: cssvarsassistant.documentation.v2.CssVariableDocumentationTarget@267aba69",
+        "trace_head": [
+          "junit.framework.AssertionFailedError: Expected: <null> but was: cssvarsassistant.documentation.v2.CssVariableDocumentationTarget@267aba69",
+          "\tat junit.framework.Assert.fail(Assert.java:57)",
+          "\tat junit.framework.Assert.assertTrue(Assert.java:22)",
+          "\tat junit.framework.Assert.assertNull(Assert.java:277)",
+          "\tat junit.framework.Assert.assertNull(Assert.java:268)",
+          "\tat junit.framework.TestCase.assertNull(TestCase.java:410)",
+          "\tat cssvarsassistant.audit.EditorBehaviorAuditTest.testLessVariableInCommentIsNotDocumentationTarget(EditorBehaviorAuditTest.kt:28)",
+          "\tat java.base@21.0.6/java.lang.reflect.Method.invoke(Method.java:580)",
+          "\tat junit.framework.TestCase.runTest(TestCase.java:177)",
+          "\tat com.intellij.testFramework.UsefulTestCase.lambda$runBare$12(UsefulTestCase.java:501)",
+          "\tat com.intellij.testFramework.TestLoggerKt$recordErrorsLoggedInTheCurrentThreadAndReportThemAsFailures$2.invoke(testLogger.kt:99)",
+          "\tat com.intellij.testFramework.TestLoggerKt$recordErrorsLoggedInTheCurrentThreadAndReportThemAsFailures$2.invoke(testLogger.kt:99)"
+        ]
+      }
+    },
+    {
+      "suite": "cssvarsassistant.audit.EditorBehaviorAuditTest",
+      "name": "testScssCompletionDoesNotOfferTokensInsideString",
+      "status": "failed",
+      "seconds": 0.722,
+      "failure": {
+        "type": "junit.framework.AssertionFailedError",
+        "message": "junit.framework.AssertionFailedError: [RenderedLookup(lookupString=$audit-brand, itemText=$audit-brand, tailText=null, typeText=red), RenderedLookup(lookupString=$audit-other, itemText=$audit-other, tailText=null, typeText=blue)]",
+        "trace_head": [
+          "junit.framework.AssertionFailedError: [RenderedLookup(lookupString=$audit-brand, itemText=$audit-brand, tailText=null, typeText=red), RenderedLookup(lookupString=$audit-other, itemText=$audit-other, tailText=null, typeText=blue)]",
+          "\tat junit.framework.Assert.fail(Assert.java:57)",
+          "\tat junit.framework.Assert.assertTrue(Assert.java:22)",
+          "\tat junit.framework.TestCase.assertTrue(TestCase.java:192)",
+          "\tat cssvarsassistant.audit.EditorBehaviorAuditTest.testScssCompletionDoesNotOfferTokensInsideString(EditorBehaviorAuditTest.kt:40)",
+          "\tat java.base@21.0.6/java.lang.reflect.Method.invoke(Method.java:580)",
+          "\tat junit.framework.TestCase.runTest(TestCase.java:177)",
+          "\tat com.intellij.testFramework.UsefulTestCase.lambda$runBare$12(UsefulTestCase.java:501)",
+          "\tat com.intellij.testFramework.TestLoggerKt$recordErrorsLoggedInTheCurrentThreadAndReportThemAsFailures$2.invoke(testLogger.kt:99)",
+          "\tat com.intellij.testFramework.TestLoggerKt$recordErrorsLoggedInTheCurrentThreadAndReportThemAsFailures$2.invoke(testLogger.kt:99)",
+          "\tat com.intellij.testFramework.TestLoggerKt.recordErrorsLoggedInTheCurrentThreadAndReportThemAsFailures(testLogger.kt:81)",
+          "\tat com.intellij.testFramework.TestLoggerKt.recordErrorsLoggedInTheCurrentThreadAndReportThemAsFailures(testLogger.kt:99)"
+        ]
+      }
+    },
+    {
+      "suite": "cssvarsassistant.audit.EditorBehaviorAuditTest",
+      "name": "testDirectPreprocessorThemeOverrideIsNotDiscardedByIndex",
+      "status": "failed",
+      "seconds": 0.073,
+      "failure": {
+        "type": "java.lang.AssertionError",
+        "message": "java.lang.AssertionError: (default, white)\n expected:<[(.dark, @night)]> but was:<[]>",
+        "trace_head": [
+          "java.lang.AssertionError: (default, white)",
+          " expected:<[(.dark, @night)]> but was:<[]>",
+          "\tat org.junit.Assert.fail(Assert.java:89)",
+          "\tat org.junit.Assert.failNotEquals(Assert.java:835)",
+          "\tat org.junit.Assert.assertEquals(Assert.java:120)",
+          "\tat com.intellij.testFramework.UsefulTestCase.assertSameElements(UsefulTestCase.java:696)",
+          "\tat com.intellij.testFramework.UsefulTestCase.assertContainsElements(UsefulTestCase.java:739)",
+          "\tat com.intellij.testFramework.UsefulTestCase.assertContainsElements(UsefulTestCase.java:729)",
+          "\tat com.intellij.testFramework.UsefulTestCase.assertContainsElements(UsefulTestCase.java:724)",
+          "\tat cssvarsassistant.audit.EditorBehaviorAuditTest.testDirectPreprocessorThemeOverrideIsNotDiscardedByIndex(EditorBehaviorAuditTest.kt:51)",
+          "\tat java.base/java.lang.reflect.Method.invoke(Method.java:580)",
+          "\tat junit.framework.TestCase.runTest(TestCase.java:177)"
+        ]
+      }
+    },
+    {
+      "suite": "cssvarsassistant.audit.EditorBehaviorAuditTest",
+      "name": "testCssCompletionDoesNotOfferTokensInsideComment",
+      "status": "failed",
+      "seconds": 0.179,
+      "failure": {
+        "type": "junit.framework.AssertionFailedError",
+        "message": "junit.framework.AssertionFailedError: [RenderedLookup(lookupString=--audit-brand, itemText=audit-brand, tailText=null, typeText=red), RenderedLookup(lookupString=--audit-other, itemText=audit-other, tailText=null, typeText=blue)]",
+        "trace_head": [
+          "junit.framework.AssertionFailedError: [RenderedLookup(lookupString=--audit-brand, itemText=audit-brand, tailText=null, typeText=red), RenderedLookup(lookupString=--audit-other, itemText=audit-other, tailText=null, typeText=blue)]",
+          "\tat junit.framework.Assert.fail(Assert.java:57)",
+          "\tat junit.framework.Assert.assertTrue(Assert.java:22)",
+          "\tat junit.framework.TestCase.assertTrue(TestCase.java:192)",
+          "\tat cssvarsassistant.audit.EditorBehaviorAuditTest.testCssCompletionDoesNotOfferTokensInsideComment(EditorBehaviorAuditTest.kt:34)",
+          "\tat java.base@21.0.6/java.lang.reflect.Method.invoke(Method.java:580)",
+          "\tat junit.framework.TestCase.runTest(TestCase.java:177)",
+          "\tat com.intellij.testFramework.UsefulTestCase.lambda$runBare$12(UsefulTestCase.java:501)",
+          "\tat com.intellij.testFramework.TestLoggerKt$recordErrorsLoggedInTheCurrentThreadAndReportThemAsFailures$2.invoke(testLogger.kt:99)",
+          "\tat com.intellij.testFramework.TestLoggerKt$recordErrorsLoggedInTheCurrentThreadAndReportThemAsFailures$2.invoke(testLogger.kt:99)",
+          "\tat com.intellij.testFramework.TestLoggerKt.recordErrorsLoggedInTheCurrentThreadAndReportThemAsFailures(testLogger.kt:81)",
+          "\tat com.intellij.testFramework.TestLoggerKt.recordErrorsLoggedInTheCurrentThreadAndReportThemAsFailures(testLogger.kt:99)"
+        ]
+      }
+    },
+    {
+      "suite": "cssvarsassistant.audit.EditorBehaviorAuditTest",
+      "name": "testNamespacedScssCompletionUsesSelectedModule",
+      "status": "failed",
+      "seconds": 0.153,
+      "failure": {
+        "type": "junit.framework.AssertionFailedError",
+        "message": "junit.framework.AssertionFailedError: expected:<{first=red, second=blue}> but was:<{first=blue, second=blue}>",
+        "trace_head": [
+          "junit.framework.AssertionFailedError: expected:<{first=red, second=blue}> but was:<{first=blue, second=blue}>",
+          "\tat junit.framework.Assert.fail(Assert.java:57)",
+          "\tat junit.framework.Assert.failNotEquals(Assert.java:329)",
+          "\tat junit.framework.Assert.assertEquals(Assert.java:78)",
+          "\tat junit.framework.Assert.assertEquals(Assert.java:86)",
+          "\tat junit.framework.TestCase.assertEquals(TestCase.java:246)",
+          "\tat cssvarsassistant.audit.EditorBehaviorAuditTest.testNamespacedScssCompletionUsesSelectedModule(EditorBehaviorAuditTest.kt:63)",
+          "\tat java.base@21.0.6/java.lang.reflect.Method.invoke(Method.java:580)",
+          "\tat junit.framework.TestCase.runTest(TestCase.java:177)",
+          "\tat com.intellij.testFramework.UsefulTestCase.lambda$runBare$12(UsefulTestCase.java:501)",
+          "\tat com.intellij.testFramework.TestLoggerKt$recordErrorsLoggedInTheCurrentThreadAndReportThemAsFailures$2.invoke(testLogger.kt:99)",
+          "\tat com.intellij.testFramework.TestLoggerKt$recordErrorsLoggedInTheCurrentThreadAndReportThemAsFailures$2.invoke(testLogger.kt:99)"
+        ]
+      }
+    },
+    {
+      "suite": "cssvarsassistant.audit.EditorBehaviorAuditTest",
+      "name": "testDocumentationPreservesCaseSensitiveValue",
+      "status": "failed",
+      "seconds": 0.058,
+      "failure": {
+        "type": "junit.framework.AssertionFailedError",
+        "message": "junit.framework.AssertionFailedError: <div class='definition'><pre><b>--image</b><br/></pre></div><div class='content'><div style='min-width:700px;'><div style='width:700px;height:0;overflow:hidden;'></div><table><tr style='color:#F2F2F2;padding:0px;font-weight:bold;border-bottom:1px solid #BABABA;'><th><nobr>Context</nobr></th><th><nobr>Value</nobr></th><th><nobr>Type</nobr></th><th><nobr>Source</nobr></th></tr><tr style=''><td style='white-space:nowrap;padding-top:5px;padding-bottom:5px;color:#BABABA;' title='default'><nobr>Default</nobr></td><td style='white-space:nowrap;padding-top:5px;padding-bottom:5px;color:#BABABA;' title='Resolved through variable references'><nobr>url(logodark.svg)</nobr></td><td style='white-space:nowrap;padding-top:5px;padding-bottom:5px;color:#BABABA;'><nobr>other</nobr></td><td style='white-space:nowrap;padding-top:5px;padding-bottom:5px;color:#BABABA;' title='tokens.css:1'><nobr>:1</nobr></td></tr></table></div></div>",
+        "trace_head": [
+          "junit.framework.AssertionFailedError: <div class='definition'><pre><b>--image</b><br/></pre></div><div class='content'><div style='min-width:700px;'><div style='width:700px;height:0;overflow:hidden;'></div><table><tr style='color:#F2F2F2;padding:0px;font-weight:bold;border-bottom:1px solid #BABABA;'><th><nobr>Context</nobr></th><th><nobr>Value</nobr></th><th><nobr>Type</nobr></th><th><nobr>Source</nobr></th></tr><tr style=''><td style='white-space:nowrap;padding-top:5px;padding-bottom:5px;color:#BABABA;' title='default'><nobr>Default</nobr></td><td style='white-space:nowrap;padding-top:5px;padding-bottom:5px;color:#BABABA;' title='Resolved through variable references'><nobr>url(logodark.svg)</nobr></td><td style='white-space:nowrap;padding-top:5px;padding-bottom:5px;color:#BABABA;'><nobr>other</nobr></td><td style='white-space:nowrap;padding-top:5px;padding-bottom:5px;color:#BABABA;' title='tokens.css:1'><nobr>:1</nobr></td></tr></table></div></div>",
+          "\tat junit.framework.Assert.fail(Assert.java:57)",
+          "\tat junit.framework.Assert.assertTrue(Assert.java:22)",
+          "\tat junit.framework.TestCase.assertTrue(TestCase.java:192)",
+          "\tat cssvarsassistant.audit.EditorBehaviorAuditTest.testDocumentationPreservesCaseSensitiveValue(EditorBehaviorAuditTest.kt:84)",
+          "\tat java.base@21.0.6/java.lang.reflect.Method.invoke(Method.java:580)",
+          "\tat junit.framework.TestCase.runTest(TestCase.java:177)",
+          "\tat com.intellij.testFramework.UsefulTestCase.lambda$runBare$12(UsefulTestCase.java:501)",
+          "\tat com.intellij.testFramework.TestLoggerKt$recordErrorsLoggedInTheCurrentThreadAndReportThemAsFailures$2.invoke(testLogger.kt:99)",
+          "\tat com.intellij.testFramework.TestLoggerKt$recordErrorsLoggedInTheCurrentThreadAndReportThemAsFailures$2.invoke(testLogger.kt:99)",
+          "\tat com.intellij.testFramework.TestLoggerKt.recordErrorsLoggedInTheCurrentThreadAndReportThemAsFailures(testLogger.kt:81)",
+          "\tat com.intellij.testFramework.TestLoggerKt.recordErrorsLoggedInTheCurrentThreadAndReportThemAsFailures(testLogger.kt:99)"
+        ]
+      }
+    },
+    {
+      "suite": "cssvarsassistant.audit.EditorBehaviorAuditTest",
+      "name": "testImportedSourcePointsToDependencyFile",
+      "status": "failed",
+      "seconds": 0.197,
+      "failure": {
+        "type": "junit.framework.AssertionFailedError",
+        "message": "junit.framework.AssertionFailedError: <div class='definition'><pre><b>--audit-brand</b><br/></pre></div><div class='content'><div style='min-width:700px;'><div style='width:700px;height:0;overflow:hidden;'></div><table><tr style='color:#F2F2F2;padding:0px;font-weight:bold;border-bottom:1px solid #BABABA;'><th><nobr>Context</nobr></th><th>&nbsp;</th><th><nobr>Value</nobr></th><th><nobr>Type</nobr></th><th><nobr>Source</nobr></th><th><nobr>Hex</nobr></th><th><nobr>WCAG</nobr></th></tr><tr style='font-weight:bold;'><td style='white-space:nowrap;padding-top:5px;padding-bottom:5px;color:#BABABA;'><nobr>Default</nobr></td><td style='white-space:nowrap;padding-top:5px;padding-bottom:5px;color:#BABABA;'><nobr><div style='background-color:rgb(255,0,0);border:1px solid #FFFFFF;display:inline-block;width:14px;height:14px;'></div></nobr></td><td style='white-space:nowrap;padding-top:5px;padding-bottom:5px;color:#BABABA;' title='Resolved through variable references'><nobr>red</nobr></td><td style='white-space:nowrap;padding-top:5px;padding-bottom:5px;color:#BABABA;'><nobr>color</nobr></td><td style='white-space:nowrap;padding-top:5px;padding-bottom:5px;color:#BABABA;' title='app.css:1'><nobr>:1</nobr></td><td style='white-space:nowrap;padding-top:5px;padding-bottom:5px;color:#BABABA;'><nobr>#ff0000</nobr></td><td style='white-space:nowrap;padding-top:5px;padding-bottom:5px;color:#BABABA;'><nobr>4,00:1</nobr></td></tr></table></div><p style='margin-top:10px'>\n                       <a target=\"_blank\"\n                          href=\"https://webaim.org/resources/contrastchecker/?fcolor=ff0000&bcolor=000000\">\n                          Check contrast on WebAIM Contrast Checker\n                       </a></p></div>",
+        "trace_head": [
+          "junit.framework.AssertionFailedError: <div class='definition'><pre><b>--audit-brand</b><br/></pre></div><div class='content'><div style='min-width:700px;'><div style='width:700px;height:0;overflow:hidden;'></div><table><tr style='color:#F2F2F2;padding:0px;font-weight:bold;border-bottom:1px solid #BABABA;'><th><nobr>Context</nobr></th><th>&nbsp;</th><th><nobr>Value</nobr></th><th><nobr>Type</nobr></th><th><nobr>Source</nobr></th><th><nobr>Hex</nobr></th><th><nobr>WCAG</nobr></th></tr><tr style='font-weight:bold;'><td style='white-space:nowrap;padding-top:5px;padding-bottom:5px;color:#BABABA;'><nobr>Default</nobr></td><td style='white-space:nowrap;padding-top:5px;padding-bottom:5px;color:#BABABA;'><nobr><div style='background-color:rgb(255,0,0);border:1px solid #FFFFFF;display:inline-block;width:14px;height:14px;'></div></nobr></td><td style='white-space:nowrap;padding-top:5px;padding-bottom:5px;color:#BABABA;' title='Resolved through variable references'><nobr>red</nobr></td><td style='white-space:nowrap;padding-top:5px;padding-bottom:5px;color:#BABABA;'><nobr>color</nobr></td><td style='white-space:nowrap;padding-top:5px;padding-bottom:5px;color:#BABABA;' title='app.css:1'><nobr>:1</nobr></td><td style='white-space:nowrap;padding-top:5px;padding-bottom:5px;color:#BABABA;'><nobr>#ff0000</nobr></td><td style='white-space:nowrap;padding-top:5px;padding-bottom:5px;color:#BABABA;'><nobr>4,00:1</nobr></td></tr></table></div><p style='margin-top:10px'>",
+          "                       <a target=\"_blank\"",
+          "                          href=\"https://webaim.org/resources/contrastchecker/?fcolor=ff0000&bcolor=000000\">",
+          "                          Check contrast on WebAIM Contrast Checker",
+          "                       </a></p></div>",
+          "\tat junit.framework.Assert.fail(Assert.java:57)",
+          "\tat junit.framework.Assert.assertTrue(Assert.java:22)",
+          "\tat junit.framework.TestCase.assertTrue(TestCase.java:192)",
+          "\tat cssvarsassistant.audit.EditorBehaviorAuditTest.testImportedSourcePointsToDependencyFile(EditorBehaviorAuditTest.kt:78)",
+          "\tat java.base@21.0.6/java.lang.reflect.Method.invoke(Method.java:580)",
+          "\tat junit.framework.TestCase.runTest(TestCase.java:177)",
+          "\tat com.intellij.testFramework.UsefulTestCase.lambda$runBare$12(UsefulTestCase.java:501)"
+        ]
+      }
+    },
+    {
+      "suite": "cssvarsassistant.audit.EditorBehaviorAuditTest",
+      "name": "testDocumentationEscapesMarkupInValues",
+      "status": "passed",
+      "seconds": 0.043,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.audit.EditorBehaviorAuditTest",
+      "name": "testMultilineScssPropertyValueOffersVariables",
+      "status": "failed",
+      "seconds": 0.161,
+      "failure": {
+        "type": "java.lang.AssertionError",
+        "message": "java.lang.AssertionError: audit-brand\naudit-other\n expected:<[$audit-brand, $audit-other]> but was:<[]>",
+        "trace_head": [
+          "java.lang.AssertionError: audit-brand",
+          "audit-other",
+          " expected:<[$audit-brand, $audit-other]> but was:<[]>",
+          "\tat org.junit.Assert.fail(Assert.java:89)",
+          "\tat org.junit.Assert.failNotEquals(Assert.java:835)",
+          "\tat org.junit.Assert.assertEquals(Assert.java:120)",
+          "\tat com.intellij.testFramework.UsefulTestCase.assertSameElements(UsefulTestCase.java:696)",
+          "\tat com.intellij.testFramework.UsefulTestCase.assertContainsElements(UsefulTestCase.java:739)",
+          "\tat com.intellij.testFramework.UsefulTestCase.assertContainsElements(UsefulTestCase.java:729)",
+          "\tat com.intellij.testFramework.UsefulTestCase.assertContainsElements(UsefulTestCase.java:724)",
+          "\tat cssvarsassistant.audit.EditorBehaviorAuditTest.testMultilineScssPropertyValueOffersVariables(EditorBehaviorAuditTest.kt:46)",
+          "\tat java.base/java.lang.reflect.Method.invoke(Method.java:580)"
+        ]
+      }
+    },
+    {
+      "suite": "cssvarsassistant.audit.EditorBehaviorAuditTest",
+      "name": "testScssDocumentationRespectsDeclarationOrderAtUsage",
+      "status": "failed",
+      "seconds": 0.074,
+      "failure": {
+        "type": "junit.framework.AssertionFailedError",
+        "message": "junit.framework.AssertionFailedError: Resolution: $brand → blue",
+        "trace_head": [
+          "junit.framework.AssertionFailedError: Resolution: $brand → blue",
+          "\tat junit.framework.Assert.fail(Assert.java:57)",
+          "\tat junit.framework.Assert.assertTrue(Assert.java:22)",
+          "\tat junit.framework.TestCase.assertTrue(TestCase.java:192)",
+          "\tat cssvarsassistant.audit.EditorBehaviorAuditTest.testScssDocumentationRespectsDeclarationOrderAtUsage(EditorBehaviorAuditTest.kt:70)",
+          "\tat java.base@21.0.6/java.lang.reflect.Method.invoke(Method.java:580)",
+          "\tat junit.framework.TestCase.runTest(TestCase.java:177)",
+          "\tat com.intellij.testFramework.UsefulTestCase.lambda$runBare$12(UsefulTestCase.java:501)",
+          "\tat com.intellij.testFramework.TestLoggerKt$recordErrorsLoggedInTheCurrentThreadAndReportThemAsFailures$2.invoke(testLogger.kt:99)",
+          "\tat com.intellij.testFramework.TestLoggerKt$recordErrorsLoggedInTheCurrentThreadAndReportThemAsFailures$2.invoke(testLogger.kt:99)",
+          "\tat com.intellij.testFramework.TestLoggerKt.recordErrorsLoggedInTheCurrentThreadAndReportThemAsFailures(testLogger.kt:81)",
+          "\tat com.intellij.testFramework.TestLoggerKt.recordErrorsLoggedInTheCurrentThreadAndReportThemAsFailures(testLogger.kt:99)"
+        ]
+      }
+    },
+    {
+      "suite": "cssvarsassistant.audit.EditorBehaviorAuditTest",
+      "name": "testScssUseIsNotClaimedAsLessVariableDocumentation",
+      "status": "failed",
+      "seconds": 0.059,
+      "failure": {
+        "type": "junit.framework.AssertionFailedError",
+        "message": "junit.framework.AssertionFailedError: Expected: <null> but was: cssvarsassistant.documentation.v2.CssVariableDocumentationTarget@1fe3b315",
+        "trace_head": [
+          "junit.framework.AssertionFailedError: Expected: <null> but was: cssvarsassistant.documentation.v2.CssVariableDocumentationTarget@1fe3b315",
+          "\tat junit.framework.Assert.fail(Assert.java:57)",
+          "\tat junit.framework.Assert.assertTrue(Assert.java:22)",
+          "\tat junit.framework.Assert.assertNull(Assert.java:277)",
+          "\tat junit.framework.Assert.assertNull(Assert.java:268)",
+          "\tat junit.framework.TestCase.assertNull(TestCase.java:410)",
+          "\tat cssvarsassistant.audit.EditorBehaviorAuditTest.testScssUseIsNotClaimedAsLessVariableDocumentation(EditorBehaviorAuditTest.kt:22)",
+          "\tat java.base@21.0.6/java.lang.reflect.Method.invoke(Method.java:580)",
+          "\tat junit.framework.TestCase.runTest(TestCase.java:177)",
+          "\tat com.intellij.testFramework.UsefulTestCase.lambda$runBare$12(UsefulTestCase.java:501)",
+          "\tat com.intellij.testFramework.TestLoggerKt$recordErrorsLoggedInTheCurrentThreadAndReportThemAsFailures$2.invoke(testLogger.kt:99)",
+          "\tat com.intellij.testFramework.TestLoggerKt$recordErrorsLoggedInTheCurrentThreadAndReportThemAsFailures$2.invoke(testLogger.kt:99)"
+        ]
+      }
+    },
+    {
+      "suite": "cssvarsassistant.audit.ImportEdgeCaseAuditTest",
+      "name": "testCommentedImportsDoNotResolve",
+      "status": "failed",
+      "seconds": 0.055,
+      "failure": {
+        "type": "junit.framework.AssertionFailedError",
+        "message": "junit.framework.AssertionFailedError",
+        "trace_head": [
+          "junit.framework.AssertionFailedError",
+          "\tat junit.framework.Assert.fail(Assert.java:55)",
+          "\tat junit.framework.Assert.assertTrue(Assert.java:22)",
+          "\tat junit.framework.Assert.assertTrue(Assert.java:31)",
+          "\tat junit.framework.TestCase.assertTrue(TestCase.java:200)",
+          "\tat cssvarsassistant.audit.ImportEdgeCaseAuditTest.testCommentedImportsDoNotResolve(ImportEdgeCaseAuditTest.kt:12)",
+          "\tat java.base@21.0.6/java.lang.reflect.Method.invoke(Method.java:580)",
+          "\tat junit.framework.TestCase.runTest(TestCase.java:177)",
+          "\tat com.intellij.testFramework.UsefulTestCase.lambda$runBare$12(UsefulTestCase.java:501)",
+          "\tat com.intellij.testFramework.TestLoggerKt$recordErrorsLoggedInTheCurrentThreadAndReportThemAsFailures$2.invoke(testLogger.kt:99)",
+          "\tat com.intellij.testFramework.TestLoggerKt$recordErrorsLoggedInTheCurrentThreadAndReportThemAsFailures$2.invoke(testLogger.kt:99)",
+          "\tat com.intellij.testFramework.TestLoggerKt.recordErrorsLoggedInTheCurrentThreadAndReportThemAsFailures(testLogger.kt:81)"
+        ]
+      }
+    },
+    {
+      "suite": "cssvarsassistant.audit.ImportEdgeCaseAuditTest",
+      "name": "testImportCycleTerminates",
+      "status": "passed",
+      "seconds": 0.043,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.audit.ImportEdgeCaseAuditTest",
+      "name": "testImportsInsideQuotedContentDoNotResolve",
+      "status": "failed",
+      "seconds": 0.048,
+      "failure": {
+        "type": "junit.framework.AssertionFailedError",
+        "message": "junit.framework.AssertionFailedError",
+        "trace_head": [
+          "junit.framework.AssertionFailedError",
+          "\tat junit.framework.Assert.fail(Assert.java:55)",
+          "\tat junit.framework.Assert.assertTrue(Assert.java:22)",
+          "\tat junit.framework.Assert.assertTrue(Assert.java:31)",
+          "\tat junit.framework.TestCase.assertTrue(TestCase.java:200)",
+          "\tat cssvarsassistant.audit.ImportEdgeCaseAuditTest.testImportsInsideQuotedContentDoNotResolve(ImportEdgeCaseAuditTest.kt:18)",
+          "\tat java.base@21.0.6/java.lang.reflect.Method.invoke(Method.java:580)",
+          "\tat junit.framework.TestCase.runTest(TestCase.java:177)",
+          "\tat com.intellij.testFramework.UsefulTestCase.lambda$runBare$12(UsefulTestCase.java:501)",
+          "\tat com.intellij.testFramework.TestLoggerKt$recordErrorsLoggedInTheCurrentThreadAndReportThemAsFailures$2.invoke(testLogger.kt:99)",
+          "\tat com.intellij.testFramework.TestLoggerKt$recordErrorsLoggedInTheCurrentThreadAndReportThemAsFailures$2.invoke(testLogger.kt:99)",
+          "\tat com.intellij.testFramework.TestLoggerKt.recordErrorsLoggedInTheCurrentThreadAndReportThemAsFailures(testLogger.kt:81)"
+        ]
+      }
+    },
+    {
+      "suite": "cssvarsassistant.audit.ImportEdgeCaseAuditTest",
+      "name": "testSassPartialWithExplicitExtensionResolves",
+      "status": "failed",
+      "seconds": 0.049,
+      "failure": {
+        "type": "junit.framework.AssertionFailedError",
+        "message": "junit.framework.AssertionFailedError: expected:<[temp:///src/_tokens.scss]> but was:<[]>",
+        "trace_head": [
+          "junit.framework.AssertionFailedError: expected:<[temp:///src/_tokens.scss]> but was:<[]>",
+          "\tat junit.framework.Assert.fail(Assert.java:57)",
+          "\tat junit.framework.Assert.failNotEquals(Assert.java:329)",
+          "\tat junit.framework.Assert.assertEquals(Assert.java:78)",
+          "\tat junit.framework.Assert.assertEquals(Assert.java:86)",
+          "\tat junit.framework.TestCase.assertEquals(TestCase.java:246)",
+          "\tat cssvarsassistant.audit.ImportEdgeCaseAuditTest.testSassPartialWithExplicitExtensionResolves(ImportEdgeCaseAuditTest.kt:37)",
+          "\tat java.base@21.0.6/java.lang.reflect.Method.invoke(Method.java:580)",
+          "\tat junit.framework.TestCase.runTest(TestCase.java:177)",
+          "\tat com.intellij.testFramework.UsefulTestCase.lambda$runBare$12(UsefulTestCase.java:501)",
+          "\tat com.intellij.testFramework.TestLoggerKt$recordErrorsLoggedInTheCurrentThreadAndReportThemAsFailures$2.invoke(testLogger.kt:99)",
+          "\tat com.intellij.testFramework.TestLoggerKt$recordErrorsLoggedInTheCurrentThreadAndReportThemAsFailures$2.invoke(testLogger.kt:99)"
+        ]
+      }
+    },
+    {
+      "suite": "cssvarsassistant.audit.ImportEdgeCaseAuditTest",
+      "name": "testMixedImportAndUseKeepSourceOrder",
+      "status": "failed",
+      "seconds": 0.054,
+      "failure": {
+        "type": "junit.framework.AssertionFailedError",
+        "message": "junit.framework.AssertionFailedError: expected:<[temp:///src/_first.scss, temp:///src/_second.scss]> but was:<[temp:///src/_second.scss, temp:///src/_first.scss]>",
+        "trace_head": [
+          "junit.framework.AssertionFailedError: expected:<[temp:///src/_first.scss, temp:///src/_second.scss]> but was:<[temp:///src/_second.scss, temp:///src/_first.scss]>",
+          "\tat junit.framework.Assert.fail(Assert.java:57)",
+          "\tat junit.framework.Assert.failNotEquals(Assert.java:329)",
+          "\tat junit.framework.Assert.assertEquals(Assert.java:78)",
+          "\tat junit.framework.Assert.assertEquals(Assert.java:86)",
+          "\tat junit.framework.TestCase.assertEquals(TestCase.java:246)",
+          "\tat cssvarsassistant.audit.ImportEdgeCaseAuditTest.testMixedImportAndUseKeepSourceOrder(ImportEdgeCaseAuditTest.kt:44)",
+          "\tat java.base@21.0.6/java.lang.reflect.Method.invoke(Method.java:580)",
+          "\tat junit.framework.TestCase.runTest(TestCase.java:177)",
+          "\tat com.intellij.testFramework.UsefulTestCase.lambda$runBare$12(UsefulTestCase.java:501)",
+          "\tat com.intellij.testFramework.TestLoggerKt$recordErrorsLoggedInTheCurrentThreadAndReportThemAsFailures$2.invoke(testLogger.kt:99)",
+          "\tat com.intellij.testFramework.TestLoggerKt$recordErrorsLoggedInTheCurrentThreadAndReportThemAsFailures$2.invoke(testLogger.kt:99)"
+        ]
+      }
+    },
+    {
+      "suite": "cssvarsassistant.audit.ImportEdgeCaseAuditTest",
+      "name": "testLessImportOptionsAreRecognized",
+      "status": "failed",
+      "seconds": 0.047,
+      "failure": {
+        "type": "junit.framework.AssertionFailedError",
+        "message": "junit.framework.AssertionFailedError: expected:<[temp:///src/tokens.less]> but was:<[]>",
+        "trace_head": [
+          "junit.framework.AssertionFailedError: expected:<[temp:///src/tokens.less]> but was:<[]>",
+          "\tat junit.framework.Assert.fail(Assert.java:57)",
+          "\tat junit.framework.Assert.failNotEquals(Assert.java:329)",
+          "\tat junit.framework.Assert.assertEquals(Assert.java:78)",
+          "\tat junit.framework.Assert.assertEquals(Assert.java:86)",
+          "\tat junit.framework.TestCase.assertEquals(TestCase.java:246)",
+          "\tat cssvarsassistant.audit.ImportEdgeCaseAuditTest.testLessImportOptionsAreRecognized(ImportEdgeCaseAuditTest.kt:31)",
+          "\tat java.base@21.0.6/java.lang.reflect.Method.invoke(Method.java:580)",
+          "\tat junit.framework.TestCase.runTest(TestCase.java:177)",
+          "\tat com.intellij.testFramework.UsefulTestCase.lambda$runBare$12(UsefulTestCase.java:501)",
+          "\tat com.intellij.testFramework.TestLoggerKt$recordErrorsLoggedInTheCurrentThreadAndReportThemAsFailures$2.invoke(testLogger.kt:99)",
+          "\tat com.intellij.testFramework.TestLoggerKt$recordErrorsLoggedInTheCurrentThreadAndReportThemAsFailures$2.invoke(testLogger.kt:99)"
+        ]
+      }
+    },
+    {
+      "suite": "cssvarsassistant.audit.ImportEdgeCaseAuditTest",
+      "name": "testMissingImportReturnsEmptyWithoutThrowing",
+      "status": "passed",
+      "seconds": 0.04,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.audit.ImportEdgeCaseAuditTest",
+      "name": "testTransitiveLessImportKeepsImporterOverride",
+      "status": "failed",
+      "seconds": 0.089,
+      "failure": {
+        "type": "junit.framework.ComparisonFailure",
+        "message": "junit.framework.ComparisonFailure: expected:<[blue]> but was:<[red]>",
+        "trace_head": [
+          "junit.framework.ComparisonFailure: expected:<[blue]> but was:<[red]>",
+          "\tat junit.framework.Assert.assertEquals(Assert.java:100)",
+          "\tat junit.framework.Assert.assertEquals(Assert.java:107)",
+          "\tat junit.framework.TestCase.assertEquals(TestCase.java:260)",
+          "\tat cssvarsassistant.audit.ImportEdgeCaseAuditTest.testTransitiveLessImportKeepsImporterOverride(ImportEdgeCaseAuditTest.kt:52)",
+          "\tat java.base@21.0.6/java.lang.reflect.Method.invoke(Method.java:580)",
+          "\tat junit.framework.TestCase.runTest(TestCase.java:177)",
+          "\tat com.intellij.testFramework.UsefulTestCase.lambda$runBare$12(UsefulTestCase.java:501)",
+          "\tat com.intellij.testFramework.TestLoggerKt$recordErrorsLoggedInTheCurrentThreadAndReportThemAsFailures$2.invoke(testLogger.kt:99)",
+          "\tat com.intellij.testFramework.TestLoggerKt$recordErrorsLoggedInTheCurrentThreadAndReportThemAsFailures$2.invoke(testLogger.kt:99)",
+          "\tat com.intellij.testFramework.TestLoggerKt.recordErrorsLoggedInTheCurrentThreadAndReportThemAsFailures(testLogger.kt:81)",
+          "\tat com.intellij.testFramework.TestLoggerKt.recordErrorsLoggedInTheCurrentThreadAndReportThemAsFailures(testLogger.kt:99)"
+        ]
+      }
+    },
+    {
+      "suite": "cssvarsassistant.audit.ImportEdgeCaseAuditTest",
+      "name": "testSassImportListResolvesEveryPath",
+      "status": "failed",
+      "seconds": 0.048,
+      "failure": {
+        "type": "junit.framework.AssertionFailedError",
+        "message": "junit.framework.AssertionFailedError: expected:<[temp:///src/_first.scss, temp:///src/_second.scss]> but was:<[temp:///src/_first.scss]>",
+        "trace_head": [
+          "junit.framework.AssertionFailedError: expected:<[temp:///src/_first.scss, temp:///src/_second.scss]> but was:<[temp:///src/_first.scss]>",
+          "\tat junit.framework.Assert.fail(Assert.java:57)",
+          "\tat junit.framework.Assert.failNotEquals(Assert.java:329)",
+          "\tat junit.framework.Assert.assertEquals(Assert.java:78)",
+          "\tat junit.framework.Assert.assertEquals(Assert.java:86)",
+          "\tat junit.framework.TestCase.assertEquals(TestCase.java:246)",
+          "\tat cssvarsassistant.audit.ImportEdgeCaseAuditTest.testSassImportListResolvesEveryPath(ImportEdgeCaseAuditTest.kt:25)",
+          "\tat java.base@21.0.6/java.lang.reflect.Method.invoke(Method.java:580)",
+          "\tat junit.framework.TestCase.runTest(TestCase.java:177)",
+          "\tat com.intellij.testFramework.UsefulTestCase.lambda$runBare$12(UsefulTestCase.java:501)",
+          "\tat com.intellij.testFramework.TestLoggerKt$recordErrorsLoggedInTheCurrentThreadAndReportThemAsFailures$2.invoke(testLogger.kt:99)",
+          "\tat com.intellij.testFramework.TestLoggerKt$recordErrorsLoggedInTheCurrentThreadAndReportThemAsFailures$2.invoke(testLogger.kt:99)"
+        ]
+      }
+    },
+    {
+      "suite": "cssvarsassistant.audit.ParserEdgeCaseAuditTest",
+      "name": "sass default assignment does not overwrite an existing value()",
+      "status": "failed",
+      "seconds": 0.026,
+      "failure": {
+        "type": "org.opentest4j.AssertionFailedError",
+        "message": "org.opentest4j.AssertionFailedError: expected: <red> but was: <blue>",
+        "trace_head": [
+          "org.opentest4j.AssertionFailedError: expected: <red> but was: <blue>",
+          "\tat org.junit.jupiter.api.AssertionFailureBuilder.build(AssertionFailureBuilder.java:151)",
+          "\tat org.junit.jupiter.api.AssertionFailureBuilder.buildAndThrow(AssertionFailureBuilder.java:132)",
+          "\tat org.junit.jupiter.api.AssertEquals.failNotEqual(AssertEquals.java:197)",
+          "\tat org.junit.jupiter.api.AssertEquals.assertEquals(AssertEquals.java:182)",
+          "\tat org.junit.jupiter.api.Assertions.assertEquals(Assertions.java:1156)",
+          "\tat kotlin.test.junit5.JUnit5Asserter.assertEquals(JUnitSupport.kt:32)",
+          "\tat kotlin.test.AssertionsKt__AssertionsKt.assertEquals(Assertions.kt:63)",
+          "\tat kotlin.test.AssertionsKt.assertEquals(Unknown Source)",
+          "\tat kotlin.test.AssertionsKt__AssertionsKt.assertEquals$default(Assertions.kt:62)",
+          "\tat kotlin.test.AssertionsKt.assertEquals$default(Unknown Source)",
+          "\tat cssvarsassistant.audit.ParserEdgeCaseAuditTest.sass default assignment does not overwrite an existing value(ParserEdgeCaseAuditTest.kt:75)"
+        ]
+      }
+    },
+    {
+      "suite": "cssvarsassistant.audit.ParserEdgeCaseAuditTest",
+      "name": "index codec round trips separators inside documentation()",
+      "status": "failed",
+      "seconds": 0.003,
+      "failure": {
+        "type": "java.lang.IllegalArgumentException",
+        "message": "java.lang.IllegalArgumentException: List has more than one element.",
+        "trace_head": [
+          "java.lang.IllegalArgumentException: List has more than one element.",
+          "\tat kotlin.collections.CollectionsKt___CollectionsKt.single(_Collections.kt:618)",
+          "\tat cssvarsassistant.audit.ParserEdgeCaseAuditTest.index codec round trips separators inside documentation(ParserEdgeCaseAuditTest.kt:92)",
+          "\tat java.base/java.lang.reflect.Method.invoke(Method.java:580)",
+          "\tat com.intellij.testFramework.junit5.impl.TestLoggerInterceptor.intercept$lambda$0(TestLoggerInterceptor.kt:12)",
+          "\tat com.intellij.testFramework.TestLoggerKt.recordErrorsLoggedInTheCurrentThreadAndReportThemAsFailures(testLogger.kt:81)",
+          "\tat com.intellij.testFramework.junit5.impl.TestLoggerInterceptor.intercept(TestLoggerInterceptor.kt:11)",
+          "\tat com.intellij.testFramework.junit5.impl.AbstractInvocationInterceptor.interceptTestMethod(AbstractInvocationInterceptor.kt:29)",
+          "\tat java.base/java.util.ArrayList.forEach(ArrayList.java:1596)",
+          "\tat java.base/java.util.ArrayList.forEach(ArrayList.java:1596)"
+        ]
+      }
+    },
+    {
+      "suite": "cssvarsassistant.audit.ParserEdgeCaseAuditTest",
+      "name": "multiline final declaration may omit semicolon()",
+      "status": "failed",
+      "seconds": 0.003,
+      "failure": {
+        "type": "org.opentest4j.AssertionFailedError",
+        "message": "org.opentest4j.AssertionFailedError: expected: <[0 1px black]> but was: <[]>",
+        "trace_head": [
+          "org.opentest4j.AssertionFailedError: expected: <[0 1px black]> but was: <[]>",
+          "\tat org.junit.jupiter.api.AssertionFailureBuilder.build(AssertionFailureBuilder.java:151)",
+          "\tat org.junit.jupiter.api.AssertionFailureBuilder.buildAndThrow(AssertionFailureBuilder.java:132)",
+          "\tat org.junit.jupiter.api.AssertEquals.failNotEqual(AssertEquals.java:197)",
+          "\tat org.junit.jupiter.api.AssertEquals.assertEquals(AssertEquals.java:182)",
+          "\tat org.junit.jupiter.api.Assertions.assertEquals(Assertions.java:1156)",
+          "\tat kotlin.test.junit5.JUnit5Asserter.assertEquals(JUnitSupport.kt:32)",
+          "\tat kotlin.test.AssertionsKt__AssertionsKt.assertEquals(Assertions.kt:63)",
+          "\tat kotlin.test.AssertionsKt.assertEquals(Unknown Source)",
+          "\tat kotlin.test.AssertionsKt__AssertionsKt.assertEquals$default(Assertions.kt:62)",
+          "\tat kotlin.test.AssertionsKt.assertEquals$default(Unknown Source)",
+          "\tat cssvarsassistant.audit.ParserEdgeCaseAuditTest.multiline final declaration may omit semicolon(ParserEdgeCaseAuditTest.kt:45)"
+        ]
+      }
+    },
+    {
+      "suite": "cssvarsassistant.audit.ParserEdgeCaseAuditTest",
+      "name": "local lookup accepts omitted final semicolon()",
+      "status": "failed",
+      "seconds": 0.002,
+      "failure": {
+        "type": "org.opentest4j.AssertionFailedError",
+        "message": "org.opentest4j.AssertionFailedError: expected: <4px> but was: <null>",
+        "trace_head": [
+          "org.opentest4j.AssertionFailedError: expected: <4px> but was: <null>",
+          "\tat org.junit.jupiter.api.AssertionFailureBuilder.build(AssertionFailureBuilder.java:151)",
+          "\tat org.junit.jupiter.api.AssertionFailureBuilder.buildAndThrow(AssertionFailureBuilder.java:132)",
+          "\tat org.junit.jupiter.api.AssertEquals.failNotEqual(AssertEquals.java:197)",
+          "\tat org.junit.jupiter.api.AssertEquals.assertEquals(AssertEquals.java:182)",
+          "\tat org.junit.jupiter.api.Assertions.assertEquals(Assertions.java:1156)",
+          "\tat kotlin.test.junit5.JUnit5Asserter.assertEquals(JUnitSupport.kt:32)",
+          "\tat kotlin.test.AssertionsKt__AssertionsKt.assertEquals(Assertions.kt:63)",
+          "\tat kotlin.test.AssertionsKt.assertEquals(Unknown Source)",
+          "\tat kotlin.test.AssertionsKt__AssertionsKt.assertEquals$default(Assertions.kt:62)",
+          "\tat kotlin.test.AssertionsKt.assertEquals$default(Unknown Source)",
+          "\tat cssvarsassistant.audit.ParserEdgeCaseAuditTest.local lookup accepts omitted final semicolon(ParserEdgeCaseAuditTest.kt:67)"
+        ]
+      }
+    },
+    {
+      "suite": "cssvarsassistant.audit.ParserEdgeCaseAuditTest",
+      "name": "preprocessor quoted semicolon is retained()",
+      "status": "failed",
+      "seconds": 0.004,
+      "failure": {
+        "type": "org.opentest4j.AssertionFailedError",
+        "message": "org.opentest4j.AssertionFailedError: expected: <\"left;right\"> but was: <\"left>",
+        "trace_head": [
+          "org.opentest4j.AssertionFailedError: expected: <\"left;right\"> but was: <\"left>",
+          "\tat org.junit.jupiter.api.AssertionFailureBuilder.build(AssertionFailureBuilder.java:151)",
+          "\tat org.junit.jupiter.api.AssertionFailureBuilder.buildAndThrow(AssertionFailureBuilder.java:132)",
+          "\tat org.junit.jupiter.api.AssertEquals.failNotEqual(AssertEquals.java:197)",
+          "\tat org.junit.jupiter.api.AssertEquals.assertEquals(AssertEquals.java:182)",
+          "\tat org.junit.jupiter.api.Assertions.assertEquals(Assertions.java:1156)",
+          "\tat kotlin.test.junit5.JUnit5Asserter.assertEquals(JUnitSupport.kt:32)",
+          "\tat kotlin.test.AssertionsKt__AssertionsKt.assertEquals(Assertions.kt:63)",
+          "\tat kotlin.test.AssertionsKt.assertEquals(Unknown Source)",
+          "\tat kotlin.test.AssertionsKt__AssertionsKt.assertEquals$default(Assertions.kt:62)",
+          "\tat kotlin.test.AssertionsKt.assertEquals$default(Unknown Source)",
+          "\tat cssvarsassistant.audit.ParserEdgeCaseAuditTest.preprocessor quoted semicolon is retained(ParserEdgeCaseAuditTest.kt:71)"
+        ]
+      }
+    },
+    {
+      "suite": "cssvarsassistant.audit.ParserEdgeCaseAuditTest",
+      "name": "unicode custom property names are indexed()",
+      "status": "failed",
+      "seconds": 0.002,
+      "failure": {
+        "type": "org.opentest4j.AssertionFailedError",
+        "message": "org.opentest4j.AssertionFailedError: expected: <[--farge-blå]> but was: <[]>",
+        "trace_head": [
+          "org.opentest4j.AssertionFailedError: expected: <[--farge-blå]> but was: <[]>",
+          "\tat org.junit.jupiter.api.AssertionFailureBuilder.build(AssertionFailureBuilder.java:151)",
+          "\tat org.junit.jupiter.api.AssertionFailureBuilder.buildAndThrow(AssertionFailureBuilder.java:132)",
+          "\tat org.junit.jupiter.api.AssertEquals.failNotEqual(AssertEquals.java:197)",
+          "\tat org.junit.jupiter.api.AssertEquals.assertEquals(AssertEquals.java:182)",
+          "\tat org.junit.jupiter.api.Assertions.assertEquals(Assertions.java:1156)",
+          "\tat kotlin.test.junit5.JUnit5Asserter.assertEquals(JUnitSupport.kt:32)",
+          "\tat kotlin.test.AssertionsKt__AssertionsKt.assertEquals(Assertions.kt:63)",
+          "\tat kotlin.test.AssertionsKt.assertEquals(Unknown Source)",
+          "\tat kotlin.test.AssertionsKt__AssertionsKt.assertEquals$default(Assertions.kt:62)",
+          "\tat kotlin.test.AssertionsKt.assertEquals$default(Unknown Source)",
+          "\tat cssvarsassistant.audit.ParserEdgeCaseAuditTest.unicode custom property names are indexed(ParserEdgeCaseAuditTest.kt:49)"
+        ]
+      }
+    },
+    {
+      "suite": "cssvarsassistant.audit.ParserEdgeCaseAuditTest",
+      "name": "local lookup respects complete variable name()",
+      "status": "passed",
+      "seconds": 0.001,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.audit.ParserEdgeCaseAuditTest",
+      "name": "sass indentation preserves theme context()",
+      "status": "failed",
+      "seconds": 0.001,
+      "failure": {
+        "type": "org.opentest4j.AssertionFailedError",
+        "message": "org.opentest4j.AssertionFailedError: expected: <[(default, white), (.dark, black)]> but was: <[(default, white), (default, black)]>",
+        "trace_head": [
+          "org.opentest4j.AssertionFailedError: expected: <[(default, white), (.dark, black)]> but was: <[(default, white), (default, black)]>",
+          "\tat org.junit.jupiter.api.AssertionFailureBuilder.build(AssertionFailureBuilder.java:151)",
+          "\tat org.junit.jupiter.api.AssertionFailureBuilder.buildAndThrow(AssertionFailureBuilder.java:132)",
+          "\tat org.junit.jupiter.api.AssertEquals.failNotEqual(AssertEquals.java:197)",
+          "\tat org.junit.jupiter.api.AssertEquals.assertEquals(AssertEquals.java:182)",
+          "\tat org.junit.jupiter.api.Assertions.assertEquals(Assertions.java:1156)",
+          "\tat kotlin.test.junit5.JUnit5Asserter.assertEquals(JUnitSupport.kt:32)",
+          "\tat kotlin.test.AssertionsKt__AssertionsKt.assertEquals(Assertions.kt:63)",
+          "\tat kotlin.test.AssertionsKt.assertEquals(Unknown Source)",
+          "\tat kotlin.test.AssertionsKt__AssertionsKt.assertEquals$default(Assertions.kt:62)",
+          "\tat kotlin.test.AssertionsKt.assertEquals$default(Unknown Source)",
+          "\tat cssvarsassistant.audit.ParserEdgeCaseAuditTest.sass indentation preserves theme context(ParserEdgeCaseAuditTest.kt:54)"
+        ]
+      }
+    },
+    {
+      "suite": "cssvarsassistant.audit.ParserEdgeCaseAuditTest",
+      "name": "css URL is indexed intact()",
+      "status": "failed",
+      "seconds": 0.003,
+      "failure": {
+        "type": "org.opentest4j.AssertionFailedError",
+        "message": "org.opentest4j.AssertionFailedError: expected: <[url(\"https://example.com/Logo.svg\")]> but was: <[]>",
+        "trace_head": [
+          "org.opentest4j.AssertionFailedError: expected: <[url(\"https://example.com/Logo.svg\")]> but was: <[]>",
+          "\tat org.junit.jupiter.api.AssertionFailureBuilder.build(AssertionFailureBuilder.java:151)",
+          "\tat org.junit.jupiter.api.AssertionFailureBuilder.buildAndThrow(AssertionFailureBuilder.java:132)",
+          "\tat org.junit.jupiter.api.AssertEquals.failNotEqual(AssertEquals.java:197)",
+          "\tat org.junit.jupiter.api.AssertEquals.assertEquals(AssertEquals.java:182)",
+          "\tat org.junit.jupiter.api.Assertions.assertEquals(Assertions.java:1156)",
+          "\tat kotlin.test.junit5.JUnit5Asserter.assertEquals(JUnitSupport.kt:32)",
+          "\tat kotlin.test.AssertionsKt__AssertionsKt.assertEquals(Assertions.kt:63)",
+          "\tat kotlin.test.AssertionsKt.assertEquals(Unknown Source)",
+          "\tat kotlin.test.AssertionsKt__AssertionsKt.assertEquals$default(Assertions.kt:62)",
+          "\tat kotlin.test.AssertionsKt.assertEquals$default(Unknown Source)",
+          "\tat cssvarsassistant.audit.ParserEdgeCaseAuditTest.css URL is indexed intact(ParserEdgeCaseAuditTest.kt:25)"
+        ]
+      }
+    },
+    {
+      "suite": "cssvarsassistant.audit.ParserEdgeCaseAuditTest",
+      "name": "minified adjacent rules retain their own contexts()",
+      "status": "failed",
+      "seconds": 0.001,
+      "failure": {
+        "type": "org.opentest4j.AssertionFailedError",
+        "message": "org.opentest4j.AssertionFailedError: expected: <[(default, white), (.dark, black)]> but was: <[(default, white), (default, black)]>",
+        "trace_head": [
+          "org.opentest4j.AssertionFailedError: expected: <[(default, white), (.dark, black)]> but was: <[(default, white), (default, black)]>",
+          "\tat org.junit.jupiter.api.AssertionFailureBuilder.build(AssertionFailureBuilder.java:151)",
+          "\tat org.junit.jupiter.api.AssertionFailureBuilder.buildAndThrow(AssertionFailureBuilder.java:132)",
+          "\tat org.junit.jupiter.api.AssertEquals.failNotEqual(AssertEquals.java:197)",
+          "\tat org.junit.jupiter.api.AssertEquals.assertEquals(AssertEquals.java:182)",
+          "\tat org.junit.jupiter.api.Assertions.assertEquals(Assertions.java:1156)",
+          "\tat kotlin.test.junit5.JUnit5Asserter.assertEquals(JUnitSupport.kt:32)",
+          "\tat kotlin.test.AssertionsKt__AssertionsKt.assertEquals(Assertions.kt:63)",
+          "\tat kotlin.test.AssertionsKt.assertEquals(Unknown Source)",
+          "\tat kotlin.test.AssertionsKt__AssertionsKt.assertEquals$default(Assertions.kt:62)",
+          "\tat kotlin.test.AssertionsKt.assertEquals$default(Unknown Source)",
+          "\tat cssvarsassistant.audit.ParserEdgeCaseAuditTest.minified adjacent rules retain their own contexts(ParserEdgeCaseAuditTest.kt:35)"
+        ]
+      }
+    },
+    {
+      "suite": "cssvarsassistant.audit.ParserEdgeCaseAuditTest",
+      "name": "declaration following multiline value on same line is retained()",
+      "status": "failed",
+      "seconds": 0.001,
+      "failure": {
+        "type": "org.opentest4j.AssertionFailedError",
+        "message": "org.opentest4j.AssertionFailedError: expected: <[--shadow, --gap]> but was: <[--shadow]>",
+        "trace_head": [
+          "org.opentest4j.AssertionFailedError: expected: <[--shadow, --gap]> but was: <[--shadow]>",
+          "\tat org.junit.jupiter.api.AssertionFailureBuilder.build(AssertionFailureBuilder.java:151)",
+          "\tat org.junit.jupiter.api.AssertionFailureBuilder.buildAndThrow(AssertionFailureBuilder.java:132)",
+          "\tat org.junit.jupiter.api.AssertEquals.failNotEqual(AssertEquals.java:197)",
+          "\tat org.junit.jupiter.api.AssertEquals.assertEquals(AssertEquals.java:182)",
+          "\tat org.junit.jupiter.api.Assertions.assertEquals(Assertions.java:1156)",
+          "\tat kotlin.test.junit5.JUnit5Asserter.assertEquals(JUnitSupport.kt:32)",
+          "\tat kotlin.test.AssertionsKt__AssertionsKt.assertEquals(Assertions.kt:63)",
+          "\tat kotlin.test.AssertionsKt.assertEquals(Unknown Source)",
+          "\tat kotlin.test.AssertionsKt__AssertionsKt.assertEquals$default(Assertions.kt:62)",
+          "\tat kotlin.test.AssertionsKt.assertEquals$default(Unknown Source)",
+          "\tat cssvarsassistant.audit.ParserEdgeCaseAuditTest.declaration following multiline value on same line is retained(ParserEdgeCaseAuditTest.kt:40)"
+        ]
+      }
+    },
+    {
+      "suite": "cssvarsassistant.audit.ParserEdgeCaseAuditTest",
+      "name": "index codec round trips separators inside value()",
+      "status": "failed",
+      "seconds": 0.001,
+      "failure": {
+        "type": "org.opentest4j.AssertionFailedError",
+        "message": "org.opentest4j.AssertionFailedError: expected: <1> but was: <2>",
+        "trace_head": [
+          "org.opentest4j.AssertionFailedError: expected: <1> but was: <2>",
+          "\tat org.junit.jupiter.api.AssertionFailureBuilder.build(AssertionFailureBuilder.java:151)",
+          "\tat org.junit.jupiter.api.AssertionFailureBuilder.buildAndThrow(AssertionFailureBuilder.java:132)",
+          "\tat org.junit.jupiter.api.AssertEquals.failNotEqual(AssertEquals.java:197)",
+          "\tat org.junit.jupiter.api.AssertEquals.assertEquals(AssertEquals.java:182)",
+          "\tat org.junit.jupiter.api.Assertions.assertEquals(Assertions.java:1156)",
+          "\tat kotlin.test.junit5.JUnit5Asserter.assertEquals(JUnitSupport.kt:32)",
+          "\tat kotlin.test.AssertionsKt__AssertionsKt.assertEquals(Assertions.kt:63)",
+          "\tat kotlin.test.AssertionsKt.assertEquals(Unknown Source)",
+          "\tat kotlin.test.AssertionsKt__AssertionsKt.assertEquals$default(Assertions.kt:62)",
+          "\tat kotlin.test.AssertionsKt.assertEquals$default(Unknown Source)",
+          "\tat cssvarsassistant.audit.ParserEdgeCaseAuditTest.index codec round trips separators inside value(ParserEdgeCaseAuditTest.kt:85)"
+        ]
+      }
+    },
+    {
+      "suite": "cssvarsassistant.audit.ParserEdgeCaseAuditTest",
+      "name": "literal block comment markers in strings survive()",
+      "status": "failed",
+      "seconds": 0.001,
+      "failure": {
+        "type": "org.opentest4j.AssertionFailedError",
+        "message": "org.opentest4j.AssertionFailedError: expected: <:root { --label: \"/* literal */\"; }> but was: <:root { --label: \" \"; }>",
+        "trace_head": [
+          "org.opentest4j.AssertionFailedError: expected: <:root { --label: \"/* literal */\"; }> but was: <:root { --label: \" \"; }>",
+          "\tat org.junit.jupiter.api.AssertionFailureBuilder.build(AssertionFailureBuilder.java:151)",
+          "\tat org.junit.jupiter.api.AssertionFailureBuilder.buildAndThrow(AssertionFailureBuilder.java:132)",
+          "\tat org.junit.jupiter.api.AssertEquals.failNotEqual(AssertEquals.java:197)",
+          "\tat org.junit.jupiter.api.AssertEquals.assertEquals(AssertEquals.java:182)",
+          "\tat org.junit.jupiter.api.Assertions.assertEquals(Assertions.java:1156)",
+          "\tat kotlin.test.junit5.JUnit5Asserter.assertEquals(JUnitSupport.kt:32)",
+          "\tat kotlin.test.AssertionsKt__AssertionsKt.assertEquals(Assertions.kt:63)",
+          "\tat kotlin.test.AssertionsKt.assertEquals(Unknown Source)",
+          "\tat kotlin.test.AssertionsKt__AssertionsKt.assertEquals$default(Assertions.kt:62)",
+          "\tat kotlin.test.AssertionsKt.assertEquals$default(Unknown Source)",
+          "\tat cssvarsassistant.audit.ParserEdgeCaseAuditTest.literal block comment markers in strings survive(ParserEdgeCaseAuditTest.kt:20)"
+        ]
+      }
+    },
+    {
+      "suite": "cssvarsassistant.audit.ParserEdgeCaseAuditTest",
+      "name": "ordinary comments do not add tokens()",
+      "status": "passed",
+      "seconds": 0.0,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.audit.ParserEdgeCaseAuditTest",
+      "name": "quoted sass flag is literal text()",
+      "status": "failed",
+      "seconds": 0.001,
+      "failure": {
+        "type": "org.opentest4j.AssertionFailedError",
+        "message": "org.opentest4j.AssertionFailedError: expected: <\"keep !default\"> but was: <\"keep\">",
+        "trace_head": [
+          "org.opentest4j.AssertionFailedError: expected: <\"keep !default\"> but was: <\"keep\">",
+          "\tat org.junit.jupiter.api.AssertionFailureBuilder.build(AssertionFailureBuilder.java:151)",
+          "\tat org.junit.jupiter.api.AssertionFailureBuilder.buildAndThrow(AssertionFailureBuilder.java:132)",
+          "\tat org.junit.jupiter.api.AssertEquals.failNotEqual(AssertEquals.java:197)",
+          "\tat org.junit.jupiter.api.AssertEquals.assertEquals(AssertEquals.java:182)",
+          "\tat org.junit.jupiter.api.Assertions.assertEquals(Assertions.java:1156)",
+          "\tat kotlin.test.junit5.JUnit5Asserter.assertEquals(JUnitSupport.kt:32)",
+          "\tat kotlin.test.AssertionsKt__AssertionsKt.assertEquals(Assertions.kt:63)",
+          "\tat kotlin.test.AssertionsKt.assertEquals(Unknown Source)",
+          "\tat kotlin.test.AssertionsKt__AssertionsKt.assertEquals$default(Assertions.kt:62)",
+          "\tat kotlin.test.AssertionsKt.assertEquals$default(Unknown Source)",
+          "\tat cssvarsassistant.audit.ParserEdgeCaseAuditTest.quoted sass flag is literal text(ParserEdgeCaseAuditTest.kt:79)"
+        ]
+      }
+    },
+    {
+      "suite": "cssvarsassistant.audit.ParserEdgeCaseAuditTest",
+      "name": "string contents do not create phantom declarations()",
+      "status": "failed",
+      "seconds": 0.001,
+      "failure": {
+        "type": "org.opentest4j.AssertionFailedError",
+        "message": "org.opentest4j.AssertionFailedError: expected: <[(--label, \"--phantom: red;\")]> but was: <[(--label, \"--phantom: red)]>",
+        "trace_head": [
+          "org.opentest4j.AssertionFailedError: expected: <[(--label, \"--phantom: red;\")]> but was: <[(--label, \"--phantom: red)]>",
+          "\tat org.junit.jupiter.api.AssertionFailureBuilder.build(AssertionFailureBuilder.java:151)",
+          "\tat org.junit.jupiter.api.AssertionFailureBuilder.buildAndThrow(AssertionFailureBuilder.java:132)",
+          "\tat org.junit.jupiter.api.AssertEquals.failNotEqual(AssertEquals.java:197)",
+          "\tat org.junit.jupiter.api.AssertEquals.assertEquals(AssertEquals.java:182)",
+          "\tat org.junit.jupiter.api.Assertions.assertEquals(Assertions.java:1156)",
+          "\tat kotlin.test.junit5.JUnit5Asserter.assertEquals(JUnitSupport.kt:32)",
+          "\tat kotlin.test.AssertionsKt__AssertionsKt.assertEquals(Assertions.kt:63)",
+          "\tat kotlin.test.AssertionsKt.assertEquals(Unknown Source)",
+          "\tat kotlin.test.AssertionsKt__AssertionsKt.assertEquals$default(Assertions.kt:62)",
+          "\tat kotlin.test.AssertionsKt.assertEquals$default(Unknown Source)",
+          "\tat cssvarsassistant.audit.ParserEdgeCaseAuditTest.string contents do not create phantom declarations(ParserEdgeCaseAuditTest.kt:59)"
+        ]
+      }
+    },
+    {
+      "suite": "cssvarsassistant.audit.ParserEdgeCaseAuditTest",
+      "name": "quoted semicolon is part of the CSS value()",
+      "status": "failed",
+      "seconds": 0.001,
+      "failure": {
+        "type": "org.opentest4j.AssertionFailedError",
+        "message": "org.opentest4j.AssertionFailedError: expected: <[\"left;right\"]> but was: <[\"left]>",
+        "trace_head": [
+          "org.opentest4j.AssertionFailedError: expected: <[\"left;right\"]> but was: <[\"left]>",
+          "\tat org.junit.jupiter.api.AssertionFailureBuilder.build(AssertionFailureBuilder.java:151)",
+          "\tat org.junit.jupiter.api.AssertionFailureBuilder.buildAndThrow(AssertionFailureBuilder.java:132)",
+          "\tat org.junit.jupiter.api.AssertEquals.failNotEqual(AssertEquals.java:197)",
+          "\tat org.junit.jupiter.api.AssertEquals.assertEquals(AssertEquals.java:182)",
+          "\tat org.junit.jupiter.api.Assertions.assertEquals(Assertions.java:1156)",
+          "\tat kotlin.test.junit5.JUnit5Asserter.assertEquals(JUnitSupport.kt:32)",
+          "\tat kotlin.test.AssertionsKt__AssertionsKt.assertEquals(Assertions.kt:63)",
+          "\tat kotlin.test.AssertionsKt.assertEquals(Unknown Source)",
+          "\tat kotlin.test.AssertionsKt__AssertionsKt.assertEquals$default(Assertions.kt:62)",
+          "\tat kotlin.test.AssertionsKt.assertEquals$default(Unknown Source)",
+          "\tat cssvarsassistant.audit.ParserEdgeCaseAuditTest.quoted semicolon is part of the CSS value(ParserEdgeCaseAuditTest.kt:30)"
+        ]
+      }
+    },
+    {
+      "suite": "cssvarsassistant.audit.ParserEdgeCaseAuditTest",
+      "name": "https strings survive comment removal()",
+      "status": "failed",
+      "seconds": 0.001,
+      "failure": {
+        "type": "org.opentest4j.AssertionFailedError",
+        "message": "org.opentest4j.AssertionFailedError: expected: <:root { --image: url(\"https://example.com/Logo.svg\"); }> but was: <:root { --image: url(\"https: >",
+        "trace_head": [
+          "org.opentest4j.AssertionFailedError: expected: <:root { --image: url(\"https://example.com/Logo.svg\"); }> but was: <:root { --image: url(\"https: >",
+          "\tat org.junit.jupiter.api.AssertionFailureBuilder.build(AssertionFailureBuilder.java:151)",
+          "\tat org.junit.jupiter.api.AssertionFailureBuilder.buildAndThrow(AssertionFailureBuilder.java:132)",
+          "\tat org.junit.jupiter.api.AssertEquals.failNotEqual(AssertEquals.java:197)",
+          "\tat org.junit.jupiter.api.AssertEquals.assertEquals(AssertEquals.java:182)",
+          "\tat org.junit.jupiter.api.Assertions.assertEquals(Assertions.java:1156)",
+          "\tat kotlin.test.junit5.JUnit5Asserter.assertEquals(JUnitSupport.kt:32)",
+          "\tat kotlin.test.AssertionsKt__AssertionsKt.assertEquals(Assertions.kt:63)",
+          "\tat kotlin.test.AssertionsKt.assertEquals(Unknown Source)",
+          "\tat kotlin.test.AssertionsKt__AssertionsKt.assertEquals$default(Assertions.kt:62)",
+          "\tat kotlin.test.AssertionsKt.assertEquals$default(Unknown Source)",
+          "\tat cssvarsassistant.audit.ParserEdgeCaseAuditTest.https strings survive comment removal(ParserEdgeCaseAuditTest.kt:15)"
+        ]
+      }
+    },
+    {
+      "suite": "cssvarsassistant.audit.ResolutionEdgeCaseAuditTest",
+      "name": "testSassHyphenAndUnderscoreNamesReferToSameVariable",
+      "status": "failed",
+      "seconds": 0.044,
+      "failure": {
+        "type": "junit.framework.ComparisonFailure",
+        "message": "junit.framework.ComparisonFailure: expected:<[16px]> but was:<[$font-size]>",
+        "trace_head": [
+          "junit.framework.ComparisonFailure: expected:<[16px]> but was:<[$font-size]>",
+          "\tat junit.framework.Assert.assertEquals(Assert.java:100)",
+          "\tat junit.framework.Assert.assertEquals(Assert.java:107)",
+          "\tat junit.framework.TestCase.assertEquals(TestCase.java:260)",
+          "\tat cssvarsassistant.audit.ResolutionEdgeCaseAuditTest.testSassHyphenAndUnderscoreNamesReferToSameVariable(ResolutionEdgeCaseAuditTest.kt:42)",
+          "\tat java.base@21.0.6/java.lang.reflect.Method.invoke(Method.java:580)",
+          "\tat junit.framework.TestCase.runTest(TestCase.java:177)",
+          "\tat com.intellij.testFramework.UsefulTestCase.lambda$runBare$12(UsefulTestCase.java:501)",
+          "\tat com.intellij.testFramework.TestLoggerKt$recordErrorsLoggedInTheCurrentThreadAndReportThemAsFailures$2.invoke(testLogger.kt:99)",
+          "\tat com.intellij.testFramework.TestLoggerKt$recordErrorsLoggedInTheCurrentThreadAndReportThemAsFailures$2.invoke(testLogger.kt:99)",
+          "\tat com.intellij.testFramework.TestLoggerKt.recordErrorsLoggedInTheCurrentThreadAndReportThemAsFailures(testLogger.kt:81)",
+          "\tat com.intellij.testFramework.TestLoggerKt.recordErrorsLoggedInTheCurrentThreadAndReportThemAsFailures(testLogger.kt:99)"
+        ]
+      }
+    },
+    {
+      "suite": "cssvarsassistant.audit.ResolutionEdgeCaseAuditTest",
+      "name": "testMixedLessAndCssCycleTerminates",
+      "status": "failed",
+      "seconds": 0.066,
+      "failure": {
+        "type": "java.lang.StackOverflowError",
+        "message": "java.lang.StackOverflowError",
+        "trace_head": [
+          "java.lang.StackOverflowError",
+          "\tat java.base/java.util.regex.Pattern$BmpCharPropertyGreedy.match(Pattern.java:4509)",
+          "\tat java.base/java.util.regex.Pattern$Ques.match(Pattern.java:4410)",
+          "\tat java.base/java.util.regex.Pattern$BmpCharPropertyGreedy.match(Pattern.java:4509)",
+          "\tat java.base/java.util.regex.Pattern$BmpCharProperty.match(Pattern.java:4134)",
+          "\tat java.base/java.util.regex.Pattern$Branch.match(Pattern.java:4912)",
+          "\tat java.base/java.util.regex.Pattern$BmpCharPropertyGreedy.match(Pattern.java:4509)",
+          "\tat java.base/java.util.regex.Pattern$GroupTail.match(Pattern.java:5000)",
+          "\tat java.base/java.util.regex.Pattern$BmpCharPropertyGreedy.match(Pattern.java:4509)",
+          "\tat java.base/java.util.regex.Pattern$Slice.match(Pattern.java:4268)",
+          "\tat java.base/java.util.regex.Pattern$GroupHead.match(Pattern.java:4969)",
+          "\tat java.base/java.util.regex.Pattern$BmpCharPropertyGreedy.match(Pattern.java:4509)"
+        ]
+      }
+    },
+    {
+      "suite": "cssvarsassistant.audit.ResolutionEdgeCaseAuditTest",
+      "name": "testPureCssCycleTerminates",
+      "status": "passed",
+      "seconds": 0.043,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.audit.ResolutionEdgeCaseAuditTest",
+      "name": "testPureLessCycleTerminates",
+      "status": "passed",
+      "seconds": 0.047,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.audit.ResolutionEdgeCaseAuditTest",
+      "name": "testRepeatedSiblingReferencesAreNotCycles",
+      "status": "failed",
+      "seconds": 0.042,
+      "failure": {
+        "type": "junit.framework.ComparisonFailure",
+        "message": "junit.framework.ComparisonFailure: expected:<calc(4px + [4px])> but was:<calc(4px + [var(--gap)])>",
+        "trace_head": [
+          "junit.framework.ComparisonFailure: expected:<calc(4px + [4px])> but was:<calc(4px + [var(--gap)])>",
+          "\tat junit.framework.Assert.assertEquals(Assert.java:100)",
+          "\tat junit.framework.Assert.assertEquals(Assert.java:107)",
+          "\tat junit.framework.TestCase.assertEquals(TestCase.java:260)",
+          "\tat cssvarsassistant.audit.ResolutionEdgeCaseAuditTest.testRepeatedSiblingReferencesAreNotCycles(ResolutionEdgeCaseAuditTest.kt:10)",
+          "\tat java.base@21.0.6/java.lang.reflect.Method.invoke(Method.java:580)",
+          "\tat junit.framework.TestCase.runTest(TestCase.java:177)",
+          "\tat com.intellij.testFramework.UsefulTestCase.lambda$runBare$12(UsefulTestCase.java:501)",
+          "\tat com.intellij.testFramework.TestLoggerKt$recordErrorsLoggedInTheCurrentThreadAndReportThemAsFailures$2.invoke(testLogger.kt:99)",
+          "\tat com.intellij.testFramework.TestLoggerKt$recordErrorsLoggedInTheCurrentThreadAndReportThemAsFailures$2.invoke(testLogger.kt:99)",
+          "\tat com.intellij.testFramework.TestLoggerKt.recordErrorsLoggedInTheCurrentThreadAndReportThemAsFailures(testLogger.kt:81)",
+          "\tat com.intellij.testFramework.TestLoggerKt.recordErrorsLoggedInTheCurrentThreadAndReportThemAsFailures(testLogger.kt:99)"
+        ]
+      }
+    },
+    {
+      "suite": "cssvarsassistant.audit.ResolutionEdgeCaseAuditTest",
+      "name": "testLocalLessScopeDoesNotOverwriteGlobalToken",
+      "status": "failed",
+      "seconds": 0.047,
+      "failure": {
+        "type": "junit.framework.ComparisonFailure",
+        "message": "junit.framework.ComparisonFailure: expected:<[red]> but was:<[blue]>",
+        "trace_head": [
+          "junit.framework.ComparisonFailure: expected:<[red]> but was:<[blue]>",
+          "\tat junit.framework.Assert.assertEquals(Assert.java:100)",
+          "\tat junit.framework.Assert.assertEquals(Assert.java:107)",
+          "\tat junit.framework.TestCase.assertEquals(TestCase.java:260)",
+          "\tat cssvarsassistant.audit.ResolutionEdgeCaseAuditTest.testLocalLessScopeDoesNotOverwriteGlobalToken(ResolutionEdgeCaseAuditTest.kt:37)",
+          "\tat java.base@21.0.6/java.lang.reflect.Method.invoke(Method.java:580)",
+          "\tat junit.framework.TestCase.runTest(TestCase.java:177)",
+          "\tat com.intellij.testFramework.UsefulTestCase.lambda$runBare$12(UsefulTestCase.java:501)",
+          "\tat com.intellij.testFramework.TestLoggerKt$recordErrorsLoggedInTheCurrentThreadAndReportThemAsFailures$2.invoke(testLogger.kt:99)",
+          "\tat com.intellij.testFramework.TestLoggerKt$recordErrorsLoggedInTheCurrentThreadAndReportThemAsFailures$2.invoke(testLogger.kt:99)",
+          "\tat com.intellij.testFramework.TestLoggerKt.recordErrorsLoggedInTheCurrentThreadAndReportThemAsFailures(testLogger.kt:81)",
+          "\tat com.intellij.testFramework.TestLoggerKt.recordErrorsLoggedInTheCurrentThreadAndReportThemAsFailures(testLogger.kt:99)"
+        ]
+      }
+    },
+    {
+      "suite": "cssvarsassistant.audit.ResolutionEdgeCaseAuditTest",
+      "name": "testLastDefaultDeclarationWinsResolution",
+      "status": "failed",
+      "seconds": 0.043,
+      "failure": {
+        "type": "junit.framework.ComparisonFailure",
+        "message": "junit.framework.ComparisonFailure: expected:<[8]px> but was:<[4]px>",
+        "trace_head": [
+          "junit.framework.ComparisonFailure: expected:<[8]px> but was:<[4]px>",
+          "\tat junit.framework.Assert.assertEquals(Assert.java:100)",
+          "\tat junit.framework.Assert.assertEquals(Assert.java:107)",
+          "\tat junit.framework.TestCase.assertEquals(TestCase.java:260)",
+          "\tat cssvarsassistant.audit.ResolutionEdgeCaseAuditTest.testLastDefaultDeclarationWinsResolution(ResolutionEdgeCaseAuditTest.kt:15)",
+          "\tat java.base@21.0.6/java.lang.reflect.Method.invoke(Method.java:580)",
+          "\tat junit.framework.TestCase.runTest(TestCase.java:177)",
+          "\tat com.intellij.testFramework.UsefulTestCase.lambda$runBare$12(UsefulTestCase.java:501)",
+          "\tat com.intellij.testFramework.TestLoggerKt$recordErrorsLoggedInTheCurrentThreadAndReportThemAsFailures$2.invoke(testLogger.kt:99)",
+          "\tat com.intellij.testFramework.TestLoggerKt$recordErrorsLoggedInTheCurrentThreadAndReportThemAsFailures$2.invoke(testLogger.kt:99)",
+          "\tat com.intellij.testFramework.TestLoggerKt.recordErrorsLoggedInTheCurrentThreadAndReportThemAsFailures(testLogger.kt:81)",
+          "\tat com.intellij.testFramework.TestLoggerKt.recordErrorsLoggedInTheCurrentThreadAndReportThemAsFailures(testLogger.kt:99)"
+        ]
+      }
+    },
+    {
+      "suite": "cssvarsassistant.audit.ResolutionEdgeCaseAuditTest",
+      "name": "testQuotedVarTextRemainsLiteral",
+      "status": "failed",
+      "seconds": 0.043,
+      "failure": {
+        "type": "junit.framework.ComparisonFailure",
+        "message": "junit.framework.ComparisonFailure: expected:<\"[var(--gap)]\"> but was:<\"[4px]\">",
+        "trace_head": [
+          "junit.framework.ComparisonFailure: expected:<\"[var(--gap)]\"> but was:<\"[4px]\">",
+          "\tat junit.framework.Assert.assertEquals(Assert.java:100)",
+          "\tat junit.framework.Assert.assertEquals(Assert.java:107)",
+          "\tat junit.framework.TestCase.assertEquals(TestCase.java:260)",
+          "\tat cssvarsassistant.audit.ResolutionEdgeCaseAuditTest.testQuotedVarTextRemainsLiteral(ResolutionEdgeCaseAuditTest.kt:25)",
+          "\tat java.base@21.0.6/java.lang.reflect.Method.invoke(Method.java:580)",
+          "\tat junit.framework.TestCase.runTest(TestCase.java:177)",
+          "\tat com.intellij.testFramework.UsefulTestCase.lambda$runBare$12(UsefulTestCase.java:501)",
+          "\tat com.intellij.testFramework.TestLoggerKt$recordErrorsLoggedInTheCurrentThreadAndReportThemAsFailures$2.invoke(testLogger.kt:99)",
+          "\tat com.intellij.testFramework.TestLoggerKt$recordErrorsLoggedInTheCurrentThreadAndReportThemAsFailures$2.invoke(testLogger.kt:99)",
+          "\tat com.intellij.testFramework.TestLoggerKt.recordErrorsLoggedInTheCurrentThreadAndReportThemAsFailures(testLogger.kt:81)",
+          "\tat com.intellij.testFramework.TestLoggerKt.recordErrorsLoggedInTheCurrentThreadAndReportThemAsFailures(testLogger.kt:99)"
+        ]
+      }
+    },
+    {
+      "suite": "cssvarsassistant.audit.ResolutionEdgeCaseAuditTest",
+      "name": "testNestedFallbackDoesNotPreventKnownOuterVariableResolution",
+      "status": "passed",
+      "seconds": 0.045,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.audit.ResolutionEdgeCaseAuditTest",
+      "name": "testResolutionKeepsOriginalExpressionForDerivedIndicator",
+      "status": "failed",
+      "seconds": 0.042,
+      "failure": {
+        "type": "junit.framework.ComparisonFailure",
+        "message": "junit.framework.ComparisonFailure: expected:<[var(--gap)]> but was:<[4px]>",
+        "trace_head": [
+          "junit.framework.ComparisonFailure: expected:<[var(--gap)]> but was:<[4px]>",
+          "\tat junit.framework.Assert.assertEquals(Assert.java:100)",
+          "\tat junit.framework.Assert.assertEquals(Assert.java:107)",
+          "\tat junit.framework.TestCase.assertEquals(TestCase.java:260)",
+          "\tat cssvarsassistant.audit.ResolutionEdgeCaseAuditTest.testResolutionKeepsOriginalExpressionForDerivedIndicator(ResolutionEdgeCaseAuditTest.kt:31)",
+          "\tat java.base@21.0.6/java.lang.reflect.Method.invoke(Method.java:580)",
+          "\tat junit.framework.TestCase.runTest(TestCase.java:177)",
+          "\tat com.intellij.testFramework.UsefulTestCase.lambda$runBare$12(UsefulTestCase.java:501)",
+          "\tat com.intellij.testFramework.TestLoggerKt$recordErrorsLoggedInTheCurrentThreadAndReportThemAsFailures$2.invoke(testLogger.kt:99)",
+          "\tat com.intellij.testFramework.TestLoggerKt$recordErrorsLoggedInTheCurrentThreadAndReportThemAsFailures$2.invoke(testLogger.kt:99)",
+          "\tat com.intellij.testFramework.TestLoggerKt.recordErrorsLoggedInTheCurrentThreadAndReportThemAsFailures(testLogger.kt:81)",
+          "\tat com.intellij.testFramework.TestLoggerKt.recordErrorsLoggedInTheCurrentThreadAndReportThemAsFailures(testLogger.kt:99)"
+        ]
+      }
+    },
+    {
+      "suite": "cssvarsassistant.audit.ValueEdgeCaseAuditTest",
+      "name": "hue wraps beyond one full turn()",
+      "status": "failed",
+      "seconds": 0.001,
+      "failure": {
+        "type": "org.opentest4j.AssertionFailedError",
+        "message": "org.opentest4j.AssertionFailedError: expected: <java.awt.Color[r=255,g=255,b=0]> but was: <java.awt.Color[r=255,g=0,b=255]>",
+        "trace_head": [
+          "org.opentest4j.AssertionFailedError: expected: <java.awt.Color[r=255,g=255,b=0]> but was: <java.awt.Color[r=255,g=0,b=255]>",
+          "\tat org.junit.jupiter.api.AssertionFailureBuilder.build(AssertionFailureBuilder.java:151)",
+          "\tat org.junit.jupiter.api.AssertionFailureBuilder.buildAndThrow(AssertionFailureBuilder.java:132)",
+          "\tat org.junit.jupiter.api.AssertEquals.failNotEqual(AssertEquals.java:197)",
+          "\tat org.junit.jupiter.api.AssertEquals.assertEquals(AssertEquals.java:182)",
+          "\tat org.junit.jupiter.api.Assertions.assertEquals(Assertions.java:1156)",
+          "\tat kotlin.test.junit5.JUnit5Asserter.assertEquals(JUnitSupport.kt:32)",
+          "\tat kotlin.test.AssertionsKt__AssertionsKt.assertEquals(Assertions.kt:63)",
+          "\tat kotlin.test.AssertionsKt.assertEquals(Unknown Source)",
+          "\tat kotlin.test.AssertionsKt__AssertionsKt.assertEquals$default(Assertions.kt:62)",
+          "\tat kotlin.test.AssertionsKt.assertEquals$default(Unknown Source)",
+          "\tat cssvarsassistant.audit.ValueEdgeCaseAuditTest.hue wraps beyond one full turn(ValueEdgeCaseAuditTest.kt:19)"
+        ]
+      }
+    },
+    {
+      "suite": "cssvarsassistant.audit.ValueEdgeCaseAuditTest",
+      "name": "negative lengths are sizes()",
+      "status": "failed",
+      "seconds": 0.001,
+      "failure": {
+        "type": "org.opentest4j.AssertionFailedError",
+        "message": "org.opentest4j.AssertionFailedError: expected: <SIZE> but was: <OTHER>",
+        "trace_head": [
+          "org.opentest4j.AssertionFailedError: expected: <SIZE> but was: <OTHER>",
+          "\tat org.junit.jupiter.api.AssertionFailureBuilder.build(AssertionFailureBuilder.java:151)",
+          "\tat org.junit.jupiter.api.AssertionFailureBuilder.buildAndThrow(AssertionFailureBuilder.java:132)",
+          "\tat org.junit.jupiter.api.AssertEquals.failNotEqual(AssertEquals.java:197)",
+          "\tat org.junit.jupiter.api.AssertEquals.assertEquals(AssertEquals.java:182)",
+          "\tat org.junit.jupiter.api.Assertions.assertEquals(Assertions.java:1156)",
+          "\tat kotlin.test.junit5.JUnit5Asserter.assertEquals(JUnitSupport.kt:32)",
+          "\tat kotlin.test.AssertionsKt__AssertionsKt.assertEquals(Assertions.kt:63)",
+          "\tat kotlin.test.AssertionsKt.assertEquals(Unknown Source)",
+          "\tat kotlin.test.AssertionsKt__AssertionsKt.assertEquals$default(Assertions.kt:62)",
+          "\tat kotlin.test.AssertionsKt.assertEquals$default(Unknown Source)",
+          "\tat cssvarsassistant.audit.ValueEdgeCaseAuditTest.negative lengths are sizes(ValueEdgeCaseAuditTest.kt:34)"
+        ]
+      }
+    },
+    {
+      "suite": "cssvarsassistant.audit.ValueEdgeCaseAuditTest",
+      "name": "leading decimal lengths are sizes()",
+      "status": "failed",
+      "seconds": 0.0,
+      "failure": {
+        "type": "org.opentest4j.AssertionFailedError",
+        "message": "org.opentest4j.AssertionFailedError: Expected value to be true.",
+        "trace_head": [
+          "org.opentest4j.AssertionFailedError: Expected value to be true.",
+          "\tat org.junit.jupiter.api.AssertionUtils.fail(AssertionUtils.java:38)",
+          "\tat org.junit.jupiter.api.Assertions.fail(Assertions.java:138)",
+          "\tat kotlin.test.junit5.JUnit5Asserter.fail(JUnitSupport.kt:56)",
+          "\tat kotlin.test.Asserter$DefaultImpls.assertTrue(Assertions.kt:694)",
+          "\tat kotlin.test.junit5.JUnit5Asserter.assertTrue(JUnitSupport.kt:30)",
+          "\tat kotlin.test.Asserter$DefaultImpls.assertTrue(Assertions.kt:704)",
+          "\tat kotlin.test.junit5.JUnit5Asserter.assertTrue(JUnitSupport.kt:30)",
+          "\tat kotlin.test.AssertionsKt__AssertionsKt.assertTrue(Assertions.kt:44)",
+          "\tat kotlin.test.AssertionsKt.assertTrue(Unknown Source)",
+          "\tat kotlin.test.AssertionsKt__AssertionsKt.assertTrue$default(Assertions.kt:42)",
+          "\tat kotlin.test.AssertionsKt.assertTrue$default(Unknown Source)"
+        ]
+      }
+    },
+    {
+      "suite": "cssvarsassistant.audit.ValueEdgeCaseAuditTest",
+      "name": "valid hex alpha control()",
+      "status": "passed",
+      "seconds": 0.001,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.audit.ValueEdgeCaseAuditTest",
+      "name": "negative hue wraps()",
+      "status": "failed",
+      "seconds": 0.001,
+      "failure": {
+        "type": "org.opentest4j.AssertionFailedError",
+        "message": "org.opentest4j.AssertionFailedError: expected: <java.awt.Color[r=255,g=0,b=255]> but was: <java.awt.Color[r=255,g=0,b=0]>",
+        "trace_head": [
+          "org.opentest4j.AssertionFailedError: expected: <java.awt.Color[r=255,g=0,b=255]> but was: <java.awt.Color[r=255,g=0,b=0]>",
+          "\tat org.junit.jupiter.api.AssertionFailureBuilder.build(AssertionFailureBuilder.java:151)",
+          "\tat org.junit.jupiter.api.AssertionFailureBuilder.buildAndThrow(AssertionFailureBuilder.java:132)",
+          "\tat org.junit.jupiter.api.AssertEquals.failNotEqual(AssertEquals.java:197)",
+          "\tat org.junit.jupiter.api.AssertEquals.assertEquals(AssertEquals.java:182)",
+          "\tat org.junit.jupiter.api.Assertions.assertEquals(Assertions.java:1156)",
+          "\tat kotlin.test.junit5.JUnit5Asserter.assertEquals(JUnitSupport.kt:32)",
+          "\tat kotlin.test.AssertionsKt__AssertionsKt.assertEquals(Assertions.kt:63)",
+          "\tat kotlin.test.AssertionsKt.assertEquals(Unknown Source)",
+          "\tat kotlin.test.AssertionsKt__AssertionsKt.assertEquals$default(Assertions.kt:62)",
+          "\tat kotlin.test.AssertionsKt.assertEquals$default(Unknown Source)",
+          "\tat cssvarsassistant.audit.ValueEdgeCaseAuditTest.negative hue wraps(ValueEdgeCaseAuditTest.kt:22)"
+        ]
+      }
+    },
+    {
+      "suite": "cssvarsassistant.audit.ValueEdgeCaseAuditTest",
+      "name": "legacy hsla alpha survives parsing()",
+      "status": "failed",
+      "seconds": 0.0,
+      "failure": {
+        "type": "org.opentest4j.AssertionFailedError",
+        "message": "org.opentest4j.AssertionFailedError: expected: <64> but was: <255>",
+        "trace_head": [
+          "org.opentest4j.AssertionFailedError: expected: <64> but was: <255>",
+          "\tat org.junit.jupiter.api.AssertionFailureBuilder.build(AssertionFailureBuilder.java:151)",
+          "\tat org.junit.jupiter.api.AssertionFailureBuilder.buildAndThrow(AssertionFailureBuilder.java:132)",
+          "\tat org.junit.jupiter.api.AssertEquals.failNotEqual(AssertEquals.java:197)",
+          "\tat org.junit.jupiter.api.AssertEquals.assertEquals(AssertEquals.java:182)",
+          "\tat org.junit.jupiter.api.Assertions.assertEquals(Assertions.java:1156)",
+          "\tat kotlin.test.junit5.JUnit5Asserter.assertEquals(JUnitSupport.kt:32)",
+          "\tat kotlin.test.AssertionsKt__AssertionsKt.assertEquals(Assertions.kt:63)",
+          "\tat kotlin.test.AssertionsKt.assertEquals(Unknown Source)",
+          "\tat kotlin.test.AssertionsKt__AssertionsKt.assertEquals$default(Assertions.kt:62)",
+          "\tat kotlin.test.AssertionsKt.assertEquals$default(Unknown Source)",
+          "\tat cssvarsassistant.audit.ValueEdgeCaseAuditTest.legacy hsla alpha survives parsing(ValueEdgeCaseAuditTest.kt:16)"
+        ]
+      }
+    },
+    {
+      "suite": "cssvarsassistant.audit.ValueEdgeCaseAuditTest",
+      "name": "fractional RGB channels are accepted()",
+      "status": "failed",
+      "seconds": 0.0,
+      "failure": {
+        "type": "org.opentest4j.AssertionFailedError",
+        "message": "org.opentest4j.AssertionFailedError: actual value is null ==> expected: not <null>",
+        "trace_head": [
+          "org.opentest4j.AssertionFailedError: actual value is null ==> expected: not <null>",
+          "\tat org.junit.jupiter.api.AssertionFailureBuilder.build(AssertionFailureBuilder.java:152)",
+          "\tat org.junit.jupiter.api.AssertionFailureBuilder.buildAndThrow(AssertionFailureBuilder.java:132)",
+          "\tat org.junit.jupiter.api.AssertNotNull.failNull(AssertNotNull.java:49)",
+          "\tat org.junit.jupiter.api.AssertNotNull.assertNotNull(AssertNotNull.java:35)",
+          "\tat org.junit.jupiter.api.Assertions.assertNotNull(Assertions.java:312)",
+          "\tat kotlin.test.junit5.JUnit5Asserter.assertNotNull(JUnitSupport.kt:48)",
+          "\tat kotlin.test.AssertionsKt__AssertionsKt.assertNotNull(Assertions.kt:145)",
+          "\tat kotlin.test.AssertionsKt.assertNotNull(Unknown Source)",
+          "\tat kotlin.test.AssertionsKt__AssertionsKt.assertNotNull$default(Assertions.kt:143)",
+          "\tat kotlin.test.AssertionsKt.assertNotNull$default(Unknown Source)",
+          "\tat cssvarsassistant.audit.ValueEdgeCaseAuditTest.fractional RGB channels are accepted(ValueEdgeCaseAuditTest.kt:28)"
+        ]
+      }
+    },
+    {
+      "suite": "cssvarsassistant.audit.ValueEdgeCaseAuditTest",
+      "name": "hsl alpha survives parsing()",
+      "status": "failed",
+      "seconds": 0.001,
+      "failure": {
+        "type": "org.opentest4j.AssertionFailedError",
+        "message": "org.opentest4j.AssertionFailedError: expected: <128> but was: <255>",
+        "trace_head": [
+          "org.opentest4j.AssertionFailedError: expected: <128> but was: <255>",
+          "\tat org.junit.jupiter.api.AssertionFailureBuilder.build(AssertionFailureBuilder.java:151)",
+          "\tat org.junit.jupiter.api.AssertionFailureBuilder.buildAndThrow(AssertionFailureBuilder.java:132)",
+          "\tat org.junit.jupiter.api.AssertEquals.failNotEqual(AssertEquals.java:197)",
+          "\tat org.junit.jupiter.api.AssertEquals.assertEquals(AssertEquals.java:182)",
+          "\tat org.junit.jupiter.api.Assertions.assertEquals(Assertions.java:1156)",
+          "\tat kotlin.test.junit5.JUnit5Asserter.assertEquals(JUnitSupport.kt:32)",
+          "\tat kotlin.test.AssertionsKt__AssertionsKt.assertEquals(Assertions.kt:63)",
+          "\tat kotlin.test.AssertionsKt.assertEquals(Unknown Source)",
+          "\tat kotlin.test.AssertionsKt__AssertionsKt.assertEquals$default(Assertions.kt:62)",
+          "\tat kotlin.test.AssertionsKt.assertEquals$default(Unknown Source)",
+          "\tat cssvarsassistant.audit.ValueEdgeCaseAuditTest.hsl alpha survives parsing(ValueEdgeCaseAuditTest.kt:13)"
+        ]
+      }
+    },
+    {
+      "suite": "cssvarsassistant.audit.ValueEdgeCaseAuditTest",
+      "name": "color functions are case insensitive()",
+      "status": "failed",
+      "seconds": 0.001,
+      "failure": {
+        "type": "org.opentest4j.AssertionFailedError",
+        "message": "org.opentest4j.AssertionFailedError: expected: <java.awt.Color[r=255,g=0,b=0]> but was: <null>",
+        "trace_head": [
+          "org.opentest4j.AssertionFailedError: expected: <java.awt.Color[r=255,g=0,b=0]> but was: <null>",
+          "\tat org.junit.jupiter.api.AssertionFailureBuilder.build(AssertionFailureBuilder.java:151)",
+          "\tat org.junit.jupiter.api.AssertionFailureBuilder.buildAndThrow(AssertionFailureBuilder.java:132)",
+          "\tat org.junit.jupiter.api.AssertEquals.failNotEqual(AssertEquals.java:197)",
+          "\tat org.junit.jupiter.api.AssertEquals.assertEquals(AssertEquals.java:182)",
+          "\tat org.junit.jupiter.api.Assertions.assertEquals(Assertions.java:1156)",
+          "\tat kotlin.test.junit5.JUnit5Asserter.assertEquals(JUnitSupport.kt:32)",
+          "\tat kotlin.test.AssertionsKt__AssertionsKt.assertEquals(Assertions.kt:63)",
+          "\tat kotlin.test.AssertionsKt.assertEquals(Unknown Source)",
+          "\tat kotlin.test.AssertionsKt__AssertionsKt.assertEquals$default(Assertions.kt:62)",
+          "\tat kotlin.test.AssertionsKt.assertEquals$default(Unknown Source)",
+          "\tat cssvarsassistant.audit.ValueEdgeCaseAuditTest.color functions are case insensitive(ValueEdgeCaseAuditTest.kt:25)"
+        ]
+      }
+    },
+    {
+      "suite": "cssvarsassistant.audit.ValueEdgeCaseAuditTest",
+      "name": "malformed bare HSL returns null without throwing()",
+      "status": "failed",
+      "seconds": 0.001,
+      "failure": {
+        "type": "java.lang.NumberFormatException",
+        "message": "java.lang.NumberFormatException: multiple points",
+        "trace_head": [
+          "java.lang.NumberFormatException: multiple points",
+          "\tat java.base/jdk.internal.math.FloatingDecimal.readJavaFormatString(FloatingDecimal.java:1914)",
+          "\tat java.base/jdk.internal.math.FloatingDecimal.parseFloat(FloatingDecimal.java:122)",
+          "\tat java.base/java.lang.Float.parseFloat(Float.java:556)",
+          "\tat cssvarsassistant.documentation.ColorParser.parseCssColor(ColorParser.kt:66)",
+          "\tat cssvarsassistant.audit.ValueEdgeCaseAuditTest.malformed bare HSL returns null without throwing(ValueEdgeCaseAuditTest.kt:31)",
+          "\tat java.base/java.lang.reflect.Method.invoke(Method.java:580)",
+          "\tat com.intellij.testFramework.junit5.impl.TestLoggerInterceptor.intercept$lambda$0(TestLoggerInterceptor.kt:12)",
+          "\tat com.intellij.testFramework.TestLoggerKt.recordErrorsLoggedInTheCurrentThreadAndReportThemAsFailures(testLogger.kt:81)",
+          "\tat com.intellij.testFramework.junit5.impl.TestLoggerInterceptor.intercept(TestLoggerInterceptor.kt:11)",
+          "\tat com.intellij.testFramework.junit5.impl.AbstractInvocationInterceptor.interceptTestMethod(AbstractInvocationInterceptor.kt:29)",
+          "\tat java.base/java.util.ArrayList.forEach(ArrayList.java:1596)"
+        ]
+      }
+    },
+    {
+      "suite": "cssvarsassistant.completion.CssVarCascadeUtilTest",
+      "name": "falls back to last default when no local declaration exists()",
+      "status": "passed",
+      "seconds": 0.0,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.completion.CssVarCascadeUtilTest",
+      "name": "selects last local declaration over indexed defaults()",
+      "status": "passed",
+      "seconds": 0.0,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.completion.CssVarQueryMatcherTest",
+      "name": "cloneWithPrefix returns a fresh matcher bound to the new prefix()",
+      "status": "passed",
+      "seconds": 0.0,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.completion.CssVarQueryMatcherTest",
+      "name": "prefixMatches narrows progressively as the user types()",
+      "status": "passed",
+      "seconds": 0.001,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.completion.CssVarQueryMatcherTest",
+      "name": "CssVarPrefixMatcher with single-dash prefix admits every variable()",
+      "status": "passed",
+      "seconds": 0.0,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.completion.CssVarQueryMatcherTest",
+      "name": "extract query returns blank query for bare var open paren()",
+      "status": "passed",
+      "seconds": 0.0,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.completion.CssVarQueryMatcherTest",
+      "name": "withFallback treats triple-dash prefix as blank query()",
+      "status": "passed",
+      "seconds": 0.0,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.completion.CssVarQueryMatcherTest",
+      "name": "trims trailing query segments until a usable match is found()",
+      "status": "passed",
+      "seconds": 0.0,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.completion.CssVarQueryMatcherTest",
+      "name": "withFallback treats single-dash prefix as blank query()",
+      "status": "passed",
+      "seconds": 0.0,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.completion.CssVarQueryMatcherTest",
+      "name": "extract query tolerates dummy identifier at top level()",
+      "status": "passed",
+      "seconds": 0.0,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.completion.CssVarQueryMatcherTest",
+      "name": "prefixMatches accepts everything for blank or dash-only prefix()",
+      "status": "passed",
+      "seconds": 0.0,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.completion.CssVarQueryMatcherTest",
+      "name": "keeps strongest match tier for a query()",
+      "status": "passed",
+      "seconds": 0.001,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.completion.CssVarQueryMatcherTest",
+      "name": "rejects non custom property prefixes()",
+      "status": "passed",
+      "seconds": 0.0,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.completion.CssVarQueryMatcherTest",
+      "name": "matchingDegree ranks full-typed name above shorter prefix-sibling()",
+      "status": "passed",
+      "seconds": 0.001,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.completion.CssVarQueryMatcherTest",
+      "name": "extracts query from closed var call()",
+      "status": "passed",
+      "seconds": 0.0,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.completion.CssVarQueryMatcherTest",
+      "name": "extracts blank query at var function start()",
+      "status": "passed",
+      "seconds": 0.0,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.completion.CssVarQueryMatcherTest",
+      "name": "matchingDegree ranks exact name above longer variants for same prefix tier()",
+      "status": "passed",
+      "seconds": 0.001,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.completion.CssVarQueryMatcherTest",
+      "name": "isStartMatch is true for prefix and token prefix tiers()",
+      "status": "passed",
+      "seconds": 0.0,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.completion.CssVarQueryMatcherTest",
+      "name": "extract query must not capture IntelliJ dummy identifier as part of prefix()",
+      "status": "passed",
+      "seconds": 0.0,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.completion.CssVarQueryMatcherTest",
+      "name": "prefixMatches routes through bestMatch for a non-blank prefix()",
+      "status": "passed",
+      "seconds": 0.001,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.completion.CssVarQueryMatcherTest",
+      "name": "prefers exact foreground prefix over suffix matches()",
+      "status": "passed",
+      "seconds": 0.0,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.completion.CssVarQueryMatcherTest",
+      "name": "matchingDegree returns 0 for a non-matching name()",
+      "status": "passed",
+      "seconds": 0.0,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.completion.CssVarSortOrderWeigherTest",
+      "name": "computeSortRank returns increasing values for increasing pixel sizes()",
+      "status": "passed",
+      "seconds": 0.0,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.completion.CssVarSortOrderWeigherTest",
+      "name": "DESC weight order matches rank order()",
+      "status": "passed",
+      "seconds": 0.0,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.completion.CssVarSortOrderWeigherTest",
+      "name": "computeSortRank normalises across units via ValueUtil convertToPixels()",
+      "status": "passed",
+      "seconds": 0.0,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.completion.CssVarSortOrderWeigherTest",
+      "name": "computeSortRank returns null for non-orderable values()",
+      "status": "passed",
+      "seconds": 0.0,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.completion.CssVarSortOrderWeigherTest",
+      "name": "computeSortRank orders colours by hue ascending()",
+      "status": "passed",
+      "seconds": 0.001,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.completion.CssVarSortOrderWeigherTest",
+      "name": "ASC weight order reverses rank order()",
+      "status": "passed",
+      "seconds": 0.0,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.completion.CssVarSortOrderWeigherTest",
+      "name": "computeSortRank returns increasing values for increasing raw numbers()",
+      "status": "passed",
+      "seconds": 0.0,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.completion.CssVariableCompletionBehaviorTest",
+      "name": "allows IDE fallback when plugin has no matches and fallback is enabled()",
+      "status": "passed",
+      "seconds": 0.001,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.completion.CssVariableCompletionBehaviorTest",
+      "name": "stops completion when plugin has matches()",
+      "status": "passed",
+      "seconds": 0.0,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.completion.CssVariableCompletionBehaviorTest",
+      "name": "stops completion when plugin has no matches and fallback is disabled()",
+      "status": "passed",
+      "seconds": 0.0,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.completion.CssVariableCompletionHarnessTest",
+      "name": "testInsertionInDoubleNestedFunctionsProducesCleanVar",
+      "status": "passed",
+      "seconds": 0.108,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.completion.CssVariableCompletionHarnessTest",
+      "name": "testInsertionRightAfterDashesProducesCleanVar",
+      "status": "passed",
+      "seconds": 0.086,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.completion.CssVariableCompletionHarnessTest",
+      "name": "testCssVariableCompletionResolvesImportedSassPreprocessorAliasChain",
+      "status": "passed",
+      "seconds": 0.134,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.completion.CssVariableCompletionHarnessTest",
+      "name": "testInsertionOfDashedVarWhenUserTypedNothingAfterVarOpenInsideHsl",
+      "status": "passed",
+      "seconds": 0.094,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.completion.CssVariableCompletionHarnessTest",
+      "name": "testInsertionInsideColorMixProducesCleanVar",
+      "status": "passed",
+      "seconds": 0.078,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.completion.CssVariableCompletionHarnessTest",
+      "name": "testCssVariableCompletionResolvesImportedScssPreprocessorAliasChain",
+      "status": "passed",
+      "seconds": 0.113,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.completion.CssVariableCompletionHarnessTest",
+      "name": "testInsertionInsideHslaWithTrailingArgsProducesCleanVar",
+      "status": "passed",
+      "seconds": 0.074,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.completion.CssVariableCompletionHarnessTest",
+      "name": "testInsertionOnAlreadyCompleteNameDoesNotAddTrailingDash",
+      "status": "passed",
+      "seconds": 0.071,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.completion.CssVariableCompletionHarnessTest",
+      "name": "testBlankQueryInsideVarDoesNotPreferSizeOverName",
+      "status": "passed",
+      "seconds": 0.072,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.completion.CssVariableCompletionHarnessTest",
+      "name": "testStrongPrefixMatchesHideWeakerSubstringMatches",
+      "status": "passed",
+      "seconds": 0.074,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.completion.CssVariableCompletionHarnessTest",
+      "name": "testScssVariableDocumentationResolvesImportedNodeModulesAliasChain",
+      "status": "passed",
+      "seconds": 0.1,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.completion.CssVariableCompletionHarnessTest",
+      "name": "testExactFullNameMatchRanksFirstForCompleteTypedQuery",
+      "status": "passed",
+      "seconds": 0.071,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.completion.CssVariableCompletionHarnessTest",
+      "name": "testCompoundMediaQueryContextIsNormalized",
+      "status": "passed",
+      "seconds": 0.044,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.completion.CssVariableCompletionHarnessTest",
+      "name": "testMatchedNumericFamiliesSortNaturally",
+      "status": "passed",
+      "seconds": 0.069,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.completion.CssVariableCompletionHarnessTest",
+      "name": "testCssVariableDocumentationCanonicalizesRootAndLightSelectorVariants",
+      "status": "passed",
+      "seconds": 0.102,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.completion.CssVariableCompletionHarnessTest",
+      "name": "testExactPrefixRanksAheadOfForegroundSuffixMatches",
+      "status": "passed",
+      "seconds": 0.099,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.completion.CssVariableCompletionHarnessTest",
+      "name": "testCompoundScssValueWithCssVarDocumentationStaysLiteral",
+      "status": "passed",
+      "seconds": 0.054,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.completion.CssVariableCompletionHarnessTest",
+      "name": "testInsertionInsideRgbFunctionProducesCleanVar",
+      "status": "passed",
+      "seconds": 0.077,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.completion.CssVariableCompletionHarnessTest",
+      "name": "testInsertionOfDashedVarWhenUserTypedWithoutDashesInsideHsl",
+      "status": "passed",
+      "seconds": 0.072,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.completion.CssVariableCompletionHarnessTest",
+      "name": "testInsertionInsideHslFunctionProducesCleanVar",
+      "status": "passed",
+      "seconds": 0.056,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.completion.CssVariableCompletionHarnessTest",
+      "name": "testInsertionWithPartialDashedPrefixProducesCleanVar",
+      "status": "passed",
+      "seconds": 0.071,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.completion.CssVariableCompletionHarnessTest",
+      "name": "testLessVariableDocumentationResolvesAliasChain",
+      "status": "passed",
+      "seconds": 0.056,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.completion.CssVariableCompletionHarnessTest",
+      "name": "testCompletionInsideHslWithDashedPrefixFiltersByPrefix",
+      "status": "passed",
+      "seconds": 0.067,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.completion.CssVariableCompletionHarnessTest",
+      "name": "testCssIndexCanBeQueriedFromTests",
+      "status": "passed",
+      "seconds": 0.053,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.completion.CssVariableCompletionHarnessTest",
+      "name": "testDoesNotFireBetweenTwoVarsOnSameLine",
+      "status": "passed",
+      "seconds": 0.147,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.completion.CssVariableCompletionHarnessTest",
+      "name": "testNestedRuleClosuresDoNotDropMediaContext",
+      "status": "passed",
+      "seconds": 0.044,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.completion.CssVariableCompletionHarnessTest",
+      "name": "testScssVariableCompletionInsertsCleanDollarVariable",
+      "status": "passed",
+      "seconds": 0.078,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.completion.CssVariableCompletionHarnessTest",
+      "name": "testScssAliasWithFallbackDocumentationShowsCssVariableContextsAndHint",
+      "status": "passed",
+      "seconds": 0.056,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.completion.CssVariableCompletionHarnessTest",
+      "name": "testDocCommentDoesNotLeakIntoValueColumn",
+      "status": "passed",
+      "seconds": 0.071,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.completion.CssVariableCompletionHarnessTest",
+      "name": "testLocalOverrideWinsInCompletionAndDocumentation",
+      "status": "passed",
+      "seconds": 0.043,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.completion.CssVariableCompletionHarnessTest",
+      "name": "testScssVariableCompletionReturnsImportedNodeModulesDesignTokensOnly",
+      "status": "passed",
+      "seconds": 0.102,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.completion.CssVariableCompletionHarnessTest",
+      "name": "testInsertionInsideRgbaFunctionProducesCleanVar",
+      "status": "passed",
+      "seconds": 0.066,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.completion.CssVariableCompletionHarnessTest",
+      "name": "testScssVariableDocumentationResolvesAliasChain",
+      "status": "passed",
+      "seconds": 0.054,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.completion.CssVariableCompletionHarnessTest",
+      "name": "testForegroundColorQueryFallsBackToForegroundFamily",
+      "status": "passed",
+      "seconds": 0.067,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.completion.CssVariableCompletionHarnessTest",
+      "name": "testLessVariableCompletionInsertsCleanAtVariable",
+      "status": "passed",
+      "seconds": 0.07,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.completion.CssVariableCompletionHarnessTest",
+      "name": "testSassVariableCompletionReturnsImportedNodeModulesDesignTokensOnly",
+      "status": "passed",
+      "seconds": 0.102,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.completion.CssVariableCompletionHarnessTest",
+      "name": "testScssAliasToCssVarDocumentationShowsCssVariableContexts",
+      "status": "passed",
+      "seconds": 0.054,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.completion.CssVariableCompletionHarnessTest",
+      "name": "testInsertionInsideHslWithSixCharDashedPrefixProducesCleanVar",
+      "status": "passed",
+      "seconds": 0.067,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.completion.CssVariableCompletionHarnessTest",
+      "name": "testLessVariableDocumentationResolvesImportedNodeModulesAliasChain",
+      "status": "passed",
+      "seconds": 0.099,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.completion.CssVariableCompletionHarnessTest",
+      "name": "testDoesNotOfferCssVariablesWhenCompletingPropertyNames",
+      "status": "passed",
+      "seconds": 0.446,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.completion.CssVariableCompletionHarnessTest",
+      "name": "testSemanticSizeFamiliesSortByResolvedValue",
+      "status": "passed",
+      "seconds": 0.067,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.completion.CssVariableCompletionHarnessTest",
+      "name": "testInsertionInsideOklchFunctionProducesCleanVar",
+      "status": "passed",
+      "seconds": 0.066,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.completion.CssVariableCompletionHarnessTest",
+      "name": "testLocalOverrideIgnoresCommentedOutDeclaration",
+      "status": "passed",
+      "seconds": 0.066,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.completion.CssVariableCompletionHarnessTest",
+      "name": "testCssVariableDocumentationUsesDefaultForRootOnlyBaseline",
+      "status": "passed",
+      "seconds": 0.053,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.completion.CssVariableCompletionHarnessTest",
+      "name": "testScssVariableCompletionResolvesAliasToCssCustomPropertyValue",
+      "status": "passed",
+      "seconds": 0.065,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.completion.CssVariableCompletionHarnessTest",
+      "name": "testLessVariableCompletionReturnsAtVariables",
+      "status": "passed",
+      "seconds": 0.062,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.completion.CssVariableCompletionHarnessTest",
+      "name": "testInsertionInsideHslWithTrailingDashProducesCleanVar",
+      "status": "passed",
+      "seconds": 0.07,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.completion.CssVariableCompletionHarnessTest",
+      "name": "testCompletionInsideHslWithDashedErPrefixShowsBothErrorVariants",
+      "status": "passed",
+      "seconds": 0.065,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.completion.CssVariableCompletionHarnessTest",
+      "name": "testInsertionRewritesOnlyTheVarContainingTheCaret_First",
+      "status": "passed",
+      "seconds": 0.064,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.completion.CssVariableCompletionHarnessTest",
+      "name": "testDoesNotOfferCssVariablesInTypeScriptFiles",
+      "status": "passed",
+      "seconds": 0.593,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.completion.CssVariableCompletionHarnessTest",
+      "name": "testSassVariableDocumentationResolvesImportedNodeModulesAliasChain",
+      "status": "passed",
+      "seconds": 0.101,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.completion.CssVariableCompletionHarnessTest",
+      "name": "testCompletionReturnsProjectCustomProperties",
+      "status": "passed",
+      "seconds": 0.066,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.completion.CssVariableCompletionHarnessTest",
+      "name": "testCssVariableDocumentationCanonicalizesRootAndExplicitLightSelectorsToDefaultLight",
+      "status": "passed",
+      "seconds": 0.056,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.completion.CssVariableCompletionHarnessTest",
+      "name": "testCssVariableDocumentationResolvesImportedScssPackageViaUseEntrypoint",
+      "status": "passed",
+      "seconds": 0.105,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.completion.CssVariableCompletionHarnessTest",
+      "name": "testInsertionOutsideVarLeavesDocumentUnchanged",
+      "status": "passed",
+      "seconds": 0.054,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.completion.CssVariableCompletionHarnessTest",
+      "name": "testDoesNotFireAfterClosingParenOnSameLine",
+      "status": "passed",
+      "seconds": 0.064,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.completion.CssVariableCompletionHarnessTest",
+      "name": "testScssVariableCompletionReturnsDollarVariables",
+      "status": "passed",
+      "seconds": 0.066,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.completion.CssVariableCompletionHarnessTest",
+      "name": "testCompletionInsideHslWithDashedBackPrefixDoesNotShowBlue",
+      "status": "passed",
+      "seconds": 0.065,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.completion.CssVariableCompletionHarnessTest",
+      "name": "testCssVariableDocumentationResolvesPackageRootUseViaCssFallbackWhenSassIsMixinOnly",
+      "status": "passed",
+      "seconds": 0.104,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.completion.CssVariableCompletionHarnessTest",
+      "name": "testInsertionInsideHslWithFiveCharDashedPrefixProducesCleanVar",
+      "status": "passed",
+      "seconds": 0.076,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.completion.CssVariableCompletionHarnessTest",
+      "name": "testInsertionInsideClampAsMiddleArgProducesCleanVar",
+      "status": "passed",
+      "seconds": 0.071,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.completion.CssVariableCompletionHarnessTest",
+      "name": "testLessVariableCompletionReturnsImportedNodeModulesDesignTokensOnly",
+      "status": "passed",
+      "seconds": 0.109,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.completion.CssVariableCompletionHarnessTest",
+      "name": "testInsertionOfDashedVarWhenUserTypedShortPrefixWithoutDashesInsideHsl",
+      "status": "passed",
+      "seconds": 0.07,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.completion.CssVariableCompletionHarnessTest",
+      "name": "testCssVariableDocumentationCanonicalizesSelectorListPlusRootToDefaultLight",
+      "status": "passed",
+      "seconds": 0.057,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.completion.CssVariableCompletionHarnessTest",
+      "name": "testCssVariableDocumentationResolvesImportedSassPreprocessorAliasChain",
+      "status": "passed",
+      "seconds": 0.101,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.completion.CssVariableCompletionHarnessTest",
+      "name": "testPreprocessorCompletionDoesNotRunInsideCssVarFunction",
+      "status": "passed",
+      "seconds": 0.076,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.completion.CssVariableCompletionHarnessTest",
+      "name": "testCssVariableDocumentationResolvesImportedLessPreprocessorAliasChain",
+      "status": "passed",
+      "seconds": 0.105,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.completion.CssVariableCompletionHarnessTest",
+      "name": "testInsertionRewritesOnlyTheVarContainingTheCaret_Second",
+      "status": "passed",
+      "seconds": 0.073,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.completion.CssVariableCompletionHarnessTest",
+      "name": "testInsertionInsideCalcProducesCleanVar",
+      "status": "passed",
+      "seconds": 0.056,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.completion.CssVariableCompletionHarnessTest",
+      "name": "testCssVariableDocumentationResolvesImportedScssPreprocessorAliasChain",
+      "status": "passed",
+      "seconds": 0.099,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.completion.CssVariableCompletionHarnessTest",
+      "name": "testSassVariableCompletionReturnsDollarVariables",
+      "status": "passed",
+      "seconds": 0.078,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.completion.CssVariableCompletionSortTest",
+      "name": "items starting with the full query outrank truncated-prefix matches()",
+      "status": "passed",
+      "seconds": 0.001,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.completion.CssVariableCompletionSortTest",
+      "name": "exact full-name match ranks first when user typed the whole variable name()",
+      "status": "passed",
+      "seconds": 0.0,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.completion.CssVariableCompletionSortTest",
+      "name": "more-consumed query length wins for token-only matches()",
+      "status": "passed",
+      "seconds": 0.0,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.completion.CssVariableCompletionSortTest",
+      "name": "shorter name wins when both items start with the user query()",
+      "status": "passed",
+      "seconds": 0.001,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.completion.PreprocessorCompletionContextTest",
+      "name": "extracts scss dollar usage query()",
+      "status": "passed",
+      "seconds": 0.0,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.completion.PreprocessorCompletionContextTest",
+      "name": "does not trigger in plain css files()",
+      "status": "passed",
+      "seconds": 0.0,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.completion.PreprocessorCompletionContextTest",
+      "name": "does not trigger less at variables in scss files()",
+      "status": "passed",
+      "seconds": 0.0,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.completion.PreprocessorCompletionContextTest",
+      "name": "extracts less at usage query()",
+      "status": "passed",
+      "seconds": 0.001,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.completion.PreprocessorCompletionContextTest",
+      "name": "does not trigger on sass declaration left hand side()",
+      "status": "passed",
+      "seconds": 0.0,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.completion.PreprocessorCompletionContextTest",
+      "name": "does not trigger on scss declaration left hand side()",
+      "status": "passed",
+      "seconds": 0.0,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.completion.PreprocessorCompletionContextTest",
+      "name": "does not trigger on less declaration left hand side()",
+      "status": "passed",
+      "seconds": 0.0,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.completion.PreprocessorCompletionContextTest",
+      "name": "extracts blank scss value query right after dollar sign()",
+      "status": "passed",
+      "seconds": 0.0,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.documentation.ColorParserTest",
+      "name": "hsl space slash syntax()",
+      "status": "passed",
+      "seconds": 0.0,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.documentation.ColorParserTest",
+      "name": "hex expands and parses()",
+      "status": "passed",
+      "seconds": 0.001,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.documentation.ColorParserTest",
+      "name": "hsl comma syntax()",
+      "status": "passed",
+      "seconds": 0.0,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.documentation.ColorParserTest",
+      "name": "4-digit hex shorthand with full opacity collapses to 6 digits()",
+      "status": "passed",
+      "seconds": 0.0,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.documentation.ColorParserTest",
+      "name": "rgba slash alpha syntax preserves alpha()",
+      "status": "passed",
+      "seconds": 0.0,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.documentation.ColorParserTest",
+      "name": "rgb decimal()",
+      "status": "passed",
+      "seconds": 0.001,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.documentation.ColorParserTest",
+      "name": "rgba with explicit full opacity stays 6 digits()",
+      "status": "passed",
+      "seconds": 0.0,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.documentation.ColorParserTest",
+      "name": "bare HSL triplet()",
+      "status": "passed",
+      "seconds": 0.0,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.documentation.ColorParserTest",
+      "name": "shorthand hex expands()",
+      "status": "passed",
+      "seconds": 0.0,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.documentation.ColorParserTest",
+      "name": "8-digit hex with full opacity collapses to 6 digits()",
+      "status": "passed",
+      "seconds": 0.0,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.documentation.ColorParserTest",
+      "name": "hsl with commas and slash()",
+      "status": "passed",
+      "seconds": 0.0,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.documentation.ColorParserTest",
+      "name": "hwb works()",
+      "status": "passed",
+      "seconds": 0.0,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.documentation.ColorParserTest",
+      "name": "hwb with commas and slash()",
+      "status": "passed",
+      "seconds": 0.0,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.documentation.ColorParserTest",
+      "name": "hex with surrounding whitespace()",
+      "status": "passed",
+      "seconds": 0.0,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.documentation.ColorParserTest",
+      "name": "4-digit hex shorthand expands with alpha()",
+      "status": "passed",
+      "seconds": 0.001,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.documentation.ColorParserTest",
+      "name": "parses 8-digit hex into Color object with correct channels()",
+      "status": "passed",
+      "seconds": 0.0,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.documentation.ColorParserTest",
+      "name": "rgb percent()",
+      "status": "passed",
+      "seconds": 0.0,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.documentation.ColorParserTest",
+      "name": "rgba comma alpha syntax preserves alpha()",
+      "status": "passed",
+      "seconds": 0.0,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.documentation.ColorParserTest",
+      "name": "8-digit hex preserves alpha and uses CSS spec ordering()",
+      "status": "passed",
+      "seconds": 0.0,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.documentation.ColorParserTest",
+      "name": "empty string yields null()",
+      "status": "passed",
+      "seconds": 0.001,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.documentation.ColorParserTest",
+      "name": "rgb percentage syntax()",
+      "status": "passed",
+      "seconds": 0.0,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.documentation.ColorParserTest",
+      "name": "invalid color yields null()",
+      "status": "passed",
+      "seconds": 0.0,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.documentation.ColorParserTest",
+      "name": "hwb black and white zero()",
+      "status": "passed",
+      "seconds": 0.0,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.documentation.ColorParserTest",
+      "name": "8-digit hex round-trips when alpha is below full opacity()",
+      "status": "passed",
+      "seconds": 0.001,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.documentation.ColorParserTest",
+      "name": "hsl hue units are supported()",
+      "status": "passed",
+      "seconds": 0.0,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.documentation.ColorParserTest",
+      "name": "rgb integer syntax()",
+      "status": "passed",
+      "seconds": 0.0,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.documentation.ColorParserTest",
+      "name": "named colors cover common css palette values()",
+      "status": "passed",
+      "seconds": 0.0,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.documentation.ColorParserTest",
+      "name": "hsl rem extended hue()",
+      "status": "passed",
+      "seconds": 0.0,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.documentation.DefaultThemeLabelMergeTest",
+      "name": "default plus single theme joins with slash()",
+      "status": "passed",
+      "seconds": 0.001,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.documentation.DefaultThemeLabelMergeTest",
+      "name": "default combined with an arbitrary theme keeps its name()",
+      "status": "passed",
+      "seconds": 0.0,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.documentation.DefaultThemeLabelMergeTest",
+      "name": "default does not slash-join unrelated equal-value contexts()",
+      "status": "passed",
+      "seconds": 0.0,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.documentation.DefaultThemeLabelMergeTest",
+      "name": "duplicate default labels dedupe cleanly under the slash join()",
+      "status": "passed",
+      "seconds": 0.0,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.documentation.DefaultThemeLabelMergeTest",
+      "name": "theme-only merges keep the existing comma join()",
+      "status": "passed",
+      "seconds": 0.001,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.documentation.DefaultThemeLabelMergeTest",
+      "name": "default plus multiple themes joins with slash then commas()",
+      "status": "passed",
+      "seconds": 0.0,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.documentation.DefaultThemeLabelMergeTest",
+      "name": "default alone stays default()",
+      "status": "passed",
+      "seconds": 0.001,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.documentation.DocHelpersResolveVarValueTest",
+      "name": "testCompoundScssValueWithCssCustomPropertyStaysLiteral",
+      "status": "passed",
+      "seconds": 0.031,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.documentation.DocHelpersResolveVarValueTest",
+      "name": "testScssAliasWithFallbackToCssCustomPropertyResolvesThroughCssVariable",
+      "status": "passed",
+      "seconds": 0.042,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.documentation.DocHelpersResolveVarValueTest",
+      "name": "testNestedVarWithUniformValuesStillSubstitutes",
+      "status": "passed",
+      "seconds": 0.043,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.documentation.DocHelpersResolveVarValueTest",
+      "name": "testScssAliasToCssCustomPropertyResolvesThroughCssVariable",
+      "status": "passed",
+      "seconds": 0.032,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.documentation.DocHelpersResolveVarValueTest",
+      "name": "testCircularPreprocessorAliasesReturnWithoutInfiniteRecursion",
+      "status": "passed",
+      "seconds": 0.031,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.documentation.DocHelpersResolveVarValueTest",
+      "name": "testImportedLessCustomPropertyResolvesThroughNestedPreprocessorAliasChain",
+      "status": "passed",
+      "seconds": 0.088,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.documentation.DocHelpersResolveVarValueTest",
+      "name": "testImportedSassCustomPropertyResolvesThroughNestedPreprocessorAliasChain",
+      "status": "passed",
+      "seconds": 0.095,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.documentation.DocHelpersResolveVarValueTest",
+      "name": "testImportedScssCustomPropertyResolvesThroughNestedPreprocessorAliasChain",
+      "status": "passed",
+      "seconds": 0.096,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.documentation.DocHelpersResolveVarValueTest",
+      "name": "testCalcWrapperPreservedAroundResolvedVar",
+      "status": "passed",
+      "seconds": 0.044,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.documentation.DocHelpersResolveVarValueTest",
+      "name": "testLessAliasToCssCustomPropertyResolvesThroughCssVariable",
+      "status": "passed",
+      "seconds": 0.041,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.documentation.DocHelpersResolveVarValueTest",
+      "name": "testAmbiguousNestedVarLeavesReferenceIntact",
+      "status": "passed",
+      "seconds": 0.045,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.documentation.DocHelpersResolveVarValueTest",
+      "name": "testImportedScssArithmeticAliasChainResolvesRecursively",
+      "status": "passed",
+      "seconds": 0.114,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.documentation.DocHelpersResolveVarValueTest",
+      "name": "testPrefixedScssReferenceDoesNotFallbackToLessVariableWithSameBareName",
+      "status": "passed",
+      "seconds": 0.042,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.documentation.DocHelpersResolveVarValueTest",
+      "name": "testNestedVarWithDefaultContextStillSubstitutes",
+      "status": "passed",
+      "seconds": 0.04,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.documentation.DocHelpersResolveVarValueTest",
+      "name": "testImportedScssCustomPropertyRespectsMaxImportDepth",
+      "status": "passed",
+      "seconds": 0.091,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.documentation.DocHelpersTest",
+      "name": "testPreprocessorResolutionCacheDoesNotLeakCallerSteps",
+      "status": "passed",
+      "seconds": 0.051,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.documentation.DocHelpersTest",
+      "name": "testLastLocalValueInFileIgnoresCommentedSamples",
+      "status": "passed",
+      "seconds": 0.042,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.documentation.DocHelpersTest",
+      "name": "testExtractCssVariableNameFindsDirectScssVariableReference",
+      "status": "passed",
+      "seconds": 0.055,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.documentation.DocHelpersTest",
+      "name": "testLastLocalValueInFileStillFindsRealLocalOverride",
+      "status": "passed",
+      "seconds": 0.074,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.documentation.DocHelpersTest",
+      "name": "testProviderLeavesTypeAnnotatedJavaFieldToPlatformDocumentation",
+      "status": "passed",
+      "seconds": 0.257,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.documentation.DocHelpersTest",
+      "name": "testLastLocalValueInFileIgnoresLineComments",
+      "status": "passed",
+      "seconds": 0.027,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.documentation.DocHelpersTest",
+      "name": "testProviderLeavesDeclarationAnnotatedJavaFieldToPlatformDocumentation",
+      "status": "passed",
+      "seconds": 0.051,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.documentation.DocHelpersTest",
+      "name": "testExtractCssVariableNameFindsDirectLessVariableReference",
+      "status": "passed",
+      "seconds": 0.049,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.documentation.DocHelpersTest",
+      "name": "testQuickDocumentationFallsThroughForJavaMethodWithJavadocTags",
+      "status": "passed",
+      "seconds": 0.09,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.documentation.FormatSourceCellTest",
+      "name": "full mode renders file colon line()",
+      "status": "passed",
+      "seconds": 0.0,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.documentation.FormatSourceCellTest",
+      "name": "legacy record with unknown line falls back to first step in compact mode()",
+      "status": "passed",
+      "seconds": 0.001,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.documentation.FormatSourceCellTest",
+      "name": "file without line falls back to first step()",
+      "status": "passed",
+      "seconds": 0.0,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.documentation.FormatSourceCellTest",
+      "name": "legacy record with unknown line falls back to first step in full mode()",
+      "status": "passed",
+      "seconds": 0.0,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.documentation.FormatSourceCellTest",
+      "name": "line zero falls through to fallback()",
+      "status": "passed",
+      "seconds": 0.0,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.documentation.FormatSourceCellTest",
+      "name": "no source and no step renders em-dash in both modes()",
+      "status": "passed",
+      "seconds": 0.0,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.documentation.FormatSourceCellTest",
+      "name": "compact mode renders only the colon-prefixed line number()",
+      "status": "passed",
+      "seconds": 0.0,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.documentation.HoverRowCollapseTest",
+      "name": "empty input returns empty list()",
+      "status": "passed",
+      "seconds": 0.0,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.documentation.HoverRowCollapseTest",
+      "name": "deduplicates identical labels within a merged row()",
+      "status": "passed",
+      "seconds": 0.001,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.documentation.HoverRowCollapseTest",
+      "name": "merges rows with identical values into one row with joined labels()",
+      "status": "passed",
+      "seconds": 0.0,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.documentation.HoverRowCollapseTest",
+      "name": "first occurrence of each value keeps its sort position()",
+      "status": "passed",
+      "seconds": 0.0,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.documentation.HoverRowCollapseTest",
+      "name": "truncates merged labels longer than the max length()",
+      "status": "passed",
+      "seconds": 0.0,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.documentation.HoverRowCollapseTest",
+      "name": "single-label merge renders the label once()",
+      "status": "passed",
+      "seconds": 0.0,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.documentation.HoverRowCollapseTest",
+      "name": "singleton values pass through unchanged()",
+      "status": "passed",
+      "seconds": 0.0,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.documentation.HoverRowSortTest",
+      "name": "selectors in the same file sort by line number not alphabet()",
+      "status": "passed",
+      "seconds": 0.001,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.documentation.HoverRowSortTest",
+      "name": "sorts by source file first then source line within each file()",
+      "status": "passed",
+      "seconds": 0.0,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.documentation.HoverRowSortTest",
+      "name": "full popup order matches bucket hierarchy then source order()",
+      "status": "passed",
+      "seconds": 0.0,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.documentation.HoverRowSortTest",
+      "name": "unknown source line sorts after known lines in the same bucket()",
+      "status": "passed",
+      "seconds": 0.001,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.documentation.IconUtilTest",
+      "name": "tiny red dot dataUri()",
+      "status": "passed",
+      "seconds": 0.023,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.documentation.PrettifySelectorTest",
+      "name": "returns null for pseudo-classes and id selectors()",
+      "status": "passed",
+      "seconds": 0.0,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.documentation.PrettifySelectorTest",
+      "name": "converts snake_case value to spaced sentence case()",
+      "status": "passed",
+      "seconds": 0.001,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.documentation.PrettifySelectorTest",
+      "name": "preserves uppercase acronyms()",
+      "status": "passed",
+      "seconds": 0.0,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.documentation.PrettifySelectorTest",
+      "name": "prettifies single-quoted attribute-equals selector()",
+      "status": "passed",
+      "seconds": 0.0,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.documentation.PrettifySelectorTest",
+      "name": "contextLabel prettifies theme selectors through the same path()",
+      "status": "passed",
+      "seconds": 0.0,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.documentation.PrettifySelectorTest",
+      "name": "contextLabel renders default as Default even for colour values()",
+      "status": "passed",
+      "seconds": 0.0,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.documentation.PrettifySelectorTest",
+      "name": "prettifies quoted attribute-equals selector()",
+      "status": "passed",
+      "seconds": 0.001,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.documentation.PrettifySelectorTest",
+      "name": "prettifies simple class selector()",
+      "status": "passed",
+      "seconds": 0.0,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.documentation.PrettifySelectorTest",
+      "name": "converts kebab-case value to spaced sentence case()",
+      "status": "passed",
+      "seconds": 0.0,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.documentation.PrettifySelectorTest",
+      "name": "contextLabel keeps raw selectors when prettifyTheme is disabled()",
+      "status": "passed",
+      "seconds": 0.0,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.documentation.PrettifySelectorTest",
+      "name": "returns null for empty or non-selector input()",
+      "status": "passed",
+      "seconds": 0.0,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.documentation.PrettifySelectorTest",
+      "name": "returns null for compound selectors()",
+      "status": "passed",
+      "seconds": 0.0,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.documentation.PrettifySelectorTest",
+      "name": "prettifies hyphenated class selector()",
+      "status": "passed",
+      "seconds": 0.0,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.documentation.PrettifySelectorTest",
+      "name": "handles attribute-contains and prefix match operators()",
+      "status": "passed",
+      "seconds": 0.0,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.documentation.PrettifySelectorTest",
+      "name": "prettifies unquoted attribute-equals selector()",
+      "status": "passed",
+      "seconds": 0.0,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.documentation.RankingTest",
+      "name": "testUnitConversions()",
+      "status": "passed",
+      "seconds": 0.0,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.documentation.RankingTest",
+      "name": "testSortingBehavior()",
+      "status": "passed",
+      "seconds": 0.001,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.documentation.RankingTest",
+      "name": "testRankingOrder()",
+      "status": "passed",
+      "seconds": 0.0,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.documentation.RankingTest",
+      "name": "testEdgeCases()",
+      "status": "passed",
+      "seconds": 0.0,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.index.CssVariableEntryParserTest",
+      "name": "inline comment inside value is stripped()",
+      "status": "passed",
+      "seconds": 0.001,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.index.CssVariableEntryParserTest",
+      "name": "trailing inline comment in value is stripped()",
+      "status": "passed",
+      "seconds": 0.0,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.index.CssVariableEntryParserTest",
+      "name": "root-like selectors are treated as default context()",
+      "status": "passed",
+      "seconds": 0.0,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.index.CssVariableEntryParserTest",
+      "name": "attribute selector block is tagged as its own context()",
+      "status": "passed",
+      "seconds": 0.0,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.index.CssVariableEntryParserTest",
+      "name": "long selector list is truncated with ellipsis()",
+      "status": "passed",
+      "seconds": 0.0,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.index.CssVariableEntryParserTest",
+      "name": "keeps media context when opening brace is on the next line()",
+      "status": "passed",
+      "seconds": 0.0,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.index.CssVariableEntryParserTest",
+      "name": "parses sass indented custom properties without semicolons()",
+      "status": "passed",
+      "seconds": 0.0,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.index.CssVariableEntryParserTest",
+      "name": "normalizes compound media query labels()",
+      "status": "passed",
+      "seconds": 0.0,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.index.CssVariableEntryParserTest",
+      "name": "comma-separated selector list stays one canonical context()",
+      "status": "passed",
+      "seconds": 0.001,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.index.CssVariableEntryParserTest",
+      "name": "minified css starting with a comment still indexes the declaration after it()",
+      "status": "passed",
+      "seconds": 0.0,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.index.CssVariableEntryParserTest",
+      "name": "keeps media context active after nested rule closes()",
+      "status": "passed",
+      "seconds": 0.0,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.index.CssVariableEntryParserTest",
+      "name": "parses multiline custom property values()",
+      "status": "passed",
+      "seconds": 0.0,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.index.CssVariableEntryParserTest",
+      "name": "class selector block is tagged as its own context()",
+      "status": "passed",
+      "seconds": 0.0,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.index.CssVariableEntryParserTest",
+      "name": "inline leading block comment does not drop trailing declaration()",
+      "status": "passed",
+      "seconds": 0.0,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.index.CssVariableEntryParserTest",
+      "name": "single-line selector block tags all declarations with selector()",
+      "status": "passed",
+      "seconds": 0.001,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.index.CssVariableEntryParserTest",
+      "name": "emits 1-based line number for each declaration()",
+      "status": "passed",
+      "seconds": 0.0,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.index.CssVariableEntryParserTest",
+      "name": "multi-line value records line where declaration opens()",
+      "status": "passed",
+      "seconds": 0.0,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.index.CssVariableEntryParserTest",
+      "name": "non-root selector nested inside media combines labels()",
+      "status": "passed",
+      "seconds": 0.0,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.index.CssVariableIndexValueCodecTest",
+      "name": "encodes and decodes full entry with line number round-trip()",
+      "status": "passed",
+      "seconds": 0.001,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.index.CssVariableIndexValueCodecTest",
+      "name": "empty comment with line number round-trips()",
+      "status": "passed",
+      "seconds": 0.0,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.index.CssVariableIndexValueCodecTest",
+      "name": "gracefully decodes legacy 3-part entries as line minus one()",
+      "status": "passed",
+      "seconds": 0.0,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.index.CssVariableIndexValueCodecTest",
+      "name": "multiple entries joined by triple-pipe split correctly()",
+      "status": "passed",
+      "seconds": 0.0,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.index.ImportResolverTest",
+      "name": "testCssIndexImportResolutionDoesNotPopulateImportCache",
+      "status": "passed",
+      "seconds": 0.093,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.index.ImportResolverTest",
+      "name": "testCollectProjectImportsResolvesForwardChain",
+      "status": "passed",
+      "seconds": 0.113,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.index.ImportResolverTest",
+      "name": "testCollectProjectImportsSkipsPackageWithoutStylesheetEntrypoint",
+      "status": "passed",
+      "seconds": 0.096,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.index.ImportResolverTest",
+      "name": "testCollectProjectImportsResolvesCssSubpathExport",
+      "status": "passed",
+      "seconds": 0.097,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.index.ImportResolverTest",
+      "name": "testCollectProjectImportsResolvesNestedScssPartials",
+      "status": "passed",
+      "seconds": 0.073,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.index.ImportResolverTest",
+      "name": "testCollectProjectImportsResolvesPackageJsonEntrypoint",
+      "status": "passed",
+      "seconds": 0.086,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.index.ImportResolverTest",
+      "name": "testCollectProjectImportsKeepsSassEntrypointWhenItDefinesCustomProperties",
+      "status": "passed",
+      "seconds": 0.09,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.index.ImportResolverTest",
+      "name": "testCollectProjectImportsFallsBackToCssEntrypointWhenSassHasNoCustomProperties",
+      "status": "passed",
+      "seconds": 0.09,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.index.ImportResolverTest",
+      "name": "testCollectProjectImportsResolvesUseFromNodeModules",
+      "status": "passed",
+      "seconds": 0.093,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.index.ImportResolverTest",
+      "name": "testCollectProjectImportsResolvesScssPartialsFromNodeModules",
+      "status": "passed",
+      "seconds": 0.081,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.index.ImportResolverTest",
+      "name": "testCollectProjectImportsResolvesRelativeAndNodeModulesImports",
+      "status": "passed",
+      "seconds": 0.086,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.index.PreprocessorVariableIndexTest",
+      "name": "testProjectOnlyDoesNotIndexImportedNodeModulesPreprocessorVariables",
+      "status": "passed",
+      "seconds": 0.083,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.index.PreprocessorVariableIndexTest",
+      "name": "testSassIndentedVariablesWithoutSemicolonAreIndexed",
+      "status": "passed",
+      "seconds": 0.042,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.index.PreprocessorVariableIndexTest",
+      "name": "testProjectWithImportsIndexesImportedScssPartialVariablesThroughImportingFile",
+      "status": "passed",
+      "seconds": 0.081,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.index.PreprocessorVariableIndexTest",
+      "name": "testDollarAndAtVariablesWithSameNameStaySeparate",
+      "status": "passed",
+      "seconds": 0.04,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.index.PreprocessorVariableIndexTest",
+      "name": "testGlobalInputFilterAllowsNodeModulesPreprocessorFiles",
+      "status": "passed",
+      "seconds": 0.068,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.index.PreprocessorVariableIndexTest",
+      "name": "testPreprocessorIndexerIgnoresCommentedDeclarations",
+      "status": "passed",
+      "seconds": 0.04,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.index.PreprocessorVariableIndexTest",
+      "name": "testLessVariablesKeepAtPrefix",
+      "status": "passed",
+      "seconds": 0.029,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.index.PreprocessorVariableIndexTest",
+      "name": "testScssVariablesKeepDollarPrefixAndStripFlags",
+      "status": "passed",
+      "seconds": 0.041,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.index.PreprocessorVariableIndexTest",
+      "name": "testPackageCssFallbackKeepsSassEntrypointVariablesIndexed",
+      "status": "passed",
+      "seconds": 0.097,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.index.PreprocessorVariableIndexTest",
+      "name": "testScssComplexMapValueIsKeptRaw",
+      "status": "passed",
+      "seconds": 0.041,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.index.SassModuleImportTest",
+      "name": "testAtImportAndAtUseCoexistOnSameFile",
+      "status": "passed",
+      "seconds": 0.043,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.index.SassModuleImportTest",
+      "name": "testUseResolvesPackageRootWithSassIndexPartial",
+      "status": "passed",
+      "seconds": 0.079,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.index.SassModuleImportTest",
+      "name": "testForwardWithHideShowAndPrefixClauses",
+      "status": "passed",
+      "seconds": 0.043,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.index.SassModuleImportTest",
+      "name": "testForwardResolvesRelativeSassPartial",
+      "status": "passed",
+      "seconds": 0.045,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.index.SassModuleImportTest",
+      "name": "testPackageEntrypointFallbackToCssStyleField",
+      "status": "passed",
+      "seconds": 0.084,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.index.SassModuleImportTest",
+      "name": "testUseResolvesWithNamespaceAlias",
+      "status": "passed",
+      "seconds": 0.045,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.index.SelectorListCanonicalizationTest",
+      "name": "root plus theme alternatives compose with an outer media context()",
+      "status": "passed",
+      "seconds": 0.0,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.index.SelectorListCanonicalizationTest",
+      "name": "theme-only selector list is canonicalised and deduplicated()",
+      "status": "passed",
+      "seconds": 0.0,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.index.SelectorListCanonicalizationTest",
+      "name": "mixed class and attribute theme selector list is canonicalised()",
+      "status": "passed",
+      "seconds": 0.0,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.index.SelectorListCanonicalizationTest",
+      "name": "root plus theme selector list plus plain root produces stable context set()",
+      "status": "passed",
+      "seconds": 0.001,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.index.SelectorListCanonicalizationTest",
+      "name": "plain root plus dark theme is unchanged()",
+      "status": "passed",
+      "seconds": 0.0,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.index.SelectorListCanonicalizationTest",
+      "name": "attribute namespace survives quote canonicalisation()",
+      "status": "passed",
+      "seconds": 0.0,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.index.SelectorListCanonicalizationTest",
+      "name": "root plus theme selector list emits both default and theme entries()",
+      "status": "passed",
+      "seconds": 0.0,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.index.SelectorListCanonicalizationTest",
+      "name": "root plus multiple themes emits one context per selector alternative()",
+      "status": "passed",
+      "seconds": 0.0,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.index.SelectorListCanonicalizationTest",
+      "name": "quoted and unquoted attribute equals canonicalise to the same context()",
+      "status": "passed",
+      "seconds": 0.0,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.index.SelectorListCanonicalizationTest",
+      "name": "plain root plus explicit light theme keeps separate but canonical contexts()",
+      "status": "passed",
+      "seconds": 0.0,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.index.SelectorListCanonicalizationTest",
+      "name": "all-root-like selector list collapses to default()",
+      "status": "passed",
+      "seconds": 0.0,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.metadata.MarketplaceCompatibilityMetadataTest",
+      "name": "build script targets broader ide family and verifier coverage()",
+      "status": "passed",
+      "seconds": 0.003,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.metadata.MarketplaceCompatibilityMetadataTest",
+      "name": "plugin manifest limits completion contributors to stylesheet languages()",
+      "status": "passed",
+      "seconds": 0.016,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.metadata.MarketplaceCompatibilityMetadataTest",
+      "name": "plugin manifest declares javascript and css dependencies()",
+      "status": "passed",
+      "seconds": 0.002,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.metadata.MarketplaceCompatibilityMetadataTest",
+      "name": "release build uses the Kotlin stdlib bundled with the platform()",
+      "status": "passed",
+      "seconds": 0.002,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.util.ScopeUtilTest",
+      "name": "testProjectOnlyScopeExcludesNodeModulesPreprocessorFiles",
+      "status": "passed",
+      "seconds": 0.126,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.util.ScopeUtilTest",
+      "name": "testProjectWithImportsScopeOnlyIncludesExplicitlyImportedNodeModulesFiles",
+      "status": "passed",
+      "seconds": 0.133,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.util.ValueUtilTest",
+      "name": "case insensitive units()",
+      "status": "passed",
+      "seconds": 0.0,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.util.ValueUtilTest",
+      "name": "detects viewport units()",
+      "status": "passed",
+      "seconds": 0.0,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.util.ValueUtilTest",
+      "name": "detects em values()",
+      "status": "passed",
+      "seconds": 0.0,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.util.ValueUtilTest",
+      "name": "converts pt correctly()",
+      "status": "passed",
+      "seconds": 0.001,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.util.ValueUtilTest",
+      "name": "detects modern viewport and physical units()",
+      "status": "passed",
+      "seconds": 0.0,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.util.ValueUtilTest",
+      "name": "detects percentage values()",
+      "status": "passed",
+      "seconds": 0.0,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.util.ValueUtilTest",
+      "name": "classifies number values correctly()",
+      "status": "passed",
+      "seconds": 0.0,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.util.ValueUtilTest",
+      "name": "detects rem values()",
+      "status": "passed",
+      "seconds": 0.0,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.util.ValueUtilTest",
+      "name": "ignores whitespace()",
+      "status": "passed",
+      "seconds": 0.0,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.util.ValueUtilTest",
+      "name": "detects pt values()",
+      "status": "passed",
+      "seconds": 0.0,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.util.ValueUtilTest",
+      "name": "compares numbers correctly()",
+      "status": "passed",
+      "seconds": 0.0,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.util.ValueUtilTest",
+      "name": "compares sizes correctly ascending()",
+      "status": "passed",
+      "seconds": 0.0,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.util.ValueUtilTest",
+      "name": "converts px correctly()",
+      "status": "passed",
+      "seconds": 0.0,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.util.ValueUtilTest",
+      "name": "rejects invalid size values()",
+      "status": "passed",
+      "seconds": 0.001,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.util.ValueUtilTest",
+      "name": "converts rem correctly()",
+      "status": "passed",
+      "seconds": 0.0,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.util.ValueUtilTest",
+      "name": "width variables should sort as SIZE type()",
+      "status": "passed",
+      "seconds": 0.0,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.util.ValueUtilTest",
+      "name": "converts em correctly()",
+      "status": "passed",
+      "seconds": 0.001,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.util.ValueUtilTest",
+      "name": "classifies other values correctly()",
+      "status": "passed",
+      "seconds": 0.0,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.util.ValueUtilTest",
+      "name": "classifies size values correctly()",
+      "status": "passed",
+      "seconds": 0.0,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.util.ValueUtilTest",
+      "name": "sorts mixed units correctly()",
+      "status": "passed",
+      "seconds": 0.0,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.util.ValueUtilTest",
+      "name": "sorts padding variables correctly ascending()",
+      "status": "passed",
+      "seconds": 0.001,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.util.ValueUtilTest",
+      "name": "classifies color values correctly()",
+      "status": "passed",
+      "seconds": 0.0,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.util.ValueUtilTest",
+      "name": "converts additional css units consistently()",
+      "status": "passed",
+      "seconds": 0.0,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.util.ValueUtilTest",
+      "name": "detects px values()",
+      "status": "passed",
+      "seconds": 0.0,
+      "failure": null
+    },
+    {
+      "suite": "cssvarsassistant.util.ValueUtilTest",
+      "name": "sorts pixel values correctly()",
+      "status": "passed",
+      "seconds": 0.0,
+      "failure": null
+    }
+  ],
+  "completion_measurements": [
+    "AUDIT_COMPLETION count=100 run=0 items=100 elapsedMs=62.774333",
+    "AUDIT_COMPLETION count=100 run=1 items=100 elapsedMs=38.636",
+    "AUDIT_COMPLETION count=100 run=2 items=100 elapsedMs=28.5545",
+    "AUDIT_COMPLETION count=1000 run=0 items=600 elapsedMs=269.348209",
+    "AUDIT_COMPLETION count=1000 run=1 items=600 elapsedMs=238.521166",
+    "AUDIT_COMPLETION count=1000 run=2 items=600 elapsedMs=229.083667"
+  ]
+}

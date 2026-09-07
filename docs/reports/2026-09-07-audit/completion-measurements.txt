@@ -1,0 +1,6 @@
+AUDIT_COMPLETION count=100 run=0 items=100 elapsedMs=62.774333
+AUDIT_COMPLETION count=100 run=1 items=100 elapsedMs=38.636
+AUDIT_COMPLETION count=100 run=2 items=100 elapsedMs=28.5545
+AUDIT_COMPLETION count=1000 run=0 items=600 elapsedMs=269.348209
+AUDIT_COMPLETION count=1000 run=1 items=600 elapsedMs=238.521166
+AUDIT_COMPLETION count=1000 run=2 items=600 elapsedMs=229.083667
