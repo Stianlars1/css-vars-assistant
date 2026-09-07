@@ -51,7 +51,28 @@ class VariableValuePositionTest {
     @Test
     fun `sass expression directives allow variable arguments`() {
         assertPosition("scss", "@include spacing(<caret>\$brand);", true)
+        assertPosition("scss", "@include spacing(<caret>\$brand) { color: red; }", true)
         assertPosition("scss", "@return <caret>\$brand;", true)
+    }
+
+    @Test
+    fun `type selector pseudo classes are not property values`() {
+        assertPosition("scss", "a:hover <caret>\$brand { color: red; }", false)
+        assertPosition("less", "a:hover <caret>@brand { color: red; }", false)
+        assertPosition("scss", ".outer { a:hover <caret>\$brand { color: red; } }", false)
+        assertPosition("less", ".outer { a:hover <caret>@brand { color: red; } }", false)
+        assertPosition("scss", ".a { color:<caret>\$brand; }", true)
+        assertPosition("less", ".a { color:<caret>@brand; }", true)
+    }
+
+    @Test
+    fun `quoted interpolation comments are excluded without hiding the next expression`() {
+        assertPosition("scss", ".a { content: '#{/* <caret>\$brand */}'; }", false)
+        assertPosition("scss", ".a { content: '#{\$real /* <caret>\$example */}'; }", false)
+        assertPosition("scss", ".a { content: '#{// <caret>\$example\n}'; }", false)
+        assertPosition("scss", ".a { content: '#{/* \$example */ <caret>\$real}'; }", true)
+        assertPosition("scss", ".a { content: '#{// \$example\n<caret>\$real}'; }", true)
+        assertPosition("scss", ".a { content: '#{\"/* literal */\" + <caret>\$real}'; }", true)
     }
 
     private fun assertPosition(extension: String, marked: String, expected: Boolean) {

@@ -65,6 +65,7 @@ internal object VariablePsiContext {
         val masked = CssTextUtil.maskComments(text, lineComments = true).text
         if (masked[symbolOffset] != symbol || isEscaped(text, symbolOffset)) return false
         val lexical = lexicalPosition(masked, symbolOffset, dialect)
+        if (lexical == Position.COMMENT) return false
         if (dialect == "less" && text.getOrNull(symbolOffset + 1) == '{') return true
         if (lexical == Position.STRING) return false
         if (lexical == Position.INTERPOLATION) return true
@@ -80,12 +81,15 @@ internal object VariablePsiContext {
         if (statement.terminator != '\u0000') return false
         val prefix = before.substring(statement.offset)
         val colon = prefix.indexOf(':')
-        if (colon >= 0 && propertyHead.matches(prefix.substring(0, colon))) return true
+        if (colon >= 0 && propertyHead.matches(prefix.substring(0, colon))) {
+            val containingStatement = StylesheetStatements.parse(masked, dialect).lastOrNull { it.offset <= symbolOffset }
+            return containingStatement?.terminator != '{'
+        }
         if (dialect != "less" && sassExpressionDirective.matches(prefix)) return true
         return false
     }
 
-    private enum class Position { CODE, STRING, INTERPOLATION }
+    private enum class Position { CODE, STRING, INTERPOLATION, COMMENT }
 
     /** Interpolation suspends the surrounding quote until its matching closing brace. */
     private fun lexicalPosition(text: String, offset: Int, dialect: String): Position {
@@ -99,6 +103,15 @@ internal object VariablePsiContext {
                 escaped = false
             } else if (ch == '\\') {
                 escaped = true
+            } else if (quote == null && interpolationQuotes.isNotEmpty() && ch == '/' && text.getOrNull(i + 1) in listOf('*', '/')) {
+                val end = if (text[i + 1] == '*') {
+                    text.indexOf("*/", i + 2).let { if (it < 0) text.length else it + 2 }
+                } else {
+                    text.indexOfAny(charArrayOf('\r', '\n'), i + 2).let { if (it < 0) text.length else it }
+                }
+                if (offset < end) return Position.COMMENT
+                i = end
+                continue
             } else if ((ch == '#' && dialect != "less" || ch == '@' && dialect == "less") && text.getOrNull(i + 1) == '{') {
                 interpolationQuotes += quote
                 quote = null
