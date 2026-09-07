@@ -12,7 +12,7 @@ import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.VirtualFileManager
 import com.intellij.openapi.vfs.newvfs.BulkFileListener
 import com.intellij.openapi.vfs.newvfs.events.VFileEvent
-import java.util.concurrent.ConcurrentHashMap
+import com.intellij.util.containers.CollectionFactory
 import java.util.concurrent.atomic.AtomicLong
 
 /** Invalidates queries on saved and unsaved changes without doing work in listeners. */
@@ -41,26 +41,31 @@ internal data class StylesheetSnapshot(
     val file: VirtualFile,
     val text: String,
     val css: List<LocatedCssVariable>,
-    val preprocessor: PreprocessorFileData
+    val preprocessor: PreprocessorFileData,
+    val fileStamp: Long,
+    val documentStamp: Long?
 )
 
 /** Imported/excluded files are read at query time; file-based indexes stay file-local. */
 @Service(Service.Level.PROJECT)
 internal class StylesheetSnapshots : Disposable {
-    private data class Cached(val fileStamp: Long, val documentStamp: Long?, val snapshot: StylesheetSnapshot)
-    private val snapshots = ConcurrentHashMap<VirtualFile, Cached>()
+    private val snapshots = CollectionFactory.createConcurrentWeakKeySoftValueMap<VirtualFile, StylesheetSnapshot>()
 
     fun get(file: VirtualFile): StylesheetSnapshot? {
         if (!file.isValid || file.isDirectory) return null
         val document = FileDocumentManager.getInstance().getCachedDocument(file)
         val fileStamp = file.modificationStamp
         val documentStamp = document?.modificationStamp
-        snapshots[file]?.let { if (it.fileStamp == fileStamp && it.documentStamp == documentStamp) return it.snapshot }
+        snapshots[file]?.let { if (it.fileStamp == fileStamp && it.documentStamp == documentStamp) return it }
         val text = document?.text ?: VfsUtilCore.loadText(file)
         val extension = file.extension?.lowercase()
-        val snapshot = StylesheetSnapshot(file, text, CssVariableEntryParser.declarations(text, extension), PreprocessorVariableEntryParser.declarations(text, extension))
-        if (snapshots.size >= 512) snapshots.clear()
-        snapshots[file] = Cached(fileStamp, documentStamp, snapshot)
+        val snapshot = StylesheetSnapshot(
+            file, text,
+            CssVariableEntryParser.declarations(text, extension),
+            PreprocessorVariableEntryParser.declarations(text, extension),
+            fileStamp, documentStamp
+        )
+        snapshots[file] = snapshot
         return snapshot
     }
 
