@@ -1,0 +1,26 @@
+[
+  {
+    "log": "cva-195-initial-red.log",
+    "summary": "21 tests completed, 4 failed",
+    "failing_tests": [
+      "IdeInterferenceAuditTest > testFallbackFunctionDoesNotReceiveCustomPropertyCompletions",
+      "IdeInterferenceAuditTest > testCssFallbackArgumentDoesNotReceiveBareCustomPropertyNames",
+      "IdeInterferenceAuditTest > testNativeCssColorDocumentationInCustomPropertyRemainsAvailable",
+      "IdeInterferenceAuditTest > testFallbackDoesNotOfferAnInsertionThatBecomesABareCustomProperty"
+    ]
+  },
+  {
+    "log": "cva-195-expanded-red.log",
+    "summary": "11 tests completed, 8 failed",
+    "failing_tests": [
+      "CssVarCompletionBoundaryTest > testMultilineFirstArgumentRemainsAvailable",
+      "CssVarCompletionBoundaryTest > testIncompleteCallsStillRespectTheArgumentBoundary",
+      "CssVarCompletionBoundaryTest > testDisablingIdeFallbackDoesNotClaimNonVariableArguments",
+      "CssVarCompletionBoundaryTest > testCommentsDoNotCreateArgumentSeparators",
+      "CssVarCompletionBoundaryTest > testSassVariablesAreStillCompletedInsideCssFallbackValues",
+      "CssVarCompletionBoundaryTest > testFallbackValuesInEveryStylesheetDialectAreLeftAlone",
+      "DocumentationOwnershipTest > testForeignOriginalElementIsNotReinterpretedAsACssDeclaration",
+      "DebugImportResolutionActionTest > testCanceledDebugTaskPropagatesCancellationWithoutReportingAnError"
+    ]
+  }
+]

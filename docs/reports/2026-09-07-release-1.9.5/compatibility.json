@@ -1,0 +1,43 @@
+{
+  "verifier": "1.410",
+  "artifact": "cssvarsassistant-1.9.5-signed.zip",
+  "results": [
+    {
+      "target": "GO-251.29188.80",
+      "verdict": "Compatible. 8 usages of experimental API"
+    },
+    {
+      "target": "IU-251.29188.72",
+      "verdict": "Compatible. 8 usages of experimental API"
+    },
+    {
+      "target": "IU-262.10315.125",
+      "verdict": "Compatible. 1 usage of experimental API"
+    },
+    {
+      "target": "IU-262.9437.185",
+      "verdict": "Compatible. 1 usage of experimental API"
+    },
+    {
+      "target": "PS-251.29188.73",
+      "verdict": "Compatible. 8 usages of experimental API"
+    },
+    {
+      "target": "PY-251.29188.66",
+      "verdict": "Compatible. 8 usages of experimental API"
+    },
+    {
+      "target": "RM-251.29188.59",
+      "verdict": "Compatible. 8 usages of experimental API"
+    },
+    {
+      "target": "WS-251.29188.71",
+      "verdict": "Compatible. 8 usages of experimental API"
+    },
+    {
+      "target": "WS-261.27258.45",
+      "verdict": "Compatible. 2 usages of experimental API"
+    }
+  ],
+  "source_commit": "3df269267770dbd85a53aa9533d89fd9fd34d9ba"
+}

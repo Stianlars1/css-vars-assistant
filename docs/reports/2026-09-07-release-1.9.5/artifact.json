@@ -1,0 +1,12 @@
+{
+  "filename": "cssvarsassistant-1.9.5-signed.zip",
+  "bytes": 379928,
+  "sha256": "366ac381f641689f242dac5bb6fcbc08d2be8da93f9276b0b0b3616602bfd8ea",
+  "id": "cssvarsassistant",
+  "version": "1.9.5",
+  "since_build": "251",
+  "signed_payload_matches_unsigned": true,
+  "signature_verifier": "JetBrains Marketplace ZIP Signer 0.1.43",
+  "signature_exit_code": 0,
+  "source_commit": "3df269267770dbd85a53aa9533d89fd9fd34d9ba"
+}
