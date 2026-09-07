@@ -14,7 +14,7 @@ plugins {
 }
 
 group = "com.stianlarsen"
-version = "1.9.4"
+version = "1.9.5"
 
 repositories {
     mavenCentral()
@@ -108,6 +108,14 @@ intellijPlatform {
 <p>
   CSS variables, CSS custom properties, design tokens, <code>var(--token)</code>, <code>var()</code> autocomplete, Tailwind CSS, shadcn/ui, Radix UI, Radix Themes, Material Design tokens, MUI, Open Props, CSS cascade, <code>:root</code>, <code>calc()</code>, nested CSS variables, recursive variable resolution, dark mode tokens, theme variables, WebStorm CSS plugin, IntelliJ IDEA CSS autocomplete, JetBrains plugin design tokens, SCSS variables, Sass variables, LESS variables, <code>@import</code> resolution, Sass <code>@use</code>, Sass <code>@forward</code>, JSDoc CSS, WCAG contrast checker, px equivalent, rem to px converter, hex to HSL, colour swatch, CSS-in-JS bridge.
 </p>
+
+<h3>New in 1.9.5</h3>
+<ul>
+  <li>Native color documentation remains available inside CSS custom-property declarations.</li>
+  <li>Custom-property completion is restricted to the first argument of var(). Fallback values no longer receive invalid bare variable names; nested var() calls and preprocessor fallback variables remain supported.</li>
+  <li>Canceling import debugging no longer reports an IDE error.</li>
+  <li>No settings change or index rebuild is required when upgrading from 1.9.4.</li>
+</ul>
 
 <h3>New in 1.9.4</h3>
 <ul>
@@ -254,6 +262,14 @@ intellijPlatform {
 """.trimIndent()
 
         changeNotes = """
+<h2>1.9.5 – 2026-09-07</h2>
+<ul>
+  <li>Native color documentation remains available inside CSS custom-property declarations.</li>
+  <li>Custom-property completion is restricted to the first argument of var(). Fallback values no longer receive invalid bare variable names; nested var() calls and preprocessor fallback variables remain supported.</li>
+  <li>Canceling import debugging no longer reports an IDE error.</li>
+  <li>No settings change or index rebuild is required when upgrading from 1.9.4.</li>
+</ul>
+
 <h2>1.9.4 – 2026-09-07</h2>
 <ul>
   <li>Imported values refresh after saved and unsaved edits and point to the actual declaration file.</li>

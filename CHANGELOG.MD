@@ -1,3 +1,19 @@
+## 1.9.5 — 2026-09-07
+
+### Fixed
+- Preserve native color documentation when the caret is on a value such as `red` inside `--brand: red`. A resolved custom-property declaration no longer overrides a non-variable original token.
+- Limit bare custom-property completion to the first argument of `var()`. Fallback values and nested non-var functions no longer receive suggestions that insert invalid values such as `var(--missing, --red)`.
+- Preserve completion for nested fallback `var()` calls, incomplete and multiline first arguments, CSS in HTML, and preprocessor variables in fallback values.
+- Propagate cancellation from import debugging without logging an IDE error or showing a failure notification. Completion context probing also preserves platform cancellation.
+
+### Testing
+- Add regression coverage for native documentation ownership, fallback completion and insertion, stylesheet dialects, embedded CSS, foreign-language providers, indexing mode and canceled work.
+- Preserve the Java annotation/Javadoc regressions from issue #35 and existing indexing, resolution, ranking, sorting and insertion coverage.
+
+No settings change or index rebuild is required when upgrading from 1.9.4.
+
+---
+
 ## 1.9.4 — 2026-09-07
 
 ### Fixed

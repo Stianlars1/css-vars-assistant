@@ -13,7 +13,7 @@ class CssVariablePsiDocumentationTargetProvider : PsiDocumentationTargetProvider
         if (!element.isValid) return null
 
         val source = originalElement?.takeIf { it.isValid } ?: element
-        val varName = extractCssVariableName(source) ?: extractCssVariableName(element)
+        val varName = extractCssVariableName(source)
 
         return varName?.let {
             CssVariableDocumentationTarget(source, it)
@@ -21,4 +21,3 @@ class CssVariablePsiDocumentationTargetProvider : PsiDocumentationTargetProvider
     }
 
 }
-

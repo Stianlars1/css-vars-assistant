@@ -1,5 +1,6 @@
 package cssvarsassistant.actions
 
+import com.intellij.notification.NotificationGroup
 import com.intellij.notification.NotificationGroupManager
 import com.intellij.notification.NotificationType
 import com.intellij.openapi.actionSystem.ActionUpdateThread
@@ -8,8 +9,10 @@ import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.CommonDataKeys
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.progress.ProgressIndicator
+import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.progress.Task
+import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.ui.components.JBScrollPane
@@ -48,8 +51,11 @@ class DebugImportResolutionAction : AnAction() {
             NotificationType.INFORMATION
         ).notify(project)
 
-        ProgressManager.getInstance().run(object :
-            Task.Backgroundable(project, "Import-debug: ${file.name}", true) {
+        ProgressManager.getInstance().run(createTask(project, file, group))
+    }
+
+    internal fun createTask(project: Project, file: VirtualFile, group: NotificationGroup): Task.Backgroundable =
+        object : Task.Backgroundable(project, "Import-debug: ${file.name}", true) {
 
             override fun run(indicator: ProgressIndicator) {
                 try {
@@ -83,6 +89,8 @@ class DebugImportResolutionAction : AnAction() {
 
                     LOG.info("Debug-import done for ${file.path}\n$out")
 
+                } catch (ex: ProcessCanceledException) {
+                    throw ex
                 } catch (ex: Exception) {
                     LOG.error(ex)
                     group.createNotification(
@@ -93,8 +101,7 @@ class DebugImportResolutionAction : AnAction() {
                         .notify(project)
                 }
             }
-        })
-    }
+        }
 
     /* ------------------------------------------------------------------ */
     /*  Recursive tree builder                                            */
@@ -177,6 +184,8 @@ class DebugImportResolutionAction : AnAction() {
             Regex("""\$[\w-]+\s*:\s*[^;]+;""")   // scss / sass
         )
         patterns.sumOf { it.findAll(content).count() }
+    } catch (ex: ProcessCanceledException) {
+        throw ex
     } catch (_: Exception) {
         0
     }

@@ -6,7 +6,7 @@
 
 If you find CSS Variables Assistant helpful, please consider rating it on [JetBrains Marketplace](https://plugins.jetbrains.com/plugin/27392-css-variables-assistant/reviews) ★★★★★ 🙏.
 
-**Version:** 1.9.4<br/>
+**Version:** 1.9.5<br/>
 **Compatible IDEs:** JetBrains IDEs with bundled JavaScript + CSS support — IntelliJ IDEA Ultimate, WebStorm, GoLand, PhpStorm, PyCharm Professional, and RubyMine.  
 **Author:** Stian Larsen  
 **Repo:** [github.com/Stianlars1/css-vars-assistant](https://github.com/Stianlars1/css-vars-assistant)
@@ -18,6 +18,16 @@ If you find CSS Variables Assistant helpful, please consider rating it on [JetBr
 
 
 Supercharge your CSS custom properties and preprocessor variables in JetBrains IDEs with advanced autocomplete, documentation, and debugging tools.
+---
+
+## What's new in 1.9.5
+
+Quick Documentation on color values inside custom-property declarations now stays with the IDE's native provider. Variable documentation remains available on declarations and references.
+
+Custom-property completion now stays in the first argument of `var()`. It no longer inserts bare variable names into fallback values or their nested functions. Nested fallback calls such as `var(--missing, var(--brand))` and preprocessor variables in fallback values remain supported.
+
+Canceling import debugging no longer reports an IDE error. No settings change or index rebuild is required when upgrading from 1.9.4.
+
 ---
 
 ## What's new in 1.9.4

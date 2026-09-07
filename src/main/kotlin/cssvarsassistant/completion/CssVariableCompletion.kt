@@ -8,8 +8,6 @@ import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.project.DumbService
 import com.intellij.patterns.PlatformPatterns
-import com.intellij.psi.css.CssFunction
-import com.intellij.psi.util.PsiTreeUtil
 import com.intellij.util.ProcessingContext
 import com.intellij.util.ui.ColorIcon
 import cssvarsassistant.documentation.ColorParser
@@ -135,8 +133,10 @@ class CssVariableCompletion : CompletionContributor() {
                         if (DumbService.isDumb(project)) return
                         ProgressManager.checkCanceled()
 
-                        val insideVarFunction = isInsideVarFunction(params)
-                        if (!insideVarFunction) {
+                        val inCssVariableArgument = CssVarCompletionContext.isFirstArgument(
+                            params.editor.document.text, params.editor.caretModel.offset
+                        )
+                        if (!inCssVariableArgument) {
                             val preprocessorQuery = extractPreprocessorCompletionQuery(
                                 stylesheetExtension(params),
                                 params.editor.document.text,
@@ -643,98 +643,6 @@ class CssVariableCompletion : CompletionContributor() {
             .toIntOrNull()
     }
 
-    /**
-     * Returns true if the caret sits strictly inside an unclosed `var(...)`
-     * expression — i.e. between its opening `(` and the matching `)`.
-     *
-     * Issue #18 Bug B: the old line-based check returned true whenever the
-     * caret was after *any* `var(` on the line, even when the matching `)`
-     * had already been passed. That caused the plugin to offer every indexed
-     * CSS variable on lines that happened to contain a `var()` call
-     * somewhere, flooding completion with irrelevant suggestions.
-     *
-     * Correctness rules enforced here:
-     *   1. PSI check first (authoritative when available).
-     *   2. Text fallback tracks paren depth from each `var(` until the caret
-     *      or the matching `)`. Depth must stay ≥ 1 at the caret.
-     *   3. `(?<![\w-])var\s*\(` stops identifiers like `myvar(` from counting.
-     */
-    private fun isInsideVarFunction(params: CompletionParameters): Boolean {
-        val offset = params.offset
-        val source = params.editor.document.text
-        val masked = CssTextUtil.maskComments(source, maskStrings = true).text
-        var probe = (params.editor.caretModel.offset - 1).coerceAtMost(source.lastIndex)
-        while (probe >= 0 && source[probe].isWhitespace()) probe--
-        if (probe >= 0 && source[probe] != masked[probe]) return false
-
-        // 1. PSI-first, the authoritative answer when available.
-        try {
-            val fn = PsiTreeUtil.getParentOfType(params.position, CssFunction::class.java)
-            if (fn != null && fn.name.equals("var", ignoreCase = true)) {
-                val l = fn.lParenthesis?.textOffset
-                val r = fn.rParenthesis?.textOffset
-                if (l != null && offset > l && (r == null || offset <= r)) {
-                    logger.debug("✅ PSI detected var() context")
-                    return true
-                }
-            }
-        } catch (e: Exception) {
-            logger.debug("PSI var() probe failed: ${e.message}")
-        }
-
-        // 2. Textual fallback — used in dumb mode, non-indexed files, and the
-        //    SCSS/LESS contexts where the CSS PSI sometimes does not see var.
-        return try {
-            val text = masked
-            val searchStart = maxOf(0, offset - 200)
-            val searchText = text.substring(searchStart, offset)
-            val cursorInSearch = offset - searchStart
-
-            val varMatches = VAR_OPEN_REGEX.findAll(searchText).toList()
-            if (varMatches.isEmpty()) {
-                logger.debug("❌ No var( before caret")
-                return false
-            }
-
-            // Prefer the innermost `var(` that still contains the caret: walk
-            // the matches in reverse. For each candidate, simulate paren depth
-            // from its `(` up to the caret; if depth stays ≥ 1 the caret is
-            // inside that var(...) call.
-            for (match in varMatches.asReversed()) {
-                val openParenIndex = match.range.last
-                if (cursorInSearch <= openParenIndex) continue
-
-                var depth = 1
-                var i = openParenIndex + 1
-                while (i < cursorInSearch) {
-                    when (searchText[i]) {
-                        '(' -> depth++
-                        ')' -> {
-                            depth--
-                            if (depth == 0) break
-                        }
-                    }
-                    i++
-                }
-                if (depth >= 1) {
-                    logger.debug("✅ Text scan confirms inside var(), depth=$depth")
-                    return true
-                }
-            }
-
-            logger.debug("❌ Caret is outside every var() before it")
-            false
-        } catch (e: Exception) {
-            logger.debug("Text var() probe failed: ${e.message}")
-            false
-        }
-    }
-
-    private companion object {
-        // Guarded with a non-word look-behind so identifiers that merely end
-        // in "var" (e.g. `myvar(`, `ivar(`) don't count as a var() call.
-        val VAR_OPEN_REGEX = Regex("""(?<![A-Za-z0-9_-])var\s*\(""", RegexOption.IGNORE_CASE)
-    }
 }
 
 class DoubleColorIcon(private val icon1: Icon, private val icon2: Icon) : Icon {
