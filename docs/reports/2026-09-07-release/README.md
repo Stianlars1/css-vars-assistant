@@ -33,4 +33,8 @@ Detailed evidence: [baseline tests](tests-251.json), [262 tests](tests-262.json)
 
 ## Distribution
 
-The signed file is verified and ready. Upload and GitHub release receipts will be recorded separately after completion. Uploading and JetBrains approval/listing are distinct states.
+Uploaded successfully to the **Stable** channel on 7 September 2026. Marketplace update **1163704** is **Under review**; JetBrains approval/listing remains pending.
+
+The [GitHub release v1.9.4](https://github.com/Stianlars1/css-vars-assistant/releases/tag/v1.9.4) is published with the signed ZIP. GitHub's asset digest matches the local verified SHA-256. The reviewed source and annotated v1.9.4 tag were pushed to main without force; the original dirty checkout was preserved.
+
+[Marketplace update](https://plugins.jetbrains.com/plugin/27392-css-variables-assistant/edit/versions/stable/1163704) · [Publication receipt](publication.json)
