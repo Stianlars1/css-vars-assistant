@@ -64,9 +64,9 @@ object ColorParser {
         rgbRe.matchEntire(s)?.groupValues?.get(1)?.let { return parseRgbColor(it) }
         hslRe.matchEntire(s)?.groupValues?.get(1)?.let { return parseHslColor(it) }
         bareHslRe.matchEntire(s)?.destructured?.let { (h, s2, l2) ->
-            val hue = h.toFloatOrNull() ?: return null
-            val saturation = s2.removeSuffix("%").toFloatOrNull() ?: return null
-            val lightness = l2.removeSuffix("%").toFloatOrNull() ?: return null
+            val hue = parseFiniteFloat(h) ?: return null
+            val saturation = parseFiniteFloat(s2.removeSuffix("%")) ?: return null
+            val lightness = parseFiniteFloat(l2.removeSuffix("%")) ?: return null
             return hslToColor(hue, saturation, lightness)
         }
         hwbRe.matchEntire(s)?.groupValues?.get(1)?.let { return parseHwbColor(it) }
@@ -208,6 +208,9 @@ object ColorParser {
             else -> cleaned.toFloatOrNull()
         }
     }
+
+    private fun parseFiniteFloat(value: String): Float? =
+        value.toFloatOrNull()?.takeIf { it.isFinite() }
 
     private fun parseAlpha(value: String): Int? =
         if (value.endsWith("%")) {

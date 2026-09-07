@@ -30,6 +30,12 @@ class ValueEdgeCaseAuditTest {
     @Test fun `malformed bare HSL returns null without throwing`() {
         assertNull(ColorParser.parseCssColor("1..2 50% 50%"))
     }
+    @Test fun `overflow bare HSL hue returns null without throwing`() {
+        assertNull(ColorParser.parseCssColor("9999999999999999999999999999999999999999 50% 50%"))
+    }
+    @Test fun `overflow bare HSL percentage returns null without throwing`() {
+        assertNull(ColorParser.parseCssColor("0 9999999999999999999999999999999999999999% 50%"))
+    }
     @Test fun `negative lengths are sizes`() {
         assertEquals(ValueUtil.ValueType.SIZE, ValueUtil.getValueType("-0.5rem"))
         assertEquals(-8.0, ValueUtil.convertToPixels("-0.5rem"))
