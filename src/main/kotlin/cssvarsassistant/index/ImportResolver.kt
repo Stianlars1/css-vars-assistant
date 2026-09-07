@@ -206,8 +206,8 @@ object ImportResolver {
         }
         val exports = json.get("exports")
         if (packageSubPath.isNotBlank()) {
-            return listOfNotNull(resolveFirstCandidate(packageDir,
-                extractExportCandidates(exports, "./$packageSubPath"), prioritizedExtensions))
+            return resolvePackageCandidates(packageDir,
+                extractExportCandidates(exports, "./$packageSubPath"), prioritizedExtensions)
         }
         val rootExportCandidates = extractExportCandidates(exports, ".")
         val explicitCssSubpathCandidates = extractExportCandidates(exports, "./css")
@@ -217,8 +217,17 @@ object ImportResolver {
             }
         }
 
-        val sassCandidates = (rootExportCandidates + topLevelCandidates)
-            .filter { it.kind == EntrypointKind.SASS }
+        val candidates = rootExportCandidates + topLevelCandidates +
+            explicitCssSubpathCandidates.filter { it.kind == EntrypointKind.CSS }
+        return resolvePackageCandidates(packageDir, candidates, prioritizedExtensions)
+    }
+
+    private fun resolvePackageCandidates(
+        packageDir: VirtualFile,
+        candidates: List<EntrypointCandidate>,
+        prioritizedExtensions: List<String>
+    ): List<VirtualFile> {
+        val sassCandidates = candidates.filter { it.kind == EntrypointKind.SASS }
         var firstResolvedSass: VirtualFile? = null
         for (candidate in sassCandidates) {
             val resolved = resolveEntrypointCandidate(packageDir, candidate.path, prioritizedExtensions) ?: continue
@@ -230,14 +239,12 @@ object ImportResolver {
             }
         }
 
-        val cssCandidates = (rootExportCandidates + topLevelCandidates + explicitCssSubpathCandidates)
-            .filter { it.kind == EntrypointKind.CSS }
+        val cssCandidates = candidates.filter { it.kind == EntrypointKind.CSS }
         resolveFirstCandidate(packageDir, cssCandidates, prioritizedExtensions)?.let { cssEntrypoint ->
             return listOfNotNull(firstResolvedSass, cssEntrypoint).distinct()
         }
 
-        val otherCandidates = (rootExportCandidates + topLevelCandidates)
-            .filter { it.kind == EntrypointKind.OTHER }
+        val otherCandidates = candidates.filter { it.kind == EntrypointKind.OTHER }
         resolveFirstCandidate(packageDir, otherCandidates, prioritizedExtensions)?.let {
             return listOf(it)
         }

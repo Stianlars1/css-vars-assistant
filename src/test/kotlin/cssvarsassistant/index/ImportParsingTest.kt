@@ -6,6 +6,8 @@ import com.intellij.openapi.progress.EmptyProgressIndicator
 import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.roots.ModuleRootModificationUtil
+import cssvarsassistant.util.ScopeUtil
+import cssvarsassistant.settings.CssVarsAssistantSettings
 import cssvarsassistant.testing.CssVarsAssistantPlatformTestCase
 
 class ImportParsingTest : CssVarsAssistantPlatformTestCase() {
@@ -95,6 +97,40 @@ class ImportParsingTest : CssVarsAssistantPlatformTestCase() {
         val resolved = ImportResolver.resolveDirectImports(entry, project).single()
         assertEquals(sass, resolved.resolvedFile)
         assertEquals(listOf(sass, css), resolved.resolvedFiles)
+    }
+
+    fun testConditionalSubpathKeepsSassAndCssFallback() {
+        updateSettings { indexingScope = CssVarsAssistantSettings.IndexingScope.PROJECT_WITH_IMPORTS }
+        val sass = myFixture.addFileToProject("node_modules/design/api.scss", "${'$'}brand: red;").virtualFile
+        val css = myFixture.addFileToProject("node_modules/design/theme.css", ":root { --brand: red; }").virtualFile
+        myFixture.addFileToProject("node_modules/design/package.json",
+            """{"exports":{"./theme":{"sass":"./api.scss","css":"./theme.css"}}}""")
+        val entry = myFixture.addFileToProject("app.scss", "@use 'design/theme' as *;").virtualFile
+        val resolved = ImportResolver.resolveDirectImports(entry, project).single()
+        assertEquals(sass, resolved.resolvedFile)
+        assertEquals(listOf(sass, css), resolved.resolvedFiles)
+        assertContainsElements(ImportResolver.resolveImports(entry, project, 5), sass, css)
+        val scope = ScopeUtil.effectiveCssIndexingScope(project, CssVarsAssistantSettings.getInstance())
+        assertTrue(VariableLookup.cssValues(project, "--brand", scope).any { it.file == css && it.value.value == "red" })
+        assertTrue(VariableLookup.preprocessorValues(project, "${'$'}brand", scope).any { it.file == sass && it.declaration.value == "red" })
+    }
+
+    fun testCssImportConditionalSubpathKeepsCssFallback() {
+        val sass = myFixture.addFileToProject("node_modules/design/api.scss", "${'$'}brand: red;").virtualFile
+        val css = myFixture.addFileToProject("node_modules/design/theme.css", ":root { --brand: red; }").virtualFile
+        myFixture.addFileToProject("node_modules/design/package.json",
+            """{"exports":{"./theme":{"sass":"./api.scss","style":"./theme.css"}}}""")
+        val entry = myFixture.addFileToProject("app.css", "@import 'design/theme';").virtualFile
+        assertEquals(listOf(sass, css), ImportResolver.resolveDirectImports(entry, project).single().resolvedFiles)
+    }
+
+    fun testConditionalSubpathDoesNotAddCssFallbackWhenSassDeclaresProperties() {
+        val sass = myFixture.addFileToProject("node_modules/design/api.scss", ":root { --brand: red; }").virtualFile
+        myFixture.addFileToProject("node_modules/design/theme.css", ":root { --brand: blue; }")
+        myFixture.addFileToProject("node_modules/design/package.json",
+            """{"exports":{"./theme":{"sass":"./api.scss","css":"./theme.css"}}}""")
+        val entry = myFixture.addFileToProject("app.scss", "@use 'design/theme' as *;").virtualFile
+        assertEquals(listOf(sass), ImportResolver.resolveDirectImports(entry, project).single().resolvedFiles)
     }
 
     fun testImportListKeepsQuotedCommaAndLessOptions() {
