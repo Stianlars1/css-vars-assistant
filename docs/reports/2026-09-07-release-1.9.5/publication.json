@@ -1,0 +1,25 @@
+{
+  "date": "2026-09-08",
+  "marketplace": {
+    "update_id": 1164049,
+    "version": "1.9.5",
+    "channel": "Stable",
+    "hidden": false,
+    "status": "Under review",
+    "upload_confirmation": "Upload Successful",
+    "url": "https://plugins.jetbrains.com/plugin/27392-css-variables-assistant/edit/versions/stable/1164049",
+    "public_url": "https://plugins.jetbrains.com/plugin/27392-css-variables-assistant/versions/stable/1164049",
+    "uploaded_filename": "cssvarsassistant-1.9.5-signed.zip",
+    "uploaded_local_sha256": "366ac381f641689f242dac5bb6fcbc08d2be8da93f9276b0b0b3616602bfd8ea"
+  },
+  "github": {
+    "release_url": "https://github.com/Stianlars1/css-vars-assistant/releases/tag/v1.9.5",
+    "tag": "v1.9.5",
+    "draft": false,
+    "prerelease": false,
+    "asset_url": "https://github.com/Stianlars1/css-vars-assistant/releases/download/v1.9.5/cssvarsassistant-1.9.5-signed.zip",
+    "asset_bytes": 379928,
+    "asset_sha256": "366ac381f641689f242dac5bb6fcbc08d2be8da93f9276b0b0b3616602bfd8ea",
+    "uploaded_asset_matches_local": true
+  }
+}

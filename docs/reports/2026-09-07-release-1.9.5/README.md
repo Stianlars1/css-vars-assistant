@@ -36,6 +36,6 @@ Checks exercise real platform PSI, documentation selection, completion, editor i
 - [Compatibility verdicts](compatibility.json)
 - [Artifact identity and SHA-256](artifact.json)
 
-Publication receipts are recorded separately after upload. Upload, JetBrains review, and approval/listing are distinct states.
+The signed 1.9.5 archive was uploaded successfully to the Stable channel on 8 September 2026. JetBrains assigned update **1164049** and the authenticated version page shows **Under review**. It will become publicly available after JetBrains approval; Hidden was left disabled. The GitHub release is public, and its asset SHA-256 matches the verified local ZIP. See [publication receipts](publication.json).
 
 References: [CSS var() syntax](https://www.w3.org/TR/css-variables-1/#using-variables), [JetBrains cancellation contract](https://plugins.jetbrains.com/docs/intellij/background-processes.html#handling-cancellation), and [original Java Quick Documentation issue #35](https://github.com/Stianlars1/css-vars-assistant/issues/35).
