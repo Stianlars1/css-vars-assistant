@@ -6,7 +6,7 @@
 
 If you find CSS Variables Assistant helpful, please consider rating it on [JetBrains Marketplace](https://plugins.jetbrains.com/plugin/27392-css-variables-assistant/reviews) ★★★★★ 🙏.
 
-**Version:** 1.9.5<br/>
+**Version:** 1.9.6<br/>
 **Compatible IDEs:** JetBrains IDEs with bundled JavaScript + CSS support — IntelliJ IDEA Ultimate, WebStorm, GoLand, PhpStorm, PyCharm Professional, and RubyMine.  
 **Author:** Stian Larsen  
 **Repo:** [github.com/Stianlars1/css-vars-assistant](https://github.com/Stianlars1/css-vars-assistant)
@@ -18,6 +18,16 @@ If you find CSS Variables Assistant helpful, please consider rating it on [JetBr
 
 
 Supercharge your CSS custom properties and preprocessor variables in JetBrains IDEs with advanced autocomplete, documentation, and debugging tools.
+---
+
+## What's new in 1.9.6
+
+Fixes the completion crash reported in [#36](https://github.com/Stianlars1/css-vars-assistant/issues/36), where a catalog mixing sizes, colors and numbers could trigger `Comparison method violates its general contract!`. Thank you to [@prikkprikkprikk](https://github.com/prikkprikkprikk) for the report.
+
+Size and number families keep their ascending/descending value order. Exact names and matches for the full typed prefix take priority consistently. Regression checks cover completion and insertion in CSS, SCSS, Sass and LESS.
+
+No settings change or index rebuild is required when upgrading from 1.9.5.
+
 ---
 
 ## What's new in 1.9.5

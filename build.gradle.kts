@@ -14,7 +14,7 @@ plugins {
 }
 
 group = "com.stianlarsen"
-version = "1.9.5"
+version = "1.9.6"
 
 repositories {
     mavenCentral()
@@ -109,7 +109,14 @@ intellijPlatform {
   CSS variables, CSS custom properties, design tokens, <code>var(--token)</code>, <code>var()</code> autocomplete, Tailwind CSS, shadcn/ui, Radix UI, Radix Themes, Material Design tokens, MUI, Open Props, CSS cascade, <code>:root</code>, <code>calc()</code>, nested CSS variables, recursive variable resolution, dark mode tokens, theme variables, WebStorm CSS plugin, IntelliJ IDEA CSS autocomplete, JetBrains plugin design tokens, SCSS variables, Sass variables, LESS variables, <code>@import</code> resolution, Sass <code>@use</code>, Sass <code>@forward</code>, JSDoc CSS, WCAG contrast checker, px equivalent, rem to px converter, hex to HSL, colour swatch, CSS-in-JS bridge.
 </p>
 
-<h3>New in 1.9.5</h3>
+<h3>New in 1.9.6</h3>
+<ul>
+  <li>Fixes a completion crash when a token catalog mixes sizes, colors and numbers (<a href="https://github.com/Stianlars1/css-vars-assistant/issues/36">#36</a>). Thanks to @prikkprikkprikk for reporting it.</li>
+  <li>Preserves ascending/descending value sorting for size and number families, natural numeric suffixes, and exact-name priority. Full typed-prefix matches stay ahead of truncated matches.</li>
+  <li>Completion and insertion are verified across CSS, SCSS, Sass and LESS. No settings change or index rebuild is required when upgrading from 1.9.5.</li>
+</ul>
+
+<h3>Previously in 1.9.5</h3>
 <ul>
   <li>Native color documentation remains available inside CSS custom-property declarations.</li>
   <li>Custom-property completion is restricted to the first argument of var(). Fallback values no longer receive invalid bare variable names; nested var() calls and preprocessor fallback variables remain supported.</li>
@@ -262,6 +269,14 @@ intellijPlatform {
 """.trimIndent()
 
         changeNotes = """
+<h2>1.9.6 – 2026-09-14</h2>
+<ul>
+  <li>Fixes the "Comparison method violates its general contract!" completion error caused by mixed size, color and number tokens (<a href="https://github.com/Stianlars1/css-vars-assistant/issues/36">#36</a>). Thank you to @prikkprikkprikk for the report.</li>
+  <li>Keeps semantic size and number families sorted by value, with exact-name and full-prefix matches prioritized consistently.</li>
+  <li>Adds regression coverage for mixed catalogs and completion/insertion in CSS, SCSS, Sass and LESS.</li>
+  <li>No settings change or index rebuild is required when upgrading from 1.9.5.</li>
+</ul>
+
 <h2>1.9.5 – 2026-09-07</h2>
 <ul>
   <li>Native color documentation remains available inside CSS custom-property declarations.</li>

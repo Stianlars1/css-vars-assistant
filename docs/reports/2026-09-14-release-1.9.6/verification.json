@@ -1,0 +1,81 @@
+{
+  "version": "1.9.6",
+  "date": "2026-09-14",
+  "fixPullRequest": 37,
+  "fixMergeCommit": "565179de93ced72f98c41455ec10d17e42f2ebbf",
+  "tests": {
+    "IntelliJ IDEA 2025.1": {
+      "tests": 499,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "IntelliJ IDEA 2026.2.2": {
+      "tests": 499,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    }
+  },
+  "buildPlugin": "passed",
+  "verifyPluginStructure": "passed",
+  "verifyPluginProjectConfiguration": "passed",
+  "signing": {
+    "existingPublisherIdentity": true,
+    "signatureVerifier": "JetBrains Marketplace ZIP Signer 0.1.43",
+    "signatureVerificationExitCode": 0,
+    "signedAndUnsignedContentsIdentical": true
+  },
+  "pluginVerifier": {
+    "version": "1.410",
+    "exitCode": 0,
+    "targets": [
+      {
+        "ideBuild": "GO-251.29188.80",
+        "verdict": "Compatible. 8 usages of experimental API"
+      },
+      {
+        "ideBuild": "IU-251.23774.435",
+        "verdict": "Compatible. 8 usages of experimental API"
+      },
+      {
+        "ideBuild": "IU-251.29188.72",
+        "verdict": "Compatible. 8 usages of experimental API"
+      },
+      {
+        "ideBuild": "IU-262.10315.125",
+        "verdict": "Compatible. 1 usage of experimental API"
+      },
+      {
+        "ideBuild": "IU-262.9437.185",
+        "verdict": "Compatible. 1 usage of experimental API"
+      },
+      {
+        "ideBuild": "PS-251.29188.73",
+        "verdict": "Compatible. 8 usages of experimental API"
+      },
+      {
+        "ideBuild": "PY-251.29188.66",
+        "verdict": "Compatible. 8 usages of experimental API"
+      },
+      {
+        "ideBuild": "RM-251.29188.59",
+        "verdict": "Compatible. 8 usages of experimental API"
+      },
+      {
+        "ideBuild": "WS-251.29188.71",
+        "verdict": "Compatible. 8 usages of experimental API"
+      },
+      {
+        "ideBuild": "WS-261.27258.45",
+        "verdict": "Compatible. 2 usages of experimental API"
+      }
+    ]
+  },
+  "artifact": {
+    "name": "cssvarsassistant-1.9.6-signed.zip",
+    "bytes": 380205,
+    "sha256": "6f632e0d462923886707972a6dc44393fa1e2733a15dc75c72a4fbf44bf77e42"
+  },
+  "productionSourceUnchangedFromTestedFix": true
+}

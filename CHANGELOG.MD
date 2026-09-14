@@ -1,7 +1,12 @@
-## Unreleased
+## 1.9.6 — 2026-09-14
 
 ### Fixed
 - Fix the CSS variable completion crash reported in [#36](https://github.com/Stianlars1/css-vars-assistant/issues/36). Mixed size, color and number tokens now sort consistently while preserving value ordering for size/number families and prioritizing full query matches.
+
+### Testing
+- Add 13 regression and preservation tests covering comparator contracts, mixed token catalogs, sorting preferences, exact/full-prefix ranking, and completion/insertion in CSS, SCSS, Sass and LESS.
+
+Thanks to [@prikkprikkprikk](https://github.com/prikkprikkprikk) for reporting the issue. No settings change or index rebuild is required when upgrading from 1.9.5.
 
 ---
 
