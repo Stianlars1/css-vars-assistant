@@ -590,14 +590,6 @@ class CssVariableCompletion : CompletionContributor() {
             return if (aExact) -1 else 1
         }
 
-        val aType = ValueUtil.getValueType(a.mainValue)
-        val bType = ValueUtil.getValueType(b.mainValue)
-        if (aType in setOf(ValueUtil.ValueType.SIZE, ValueUtil.ValueType.NUMBER) &&
-            bType in setOf(ValueUtil.ValueType.SIZE, ValueUtil.ValueType.NUMBER)
-        ) {
-            return null
-        }
-
         // 1.8.4 / issue #20: "starts with the FULL user query" beats "starts
         // with a truncated candidate". When user types `sidebar-accent-
         // foreground`, only `--sidebar-accent-foreground` itself begins with
@@ -612,6 +604,19 @@ class CssVariableCompletion : CompletionContributor() {
         if (aStartsWithQuery != bStartsWithQuery) {
             return if (aStartsWithQuery) -1 else 1
         }
+
+        val aType = ValueUtil.getValueType(a.mainValue)
+        val bType = ValueUtil.getValueType(b.mainValue)
+        val aNumeric = aType == ValueUtil.ValueType.SIZE || aType == ValueUtil.ValueType.NUMBER
+        val bNumeric = bType == ValueUtil.ValueType.SIZE || bType == ValueUtil.ValueType.NUMBER
+
+        // Keep numeric entries in one group before skipping name specificity.
+        // Mixing value ordering for numeric pairs with name ordering against
+        // non-numeric entries creates cycles and can make TimSort throw (#36).
+        if (aNumeric != bNumeric) {
+            return if (aNumeric) -1 else 1
+        }
+        if (aNumeric) return null
 
         // Within the "starts-with-full-query" group, the 1.8.0 behaviour
         // still holds: shorter name wins (so `--error` ranks above

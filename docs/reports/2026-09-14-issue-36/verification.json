@@ -1,0 +1,143 @@
+{
+  "date": "2026-09-14",
+  "issue": "https://github.com/Stianlars1/css-vars-assistant/issues/36",
+  "baseCommit": "4da08c74c28fda4b2ba4a3c03b42e2704bbc87c6",
+  "introducedInCommit": "73bc86e",
+  "reproduction": {
+    "input": "Synthetic 120-token mixed SIZE/COLOR/NUMBER catalog, 64 deterministic permutations, query pa",
+    "originalCode": {
+      "tests": 8,
+      "failures": [
+        {
+          "test": "mixed sizes colors and numbers have a transitive ordering()",
+          "error": "org.opentest4j.AssertionFailedError: Transitivity: padding-really-super-x, pa-nu, pa-color-x"
+        },
+        {
+          "test": "mixed catalog obeys the comparator contract across matching tiers and queries()",
+          "error": "org.opentest4j.AssertionFailedError: Transitivity: padding-really-super-x, pa-nu, pa-color-x"
+        },
+        {
+          "test": "sorting a large mixed token catalog does not throw()",
+          "error": "java.lang.IllegalArgumentException: Comparison method violates its general contract!"
+        }
+      ]
+    },
+    "reporterProjectAvailable": false
+  },
+  "verification": {
+    "IntelliJ IDEA Ultimate 2025.1": {
+      "totals": {
+        "tests": 499,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "addedSuites": [
+        {
+          "suite": "cssvarsassistant.completion.CssVariableComparatorContractTest",
+          "tests": 9,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0
+        },
+        {
+          "suite": "cssvarsassistant.completion.CssVariableMixedCatalogCompletionTest",
+          "tests": 4,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0
+        }
+      ]
+    },
+    "IntelliJ IDEA 2026.2.2": {
+      "totals": {
+        "tests": 499,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "addedSuites": [
+        {
+          "suite": "cssvarsassistant.completion.CssVariableComparatorContractTest",
+          "tests": 9,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0
+        },
+        {
+          "suite": "cssvarsassistant.completion.CssVariableMixedCatalogCompletionTest",
+          "tests": 4,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0
+        }
+      ]
+    },
+    "sourceAndTestFilesIdenticalAcrossRuntimes": true,
+    "latestRuntimeBuildTools": {
+      "intellijPlatformGradlePlugin": "2.18.1",
+      "kotlinJvmPlugin": "2.4.10"
+    },
+    "baselineBuildTools": {
+      "intellijPlatformGradlePlugin": "2.13.1",
+      "kotlinJvmPlugin": "2.1.20"
+    },
+    "buildPlugin": "passed",
+    "verifyPluginStructure": "passed",
+    "verifyPluginProjectConfiguration": "passed",
+    "pluginVerifier": {
+      "version": "1.410",
+      "exitCode": 0,
+      "targets": [
+        {
+          "ideBuild": "GO-251.29188.80",
+          "verdict": "Compatible. 8 usages of experimental API"
+        },
+        {
+          "ideBuild": "IU-251.23774.435",
+          "verdict": "Compatible. 8 usages of experimental API"
+        },
+        {
+          "ideBuild": "IU-251.29188.72",
+          "verdict": "Compatible. 8 usages of experimental API"
+        },
+        {
+          "ideBuild": "IU-262.10315.125",
+          "verdict": "Compatible. 1 usage of experimental API"
+        },
+        {
+          "ideBuild": "IU-262.9437.185",
+          "verdict": "Compatible. 1 usage of experimental API"
+        },
+        {
+          "ideBuild": "PS-251.29188.73",
+          "verdict": "Compatible. 8 usages of experimental API"
+        },
+        {
+          "ideBuild": "PY-251.29188.66",
+          "verdict": "Compatible. 8 usages of experimental API"
+        },
+        {
+          "ideBuild": "RM-251.29188.59",
+          "verdict": "Compatible. 8 usages of experimental API"
+        },
+        {
+          "ideBuild": "WS-251.29188.71",
+          "verdict": "Compatible. 8 usages of experimental API"
+        },
+        {
+          "ideBuild": "WS-261.27258.45",
+          "verdict": "Compatible. 2 usages of experimental API"
+        }
+      ]
+    }
+  },
+  "artifact": {
+    "file": "cssvarsassistant-1.9.5.zip",
+    "status": "Unsigned local verification artifact; version remains 1.9.5; not published",
+    "sha256": "2642e3f695c1cd40fee84e6754765e8961633d1c54f481f72759c32825ae8926"
+  },
+  "changedProductionFiles": {
+    "src/main/kotlin/cssvarsassistant/completion/CssVariableCompletion.kt": "ff35749cccbc633149476cb620427f52131140daa6067d0a19d6b7f621351a3b"
+  }
+}
