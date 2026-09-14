@@ -1,0 +1,38 @@
+{
+  "date": "2026-09-14",
+  "sourceCommit": "e93ff2cfaa6ec1997cd86482280996e3f599a054",
+  "pullRequest": {
+    "number": 37,
+    "state": "MERGED",
+    "mergeCommit": "565179de93ced72f98c41455ec10d17e42f2ebbf"
+  },
+  "marketplace": {
+    "updateId": 1169852,
+    "version": "1.9.6",
+    "channel": "Stable",
+    "hidden": false,
+    "status": "Under review",
+    "uploadConfirmation": "Upload Successful",
+    "adminUrl": "https://plugins.jetbrains.com/plugin/27392-css-variables-assistant/edit/versions/stable/1169852",
+    "publicUrl": "https://plugins.jetbrains.com/plugin/27392-css-variables-assistant/versions/stable/1169852",
+    "uploadedFilename": "cssvarsassistant-1.9.6-signed.zip",
+    "uploadedLocalSha256": "6f632e0d462923886707972a6dc44393fa1e2733a15dc75c72a4fbf44bf77e42",
+    "changeNotesVersionVerified": "1.9.6 \u2013 2026-09-14"
+  },
+  "github": {
+    "releaseUrl": "https://github.com/Stianlars1/css-vars-assistant/releases/tag/v1.9.6",
+    "tag": "v1.9.6",
+    "draft": false,
+    "prerelease": false,
+    "publishedAt": "2026-09-14T07:54:39Z",
+    "assetUrl": "https://github.com/Stianlars1/css-vars-assistant/releases/download/v1.9.6/cssvarsassistant-1.9.6-signed.zip",
+    "assetBytes": 380205,
+    "assetSha256": "6f632e0d462923886707972a6dc44393fa1e2733a15dc75c72a4fbf44bf77e42",
+    "publicDownloadVerification": {
+      "url": "https://github.com/Stianlars1/css-vars-assistant/releases/download/v1.9.6/cssvarsassistant-1.9.6-signed.zip",
+      "bytes": 380205,
+      "sha256": "6f632e0d462923886707972a6dc44393fa1e2733a15dc75c72a4fbf44bf77e42",
+      "matchesLocal": true
+    }
+  }
+}

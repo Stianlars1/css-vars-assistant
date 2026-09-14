@@ -14,3 +14,9 @@ Verification of the final release:
 - Source and tests are identical to the previously verified fix. Only release metadata and documentation changed after merge.
 
 See [verification.json](verification.json) for test totals, IDE builds, artifact size and SHA-256. The [issue investigation](../2026-09-14-issue-36/README.md) contains the original failing reproduction and the change review. Runtime verification uses real IntelliJ fixtures; no separate manual GUI installation is claimed.
+
+## Publication
+
+PR #37 is merged. Release commit `e93ff2c` and tag `v1.9.6` are pushed. The [GitHub release](https://github.com/Stianlars1/css-vars-assistant/releases/tag/v1.9.6) is public; an independent download matches the signed local ZIP byte-for-byte by SHA-256.
+
+The signed ZIP was uploaded successfully to Marketplace Stable as update [1169852](https://plugins.jetbrains.com/plugin/27392-css-variables-assistant/versions/stable/1169852). Hidden was left disabled, and the authenticated version page shows **Under review** with the 1.9.6 change notes. JetBrains approval and public IDE-update availability remain pending. See [publication.json](publication.json) for the receipts.
