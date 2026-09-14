@@ -1,3 +1,10 @@
+## Unreleased
+
+### Fixed
+- Fix the CSS variable completion crash reported in [#36](https://github.com/Stianlars1/css-vars-assistant/issues/36). Mixed size, color and number tokens now sort consistently while preserving value ordering for size/number families and prioritizing full query matches.
+
+---
+
 ## 1.9.5 — 2026-09-07
 
 ### Fixed
